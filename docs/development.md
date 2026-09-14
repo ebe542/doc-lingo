@@ -46,8 +46,46 @@ library must not load models, read `.env`, contact services, or modify files.
 
 Pass configuration and backend dependencies explicitly to library operations.
 Keep credential loading at the application boundary. Decide on the public API
-in a dedicated commit discussion before adding it; the current package provides
-only the CLI scaffold.
+in a dedicated commit discussion before adding it. The current library exposes
+the reader protocol and plain-text extraction; the CLI remains a translation scaffold.
+
+### Plain-text library API
+
+```python
+from doc_lingo import DocumentReader, PlainTextReader
+
+reader: DocumentReader = PlainTextReader("document.txt")
+with reader.iter_segments() as segments:
+    for segment in segments:
+        print(segment.id, segment.text)
+```
+
+`DocumentReader` is a structural protocol: adapters implement `iter_segments`
+without having to inherit from it. The method returns a context manager containing
+an iterator of immutable `TextSegment` values (`id` and `text`). Consume segments
+inside the `with` block. Context exit closes the file and iterator after normal
+completion, early termination, or an exception. Each call opens an independent
+session; constructing the reader does not open a file.
+
+`PlainTextReader` accepts a string or `pathlib.Path`. It reads UTF-8 strictly,
+accepting and removing an optional leading BOM. Empty or whitespace-only lines
+separate paragraphs and are omitted from the segments. Other whitespace and
+line endings, including a paragraph's final line ending, remain unchanged.
+An empty or whitespace-only document yields no segments. Paragraph IDs are
+strings starting at `"1"`, stable for repeated reads of an unchanged document;
+callers must treat IDs as opaque and local to that document.
+
+The reader buffers one paragraph at a time, plus normal text I/O buffering.
+A document without paragraph separators can therefore still require memory
+proportional to its full size. Document segments are not model-sized chunks;
+model token limits will be handled separately. Other formats may need to load
+their document structure before yielding segments through the same protocol.
+
+File-system and decoding errors propagate to callers; extensions are not checked.
+This API only extracts text. It does not translate or write documents, and omitted
+separators cannot be reconstructed from segments alone. The later writer adapter
+must retain or reread the original structure to preserve formatting. A shared
+writing contract will be discussed in a separate step.
 
 Keep originals intact and write a separate result for every supported format.
 The shared translation service must not assume slides, XML, or any particular

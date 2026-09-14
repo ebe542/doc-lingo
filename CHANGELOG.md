@@ -4,6 +4,9 @@
 
 ### Added
 
+- Shared document reader protocol, immutable text segments, and incremental
+  UTF-8 paragraph extraction with explicit resource management.
+
 - Initial doc-lingo package and CLI help/version interface.
 - Quality and GitHub release workflows with package installation checks.
 - Git Bash development instructions and a format roadmap: TXT, Markdown, then ODP.

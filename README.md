@@ -8,6 +8,9 @@ and formatting.
 This productive learning project is in its initial scaffolding phase. Installation,
 CLI help, version reporting, quality checks, and release tooling are available.
 Document translation is not implemented yet; translation requests fail explicitly.
+The library provides a shared reader protocol and incremental UTF-8 paragraph
+extraction. Document writing is planned separately. See the
+[plain-text API](docs/development.md#plain-text-library-api).
 
 ## Initial scope
 
@@ -31,7 +34,7 @@ Implement formats in this order, reusing the translation core:
    preserving styles, images, and slide structure. Longer translations may
    overflow text boxes; layout fit requires separate validation.
 
-These formats are planned; none is implemented yet.
+Translation for these formats is planned; TXT paragraph extraction is available.
 
 ## Development setup
 
