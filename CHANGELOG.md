@@ -4,6 +4,9 @@
 
 ### Added
 
+- Document writer protocol and TXT reconstruction with segment validation,
+  formatting preservation, and publication without overwriting existing files.
+
 - Shared document reader protocol, immutable text segments, and incremental
   UTF-8 paragraph extraction with explicit resource management.
 

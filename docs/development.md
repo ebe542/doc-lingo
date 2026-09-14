@@ -47,7 +47,7 @@ library must not load models, read `.env`, contact services, or modify files.
 Pass configuration and backend dependencies explicitly to library operations.
 Keep credential loading at the application boundary. Decide on the public API
 in a dedicated commit discussion before adding it. The current library exposes
-the reader protocol and plain-text extraction; the CLI remains a translation scaffold.
+reader/writer protocols and plain-text processing; the CLI remains a translation scaffold.
 
 ### Plain-text library API
 
@@ -82,10 +82,48 @@ model token limits will be handled separately. Other formats may need to load
 their document structure before yielding segments through the same protocol.
 
 File-system and decoding errors propagate to callers; extensions are not checked.
-This API only extracts text. It does not translate or write documents, and omitted
-separators cannot be reconstructed from segments alone. The later writer adapter
-must retain or reread the original structure to preserve formatting. A shared
-writing contract will be discussed in a separate step.
+The reader only extracts text. Omitted separators cannot be reconstructed from
+segments alone; the writer rereads the unchanged original to preserve structure.
+
+### Plain-text writing and errors
+
+```python
+from pathlib import Path
+
+from doc_lingo import DocumentWriter, PlainTextWriter, TextSegment
+
+writer: DocumentWriter = PlainTextWriter("document.txt")
+# Supply exactly one translation per original segment, in the original order.
+writer.write(Path("document.de.txt"), [TextSegment("1", "Hallo Welt!")])
+```
+
+`write(destination, translations)` accepts an iterable, including generators.
+The writer checks every ID against the original paragraph order. Missing, extra,
+duplicate, and out-of-order IDs raise `SegmentMismatchError`. It does not close
+caller-owned iterators: keep reader contexts active while supplying their segments.
+The source must not change between extraction and writing; content changes with
+the same paragraph IDs are not detected by this contract.
+
+The TXT writer preserves the original BOM, whitespace-only separator lines, and
+each paragraph's final line ending (including no ending at EOF). It removes
+trailing CR/LF characters from translated text before restoring that ending.
+Internal line breaks come from the translation. Empty translations are permitted.
+
+Output is prepared in a temporary directory next to the destination. After all
+validation and file closing, a hard link publishes the complete result without
+replacing existing paths, even if another process creates the target during
+processing. The destination directory must exist and support hard links (for
+example, NTFS); unsupported file systems raise `OSError`. No unsafe replacement
+fallback is used. Temporary storage is cleaned up on normal completion and
+exceptions; process termination or file-system cleanup failures can leave residue.
+Publication is not a guarantee of durability across power loss.
+
+Expected errors propagate as Python exceptions: `FileNotFoundError`,
+`FileExistsError`, `UnicodeDecodeError`, `UnicodeEncodeError`, or other `OSError`
+subclasses. Translation-iterator errors also propagate before publication.
+The library configures no logging and prints no errors. A future CLI step will
+map exceptions to concise console messages, exit codes, and optional detailed
+logging without document text or credentials.
 
 Keep originals intact and write a separate result for every supported format.
 The shared translation service must not assume slides, XML, or any particular

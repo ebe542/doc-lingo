@@ -1,8 +1,9 @@
 """Shared contracts for reading translatable document segments."""
 
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 
@@ -24,4 +25,21 @@ class DocumentReader(Protocol):
 
     def iter_segments(self) -> AbstractContextManager[Iterator[TextSegment]]:
         """Open a reading session; IDs remain stable while the source is unchanged."""
+        ...
+
+
+class SegmentMismatchError(ValueError):
+    """Translations do not match the original document's ordered segment IDs."""
+
+
+class DocumentWriter(Protocol):
+    """Write ordered translations into the unchanged original document structure.
+
+    Implementations own their file resources, but not the supplied iterable.
+    Missing, extra, or out-of-order IDs raise SegmentMismatchError. Existing
+    destinations must never be replaced. No output is published before validation.
+    """
+
+    def write(self, destination: Path, translations: Iterable[TextSegment]) -> None:
+        """Write a separate result; propagate encoding, input, and I/O failures."""
         ...

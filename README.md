@@ -9,7 +9,8 @@ This productive learning project is in its initial scaffolding phase. Installati
 CLI help, version reporting, quality checks, and release tooling are available.
 Document translation is not implemented yet; translation requests fail explicitly.
 The library provides a shared reader protocol and incremental UTF-8 paragraph
-extraction. Document writing is planned separately. See the
+extraction, plus a writer that inserts ordered translations into the original TXT
+structure and protects existing output files. See the
 [plain-text API](docs/development.md#plain-text-library-api).
 
 ## Initial scope
