@@ -1,0 +1,54 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python bytecode and interpreter caches
+__pycache__/
+*.py[cod]
+
+# Test, lint, and coverage artifacts
+.pytest_cache/
+# Milestone and diagnostic runs use named base-temp directories. Windows may
+# keep them locked briefly, but none of their contents belong in Git or Ruff.
+.pytest-*/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build and packaging artifacts
+build/
+dist/
+release-dist/
+*.egg-info/
+
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Editor-specific workspace settings
+.idea/
+.vscode/
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local source documents
+# Source documents and translations may contain private material.
+*.pdf
+*.odp
+*.odt
+*.ods
+*.docx
+*.pptx
+*.xlsx
+
+# Only synthetic, redistributable test documents belong in this directory.
+!tests/fixtures/**
+
+# Local test documents and generated translations
+# Everything in this directory must remain reproducible.
+local-data/
