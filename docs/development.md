@@ -9,6 +9,7 @@ behavior, and validation steps. Agree on one small, coherent step at a time.
 - Every commit must leave the project installable and executable. Do not commit
   broken intermediate states or advertise unfinished behavior as available.
 - Keep commits focused and small enough to review and understand independently.
+  Commit subjects must contain at most 50 characters, including the prefix.
   Documentation-only changes must preserve the runnable state of the project.
 - The maintainer writes the tests, runs validation, and creates commits. The
   assistant explains the expected checks and supplies Git Bash commands; it does
@@ -168,14 +169,18 @@ Backend, reader, and writer errors propagate unchanged. The service does not
 configure logging, print messages, retry, or split paragraphs into model chunks.
 One backend call handles one segment. Empty documents require no backend calls.
 Language codes are passed through unchanged; model-specific validation belongs
-to the backend. Model adapters and CLI integration will follow separately.
+to the backend. The local Hugging Face adapter is available; CLI integration
+will follow separately.
+
+See [local model setup](local-model.md) for the CUDA Hugging Face backend,
+versioned prompt identities, installation commands, and manual GPU validation.
 
 ## Format implementation roadmap
 
 Implement support in the order **TXT, Markdown, then ODP**. Each stage builds on
 the same public library API and translation backend and is exposed through the CLI.
 The roadmap describes the target behavior. TXT orchestration currently requires
-a caller-supplied backend; no model implementation or CLI integration is bundled.
+a backend, such as `HuggingFaceBackend`; CLI integration is not bundled yet.
 
 1. **Plain text (`.txt`):** establish reading, translation, and separate output
    writing with English-to-German translation first. Preserve paragraph structure.

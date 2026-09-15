@@ -9,7 +9,8 @@ This productive learning project is in its initial scaffolding phase. Installati
 CLI help, version reporting, quality checks, and release tooling are available.
 CLI translation is not connected yet; CLI translation requests fail explicitly.
 The library provides a document translation service with an injectable backend.
-No model backend is bundled yet.
+A lazy CUDA Hugging Face backend is available through the `local` extra. See
+[local model setup](docs/local-model.md) for CUDA 13.2 installation and smoke checks.
 The library provides a shared reader protocol and incremental UTF-8 paragraph
 extraction, plus a writer that inserts ordered translations into the original TXT
 structure and protects existing output files. See the
@@ -23,7 +24,7 @@ structure and protects existing output files. See the
 - Write a separate output, such as `document.de.txt`, preserving the original.
 - Expose translation through both an importable library and a CLI.
 
-The translation model and local or hosted execution are still to be selected.
+The initial backend runs Qwen3-1.7B locally on CUDA with versioned prompts.
 
 ## Format roadmap
 
@@ -61,13 +62,47 @@ Planned translation command (currently reports that translation is unavailable):
 doc-lingo document.txt --target-lang de
 ```
 
+## CUDA 13.2 installation (Windows / Git Bash)
+
+For local GPU inference, activate the environment and install the CUDA build
+explicitly before the `local` extra:
+
+```bash
+source .venv/Scripts/activate
+python -m pip install "torch==2.13.0+cu132" --index-url https://download.pytorch.org/whl/cu132 && python -m pip install -e ".[dev,local,release]"
+```
+
+The `+cu132` suffix matters: `torch==2.13.0` alone can accept an installed CPU
+build. The extra declares dependencies but does not select the CUDA package index.
+The PyTorch wheel supplies the CUDA runtime; a separate CUDA Toolkit installation
+is not required for this backend. A compatible NVIDIA driver is required.
+
+Verify the installed runtime and GPU:
+
+```bash
+python -c "import torch; print(torch.__version__); print(torch.version.cuda); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CUDA unavailable')"
+```
+
+For the project's RTX 3060 Ti setup, expect `2.13.0+cu132`, `13.2`, `True`, and
+`NVIDIA GeForce RTX 3060 Ti`. If the build ends in `+cpu`, repeat the explicit
+CUDA installation above. See [local model setup](docs/local-model.md) for the
+first model download and a manual translation check.
+
 ## Hugging Face configuration
 
 Keep your existing Hugging Face token in the local `.env` file. It is ignored by
-Git and excluded from release distributions. The scaffold does not read `.env`
-or contact Hugging Face yet. Environment loading and the token variable will be
-connected when the translation backend is implemented. Never commit real tokens.
-CI currently requires no token or model downloads.
+Git and excluded from release distributions. The CLI loads `.env` from the current
+working directory without overriding existing environment variables. Run it from
+the project root to use the project's file. The standard token variable is
+`HF_TOKEN`; never commit its real value.
+
+The library does not load `.env` automatically. For direct Python calls, load it
+before importing or initializing the backend, as shown in the
+[manual smoke check](docs/local-model.md#manual-smoke-check). The backend can
+download model files from Hugging Face on first use.
+
+Quality, clean-CI, and release scripts need no token and do not load `.env`
+themselves. CI uses model substitutes and requires no model downloads.
 
 Store private input documents and generated translations in `local-data/`.
 Only synthetic, redistributable documents belong in `tests/fixtures/`.

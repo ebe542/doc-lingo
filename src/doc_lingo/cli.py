@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import suppress
 from importlib.metadata import version
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,6 +24,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> None:
     """Expose the CLI contract; fail explicitly until translation is implemented."""
+    # Environment loading is optional. A missing or unreadable .env must not
+    # prevent commands that do not need Hugging Face authentication.
+    with suppress(OSError, UnicodeError):
+        load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
+
     parser = build_parser()
     parser.parse_args(argv)
     parser.error("Document translation is not implemented yet. No files were changed.")

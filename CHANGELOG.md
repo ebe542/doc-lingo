@@ -4,6 +4,9 @@
 
 ### Added
 
+- Optional local CUDA backend with a pinned Qwen3-1.7B revision, versioned prompts,
+  explicit token limits, and CUDA 13.2 setup instructions.
+
 - Translation backend protocol, TranslationError, and lazy document translation
   orchestration with preserved segment IDs and managed reading sessions.
 
@@ -17,4 +20,4 @@
 - Quality and GitHub release workflows with package installation checks.
 - Git Bash development instructions and a format roadmap: TXT, Markdown, then ODP.
 
-Model backend implementations and CLI translation integration are still planned.
+CLI translation integration is still planned.
