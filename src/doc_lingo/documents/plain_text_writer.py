@@ -8,6 +8,7 @@ from typing import TextIO
 
 from doc_lingo.documents.errors import SegmentMismatchError
 from doc_lingo.documents.models import TextSegment
+from doc_lingo.documents.text_blocks import iter_text_blocks
 
 
 class PlainTextWriter:
@@ -55,24 +56,14 @@ class PlainTextWriter:
         source: TextIO, output: TextIO, translations: Iterator[TextSegment]
     ) -> None:
         number = 0
-        in_paragraph = False
-        ending = ""
-        for line in source:
-            if line.strip():
-                if not in_paragraph:
-                    number += 1
-                    translated = next(translations, None)
-                    if translated is None or translated.id != str(number):
-                        raise SegmentMismatchError(f"Expected translation for segment {number}")
-                    output.write(translated.text.rstrip("\r\n"))
-                    in_paragraph = True
-                ending = line[len(line.rstrip("\r\n")) :]
-            else:
-                if in_paragraph:
-                    output.write(ending)
-                    in_paragraph = False
-                output.write(line)
-        if in_paragraph:
-            output.write(ending)
+        for block in iter_text_blocks(source):
+            output.write(block.prefix)
+            if block.text is not None:
+                number += 1
+                translated = next(translations, None)
+                if translated is None or translated.id != str(number):
+                    raise SegmentMismatchError(f"Expected translation for segment {number}")
+                output.write(translated.text.rstrip("\r\n"))
+                output.write(block.ending)
         if next(translations, None) is not None:
             raise SegmentMismatchError(f"Unexpected translation after {number} segments")

@@ -73,10 +73,31 @@ Exit codes: `0` for success, `1` for expected file or translation failures, and
 `2` for invalid command arguments. Error messages go to stderr. File logging is
 planned separately.
 
-During translation, stderr shows the number of translated paragraphs and elapsed
-seconds. The initial message explains that the first paragraph may require model
+During translation, stderr shows the translated segment count, segment type, and
+elapsed seconds. Types are `paragraph`, `bullet_item`, and `numbered_item`.
+The initial message explains that the first segment may require model
 loading. No percentage is shown because paragraphs are read incrementally without
 a counting pass. The final success message appears only after output publication.
+
+## Simple TXT lists
+
+Lines starting with `-`, `*`, `•`, or numbers followed by `.` or `)` are treated
+as individual list items when the marker is followed by spaces/tabs and text.
+The adapter retains indentation, marker, and spacing after the marker exactly;
+only the item text is translated. Blank lines and line endings remain intact.
+Prose before and after lists remains paragraph-based. Progress counts include
+each list item as a separate segment with its own type.
+
+Unmarked lines following a list marker belong to that item until the next marker,
+a blank line, or EOF, even without indentation. The complete item is sent to the
+model in one call. Separate following prose from a list with a blank line.
+Internal translated line breaks may change; original item prefixes and final
+line endings are retained.
+
+This is a small TXT convention, not Markdown parsing: tables and nested-list
+semantics are not supported. Indented markers are retained
+without interpreting their nesting level. A line such as `1.5 units` or `-word`
+is ordinary text. Internal prose indentation still depends on the translated text.
 
 ## CUDA 13.2 installation (Windows / Git Bash)
 

@@ -46,6 +46,7 @@ src/doc_lingo/
     errors.py                 SegmentMismatchError
     plain_text.py             TXT reader
     plain_text_writer.py      TXT writer
+    text_blocks.py            Shared prose/list boundaries and formatting
 ```
 
 Interfaces depend on the translation service. The service depends on document
@@ -103,16 +104,21 @@ with reader.iter_segments() as segments:
 
 `DocumentReader` is a structural protocol: adapters implement `iter_segments`
 without having to inherit from it. The method returns a context manager containing
-an iterator of immutable `TextSegment` values (`id` and `text`). Consume segments
+an iterator of immutable `TextSegment` values (`id`, `text`, and `type`). The type
+defaults to `paragraph` for existing two-argument constructors. TXT adapters also
+produce `bullet_item` and `numbered_item`; translation preserves these values.
+Consume segments
 inside the `with` block. Context exit closes the file and iterator after normal
 completion, early termination, or an exception. Each call opens an independent
 session; constructing the reader does not open a file.
 
 `PlainTextReader` accepts a string or `pathlib.Path`. It reads UTF-8 strictly,
 accepting and removing an optional leading BOM. Empty or whitespace-only lines
-separate paragraphs and are omitted from the segments. Other whitespace and
-line endings, including a paragraph's final line ending, remain unchanged.
-An empty or whitespace-only document yields no segments. Paragraph IDs are
+separate paragraphs and are omitted from the segments. Each recognized list item,
+including unmarked continuation lines, forms one segment, excluding its initial
+marker and the indentation around that marker.
+Other whitespace and line endings, including a segment's final line ending,
+remain unchanged. An empty or whitespace-only document yields no segments. Segment IDs are
 strings starting at `"1"`, stable for repeated reads of an unchanged document;
 callers must treat IDs as opaque and local to that document.
 
@@ -127,6 +133,21 @@ The reader only extracts text. Omitted separators cannot be reconstructed from
 segments alone; the writer rereads the unchanged original to preserve structure.
 
 ### Plain-text writing and errors
+
+Reader and writer use `documents/text_blocks.py` for identical segment boundaries.
+Prose is grouped until a blank line or recognized list item. Each list item
+starts with optional spaces/tabs, then `-`, `*`, `•`, or an
+ASCII number followed by `.` or `)`, followed by spaces/tabs and nonblank text.
+The exact prefix stays with the adapter; only the body reaches the backend.
+Unmarked following lines continue the item, regardless of indentation, until
+the next recognized marker, a blank line, or EOF. This keeps context together
+in a single backend call. Following prose requires a blank separator line.
+Continuation whitespace remains in the source text sent to the model; internal
+translated wrapping is not forced back to the original positions. No nesting
+semantics are inferred. Marker-only lines and numbers such as `1.5` do not start
+new list items.
+Changes to segmentation alter IDs for affected documents; do not reuse translations
+extracted using older segmentation rules. Ordinary prose behavior is unchanged.
 
 ```python
 from pathlib import Path
@@ -145,7 +166,8 @@ caller-owned iterators: keep reader contexts active while supplying their segmen
 The source must not change between extraction and writing; content changes with
 the same paragraph IDs are not detected by this contract.
 
-The TXT writer preserves the original BOM, whitespace-only separator lines, and
+The TXT writer preserves list prefixes (including indentation and spacing),
+the original BOM, whitespace-only separator lines, and
 each paragraph's final line ending (including no ending at EOF). It removes
 trailing CR/LF characters from translated text before restoring that ending.
 Internal line breaks come from the translation. Empty translations are permitted.
@@ -173,12 +195,14 @@ document format. Format-specific extraction and reconstruction belong in adapter
 
 ### Translation service
 
-`translate_document` accepts an optional `on_progress: Callable[[int], None]`.
+`translate_document` accepts an optional `on_progress: Callable[[int, str], None]`.
+The callback receives the completed count and original segment type. This replaces
+the previous single-count callback; custom callbacks must accept both arguments.
 It reports each successfully translated segment before passing it to the writer.
 The count does not imply that the final file has been published. Empty documents
 produce no callback calls; failed translations do not increase the count.
 Callback errors propagate through the same cleanup path as translation failures.
-Existing callers can omit the callback. The CLI renders counts and elapsed time
+Existing callers can omit the callback. The CLI renders counts, types, and elapsed time
 on stderr, leaving the library independent of terminal output. Elapsed time
 includes model loading. No up-front counting or background progress thread is used.
 

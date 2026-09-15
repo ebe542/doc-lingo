@@ -9,3 +9,4 @@ class TextSegment:
 
     id: str
     text: str
+    type: str = "paragraph"

@@ -61,8 +61,8 @@ def test_txt_translation(tmp_path, monkeypatch, capsys, explicit_output):
     output = capsys.readouterr()
     assert str(destination) in output.out
     assert "Preparing translation" in output.err
-    assert "Paragraphs translated: 1" in output.err
-    assert "Paragraphs translated: 2" in output.err
+    assert "Segments translated: 1 | Type: paragraph" in output.err
+    assert "Segments translated: 2 | Type: paragraph" in output.err
     assert "Elapsed:" in output.err
     assert "Hallo" not in output.err
 

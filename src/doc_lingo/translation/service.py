@@ -16,7 +16,7 @@ def translate_document(
     *,
     source_lang: str,
     target_lang: str,
-    on_progress: Callable[[int], None] | None = None,
+    on_progress: Callable[[int, str], None] | None = None,
 ) -> None:
     """Translate ordered segments while keeping the reading session open.
 
@@ -24,7 +24,8 @@ def translate_document(
     backend is caller-owned. Errors propagate without logging or wrapping; the
     writer owns output cleanup and publication. No retries or model chunking
     are performed here. The optional callback receives the completed translation
-    count before each segment is handed to the writer, not a publication count.
+    count and segment type before handing the segment to the writer. This does
+    not indicate publication. Translated segments retain their original type.
     Callback exceptions propagate and trigger normal resource cleanup.
     """
     with reader.iter_segments() as segments:
@@ -36,9 +37,10 @@ def translate_document(
                     text=backend.translate(
                         segment.text, source_lang=source_lang, target_lang=target_lang
                     ),
+                    type=segment.type,
                 )
                 if on_progress is not None:
-                    on_progress(count)
+                    on_progress(count, segment.type)
                 yield translated
 
         translations = translated_segments()

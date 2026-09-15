@@ -52,14 +52,15 @@ def main(argv: list[str] | None = None) -> None:
 
     started = monotonic()
     print(
-        "Preparing translation; the first paragraph may require model loading...",
+        "Preparing translation; the first segment may require model loading...",
         file=sys.stderr,
         flush=True,
     )
 
-    def show_progress(count: int) -> None:
+    def show_progress(count: int, segment_type: str) -> None:
         print(
-            f"Paragraphs translated: {count} | Elapsed: {monotonic() - started:.1f}s",
+            f"Segments translated: {count} | Type: {segment_type} | "
+            f"Elapsed: {monotonic() - started:.1f}s",
             file=sys.stderr,
             flush=True,
         )

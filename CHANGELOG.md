@@ -9,6 +9,13 @@
 
 ### Added
 
+- Simple TXT list segments with preserved bullet/number prefixes, indentation,
+  and shared reader/writer boundaries.
+- Wrapped list items remain a single translation segment through the next marker,
+  blank line, or end of file.
+- Segment types retained during translation and displayed in CLI progress;
+  progress callbacks now receive both count and type.
+
 - CLI paragraph progress and elapsed time via an optional library callback.
 
 - CLI TXT translation with default or explicit output paths and expected-error

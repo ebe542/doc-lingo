@@ -23,9 +23,11 @@ def test_progress_follows_successful_backend_calls(tmp_path, content):
         tmp_path / "output.txt",
         source_lang="en",
         target_lang="de",
-        on_progress=events.append,
+        on_progress=lambda count, segment_type: events.append((count, segment_type)),
     )
-    assert events == (["translated", 1, "translated", 2] if content else [])
+    assert events == (
+        ["translated", (1, "paragraph"), "translated", (2, "paragraph")] if content else []
+    )
 
 
 @pytest.mark.parametrize("callback_failure", [False, True])
@@ -40,8 +42,8 @@ def test_failures_do_not_publish_output(tmp_path, callback_failure):
                 raise TranslationError("Failed")
             return text
 
-    def report(count):
-        progress.append(count)
+    def report(count, segment_type):
+        progress.append((count, segment_type))
         if callback_failure:
             raise RuntimeError("Progress callback failed")
 
@@ -55,5 +57,5 @@ def test_failures_do_not_publish_output(tmp_path, callback_failure):
             target_lang="de",
             on_progress=report,
         )
-    assert progress == [1]
+    assert progress == [(1, "paragraph")]
     assert list(tmp_path.iterdir()) == [source]
