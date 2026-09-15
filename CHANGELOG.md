@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Organize code into interfaces, translation, and document packages while
+  preserving public imports from `doc_lingo`.
+
 ### Added
 
 - Optional local CUDA backend with a pinned Qwen3-1.7B revision, versioned prompts,

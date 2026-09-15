@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TextIO
 
-from doc_lingo.documents import TextSegment
+from doc_lingo.documents.models import TextSegment
 
 
 class PlainTextReader:

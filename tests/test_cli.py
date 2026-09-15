@@ -4,7 +4,7 @@ from importlib.metadata import version
 
 import pytest
 
-from doc_lingo.cli import main
+from doc_lingo.interfaces.cli import main
 
 
 @pytest.mark.parametrize("option", ["--help", "--version"])

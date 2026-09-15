@@ -25,6 +25,45 @@ change. It does not authorize creating a Git commit.
 
 ## Library and CLI architecture
 
+The package is organized by responsibility:
+
+```text
+src/doc_lingo/
+  __init__.py                 Public library exports
+  interfaces/
+    __init__.py
+    cli.py                    Argument parsing and CLI entry point
+  translation/
+    __init__.py
+    protocols.py              TranslationBackend and TranslationError
+    service.py                translate_document orchestration
+    prompts.py                Versioned translation instructions
+    huggingface.py            Local model adapter
+  documents/
+    __init__.py
+    protocols.py              DocumentReader and DocumentWriter
+    models.py                 TextSegment
+    errors.py                 SegmentMismatchError
+    plain_text.py             TXT reader
+    plain_text_writer.py      TXT writer
+```
+
+Interfaces depend on the translation service. The service depends on document
+and backend contracts, not concrete providers. Document adapters own formatting;
+translation adapters own model/provider behavior. Future GUI code belongs in
+`interfaces`, and additional providers belong in `translation`.
+
+Public imports such as `from doc_lingo import HuggingFaceBackend, translate_document`
+remain unchanged. The CLI module is now `doc_lingo.interfaces.cli`. After pulling
+this structural change, refresh the installed console entry point in Git Bash:
+
+```bash
+python -m pip install -e ".[dev,release]"
+```
+
+This does not remove an already installed `local` extra or replace a compatible
+CUDA build. Tests continue to live in the existing `tests/` directory.
+
 Publish one Python distribution, `doc-lingo`, containing both an importable
 `doc_lingo` library and the `doc-lingo` command-line entry point. Other Python
 applications must be able to use translation without invoking the CLI.

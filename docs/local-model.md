@@ -72,7 +72,7 @@ python scripts/check_milestone.py
 
 ## Prompt identity
 
-`prompts.py` keeps system instructions and the direction template separately
+`translation/prompts.py` keeps system instructions and the direction template separately
 versioned with a name, positive integer version, and SHA-256 fingerprint of their
 exact UTF-8 text. Increment the affected version for every instruction change.
 Fingerprinting catches edits even if the version bump is forgotten. Document

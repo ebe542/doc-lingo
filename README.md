@@ -120,6 +120,9 @@ for the development and release workflow.
 
 The [developer guide](docs/development.md) describes the library/CLI architecture
 and the agreed process for small, runnable commits and milestone releases.
+Source code is grouped into `interfaces`, `translation`, and `documents` packages.
+The CLI entry point is `doc_lingo.interfaces.cli:main`; public library imports
+remain available directly from `doc_lingo`.
 
 ## License
 

@@ -2,17 +2,10 @@
 
 from collections.abc import Iterable, Iterator
 from contextlib import AbstractContextManager
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-
-@dataclass(frozen=True)
-class TextSegment:
-    """Text with an opaque ID, unique and repeatable within an unchanged document."""
-
-    id: str
-    text: str
+from doc_lingo.documents.models import TextSegment
 
 
 class DocumentReader(Protocol):
@@ -26,10 +19,6 @@ class DocumentReader(Protocol):
     def iter_segments(self) -> AbstractContextManager[Iterator[TextSegment]]:
         """Open a reading session; IDs remain stable while the source is unchanged."""
         ...
-
-
-class SegmentMismatchError(ValueError):
-    """Translations do not match the original document's ordered segment IDs."""
 
 
 class DocumentWriter(Protocol):

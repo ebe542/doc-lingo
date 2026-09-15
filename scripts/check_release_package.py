@@ -114,8 +114,8 @@ def main() -> None:
                 ),
             ]
         )
-        run([str(python), "-m", "doc_lingo.cli", "--version"])
-        run([str(python), "-m", "doc_lingo.cli", "--help"])
+        run([str(python), "-m", "doc_lingo.interfaces.cli", "--version"])
+        run([str(python), "-m", "doc_lingo.interfaces.cli", "--help"])
         executable = python.parent / ("doc-lingo.exe" if os.name == "nt" else "doc-lingo")
         run([str(executable), "--help"])
 

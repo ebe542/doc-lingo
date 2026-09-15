@@ -6,7 +6,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TextIO
 
-from doc_lingo.documents import SegmentMismatchError, TextSegment
+from doc_lingo.documents.errors import SegmentMismatchError
+from doc_lingo.documents.models import TextSegment
 
 
 class PlainTextWriter:

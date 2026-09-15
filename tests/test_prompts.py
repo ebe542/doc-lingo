@@ -4,7 +4,7 @@ from hashlib import sha256
 
 import pytest
 
-from doc_lingo.prompts import PromptTemplate, translation_messages
+from doc_lingo.translation.prompts import PromptTemplate, translation_messages
 
 
 def test_fingerprint_identifies_exact_text():

@@ -25,7 +25,7 @@ Issues = "https://github.com/ebe542/doc-lingo/issues"
 Repository = "https://github.com/ebe542/doc-lingo"
 
 [project.scripts]
-doc-lingo = "doc_lingo.cli:main"
+doc-lingo = "doc_lingo.interfaces.cli:main"
 
 [project.optional-dependencies]
 dev = [

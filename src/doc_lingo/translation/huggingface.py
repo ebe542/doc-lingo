@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from doc_lingo.prompts import translation_messages
-from doc_lingo.translation import TranslationError
+from doc_lingo.translation.prompts import translation_messages
+from doc_lingo.translation.protocols import TranslationError
 
 DEFAULT_MODEL = "Qwen/Qwen3-1.7B"
 DEFAULT_REVISION = "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
