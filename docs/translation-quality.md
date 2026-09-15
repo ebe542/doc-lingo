@@ -4,7 +4,7 @@ The versioned [English/German fixture](../tests/fixtures/translation_quality/en-
 contains ten original, synthetic examples. It is a manual evaluation set, not an
 exact-string unit test or evidence that the current model passes. English is used
 for metadata and criteria; source and reference texts use their respective languages.
-No model evaluation has been recorded yet.
+The local comparison results below record a manual review of all ten examples.
 
 ## Abbreviations and technical terms
 
@@ -58,6 +58,10 @@ observed failures. The current article error, "Der Dokument", belongs to the
 grammar-article example and would receive `minor_issue` if meaning is unchanged.
 
 ## Running the evaluation
+
+The runner supports `--backend qwen` (default) and `--backend marian`. See
+[Marian setup](marian-model.md) for its extra tokenizer dependencies and limits.
+Marian reports contain no chat prompt identities because that backend uses none.
 
 The runner processes each fixture entry as an independent TXT document through
 the real reader, translation service, and writer. It reuses the loaded model.
@@ -118,5 +122,28 @@ comparison; later validation should include examples not used to guide the promp
 The maintainer reported no meaningful improvement from prompt v2 in the local
 comparison. This is a qualitative observation, not an automatically measured
 score. Prompt v2 remains a comparison baseline; it is not a demonstrated quality
-improvement. A separate follow-up will compare another model using the same
-examples. Local reports remain outside Git under `local-data/quality/`.
+improvement. Local reports remain outside Git under `local-data/quality/`.
+
+## Local model comparison (2026-09-15)
+
+The assistant reviewed source meaning, criteria, and actual translations in all
+three suite-version-1 reports. These are manual judgments, not automated scores.
+The suite fingerprint is
+`2111b9df96336ceb68609e7d17061bea1a05cde25a694e865b036df5c3307acf`.
+
+| Report | pass | minor_issue | major_issue | blocked | Document context (included in totals) |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Qwen baseline-v1 | 2 | 5 | 3 | 0 | minor_issue |
+| Qwen prompt-v2 | 1 | 4 | 5 | 0 | major_issue |
+| Marian marian-v1 | 8 | 1 | 1 | 0 | pass |
+
+Qwen v2 still mistranslates supervised learning and the prohibition against
+overwriting, omits the translation instruction in the numbered item, and regresses
+on RAG terminology. Marian preserves most examples, but translates document
+retrieval as document restoration (Dokumentwiederherstellung), a meaning error.
+Its numbers example has a missing article and percent-spacing issues; values
+remain correct. Retaining the original English RAG expansion is permitted.
+
+Marian is the stronger candidate on this small development set. This result does
+not establish quality on arbitrary documents or robust document-wide glossary
+handling. The regular CLI still uses Qwen; changing its default is separate work.

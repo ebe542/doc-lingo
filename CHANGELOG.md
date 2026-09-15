@@ -12,6 +12,9 @@
 
 ### Added
 
+- Lazy CUDA Marian backend for English-to-German translation and backend selection
+  in the quality runner, with separate model and generation metadata.
+
 - Ten English/German translation quality examples and manual criteria, including
   technical abbreviations and document-wide terminology consistency.
 - Quality evaluation runner with persistent manual-review reports and offline

@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 from doc_lingo import (
     HuggingFaceBackend,
+    MarianBackend,
     PlainTextReader,
     PlainTextWriter,
     SegmentMismatchError,
@@ -126,17 +127,19 @@ def evaluate_suite(
     return report
 
 
-def runtime_metadata(backend: HuggingFaceBackend) -> dict[str, Any]:
+def runtime_metadata(backend: HuggingFaceBackend | MarianBackend) -> dict[str, Any]:
     """Capture configuration for comparisons without recording credentials."""
     packages = {}
-    for name in ("torch", "transformers", "doc-lingo"):
+    for name in ("torch", "transformers", "doc-lingo", "sentencepiece", "sacremoses"):
         try:
             packages[name] = version(name)
         except PackageNotFoundError:
             packages[name] = None
     import torch
 
-    return {
+    is_marian = isinstance(backend, MarianBackend)
+    metadata = {
+        "backend": "marian" if is_marian else "qwen",
         "python": platform.python_version(),
         "packages": packages,
         "cuda": torch.version.cuda,
@@ -145,25 +148,41 @@ def runtime_metadata(backend: HuggingFaceBackend) -> dict[str, Any]:
         "revision": backend.revision,
         "max_input_tokens": backend.max_input_tokens,
         "max_new_tokens": backend.max_new_tokens,
-        "dtype": "float16",
+        "dtype": "float32" if is_marian else "float16",
         "do_sample": False,
-        "enable_thinking": False,
-        "prompts": [
+        "enable_thinking": None if is_marian else False,
+        "prompts": []
+        if is_marian
+        else [
             {"name": prompt.name, "version": prompt.version, "fingerprint": prompt.fingerprint}
             for prompt in (TRANSLATION_SYSTEM, TRANSLATION_DIRECTION)
         ],
     }
+    if is_marian:
+        metadata["generation"] = {
+            "num_beams": 4,
+            "num_return_sequences": 1,
+            "early_stopping": True,
+            "length_penalty": 1.0,
+            "renormalize_logits": True,
+            "forced_eos_token_id": None,
+        }
+        metadata["prompt_mode"] = "none"
+    else:
+        metadata["prompt_mode"] = "chat"
+    return metadata
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Generate translations for manual quality review")
     parser.add_argument("--suite", type=Path, default=DEFAULT_SUITE)
+    parser.add_argument("--backend", choices=["qwen", "marian"], default="qwen")
     parser.add_argument("--output", type=Path, required=True, help="New report directory")
     args = parser.parse_args(argv)
     try:
         suite = load_suite(args.suite)
         load_dotenv(Path.cwd() / ".env", override=False)
-        backend = HuggingFaceBackend()
+        backend = MarianBackend() if args.backend == "marian" else HuggingFaceBackend()
         report = evaluate_suite(suite, backend, args.output, metadata=runtime_metadata(backend))
     except (OSError, ValueError, ImportError):
         parser.exit(1, "Error: Check the suite, new output path, and installed local extra.\n")

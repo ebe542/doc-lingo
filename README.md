@@ -146,6 +146,10 @@ Only synthetic, redistributable documents belong in `tests/fixtures/`.
 
 ## Quality checks
 
+An optional [Marian comparison backend](docs/marian-model.md) translates English
+to German without chat prompts. Select it in the quality runner with
+`--backend marian`; the normal CLI continues to use Qwen.
+
 See [translation quality](docs/translation-quality.md) for ten English/German
 evaluation examples, abbreviation handling, and manual assessment criteria.
 These semantic checks are separate from automated code tests.

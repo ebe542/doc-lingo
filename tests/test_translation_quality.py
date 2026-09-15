@@ -5,6 +5,7 @@ import json
 import pytest
 
 from doc_lingo import TranslationError
+from scripts import evaluate_translation_quality as runner
 from scripts.evaluate_translation_quality import DEFAULT_SUITE, evaluate_suite, load_suite
 
 
@@ -85,3 +86,24 @@ def test_unexpected_failure_preserves_completed_results_and_cleans_temp(tmp_path
     assert not report["complete"]
     assert len(report["results"]) == 1
     assert list(output.iterdir()) == [output / "report.json"]
+
+
+@pytest.mark.parametrize("selection", [None, "qwen", "marian"])
+def test_runner_selects_backend_without_changing_default(tmp_path, monkeypatch, selection):
+    backends = {"qwen": object(), "marian": object()}
+    monkeypatch.setattr(runner, "HuggingFaceBackend", lambda: backends["qwen"])
+    monkeypatch.setattr(runner, "MarianBackend", lambda: backends["marian"])
+    monkeypatch.setattr(runner, "load_dotenv", lambda *args, **kwargs: None)
+    monkeypatch.setattr(runner, "runtime_metadata", lambda backend: {"test": True})
+    calls = []
+
+    def evaluate(suite, backend, output, *, metadata):
+        calls.append(backend)
+        return {"results": []}
+
+    monkeypatch.setattr(runner, "evaluate_suite", evaluate)
+    arguments = ["--output", str(tmp_path / "run")]
+    if selection is not None:
+        arguments += ["--backend", selection]
+    runner.main(arguments)
+    assert calls == [backends[selection or "qwen"]]
