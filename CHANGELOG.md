@@ -9,6 +9,8 @@
 
 ### Added
 
+- CLI paragraph progress and elapsed time via an optional library callback.
+
 - CLI TXT translation with default or explicit output paths and expected-error
   messages on stderr with nonzero exit codes.
 

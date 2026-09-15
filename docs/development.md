@@ -173,6 +173,15 @@ document format. Format-specific extraction and reconstruction belong in adapter
 
 ### Translation service
 
+`translate_document` accepts an optional `on_progress: Callable[[int], None]`.
+It reports each successfully translated segment before passing it to the writer.
+The count does not imply that the final file has been published. Empty documents
+produce no callback calls; failed translations do not increase the count.
+Callback errors propagate through the same cleanup path as translation failures.
+Existing callers can omit the callback. The CLI renders counts and elapsed time
+on stderr, leaving the library independent of terminal output. Elapsed time
+includes model loading. No up-front counting or background progress thread is used.
+
 `TranslationBackend.translate(text, *, source_lang, target_lang)` returns a string.
 Backends know neither document paths nor segment IDs. They validate supported
 languages and raise `TranslationError` for expected translation failures, using

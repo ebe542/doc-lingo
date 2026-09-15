@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from contextlib import suppress
 from importlib.metadata import version
 from pathlib import Path
+from time import monotonic
 
 from dotenv import load_dotenv
 
@@ -48,6 +50,20 @@ def main(argv: list[str] | None = None) -> None:
     with suppress(OSError, UnicodeError):
         load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
 
+    started = monotonic()
+    print(
+        "Preparing translation; the first paragraph may require model loading...",
+        file=sys.stderr,
+        flush=True,
+    )
+
+    def show_progress(count: int) -> None:
+        print(
+            f"Paragraphs translated: {count} | Elapsed: {monotonic() - started:.1f}s",
+            file=sys.stderr,
+            flush=True,
+        )
+
     try:
         translate_document(
             PlainTextReader(args.file),
@@ -56,6 +72,7 @@ def main(argv: list[str] | None = None) -> None:
             destination,
             source_lang="en",
             target_lang=args.target_lang,
+            on_progress=show_progress,
         )
     except FileExistsError:
         parser.exit(1, f"Error: Output already exists: {destination}. Choose another --output.\n")

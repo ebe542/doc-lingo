@@ -1,5 +1,6 @@
 """Format-independent document translation orchestration."""
 
+from collections.abc import Callable, Generator
 from contextlib import closing
 from pathlib import Path
 
@@ -15,24 +16,32 @@ def translate_document(
     *,
     source_lang: str,
     target_lang: str,
+    on_progress: Callable[[int], None] | None = None,
 ) -> None:
     """Translate ordered segments while keeping the reading session open.
 
     Reader and writer must refer to the same unchanged source document. The
     backend is caller-owned. Errors propagate without logging or wrapping; the
     writer owns output cleanup and publication. No retries or model chunking
-    are performed here.
+    are performed here. The optional callback receives the completed translation
+    count before each segment is handed to the writer, not a publication count.
+    Callback exceptions propagate and trigger normal resource cleanup.
     """
     with reader.iter_segments() as segments:
-        translations = (
-            TextSegment(
-                id=segment.id,
-                text=backend.translate(
-                    segment.text, source_lang=source_lang, target_lang=target_lang
-                ),
-            )
-            for segment in segments
-        )
+
+        def translated_segments() -> Generator[TextSegment, None, None]:
+            for count, segment in enumerate(segments, start=1):
+                translated = TextSegment(
+                    id=segment.id,
+                    text=backend.translate(
+                        segment.text, source_lang=source_lang, target_lang=target_lang
+                    ),
+                )
+                if on_progress is not None:
+                    on_progress(count)
+                yield translated
+
+        translations = translated_segments()
         # The writer consumes lazily. Close our generator before the reader's
         # context exits, including when writing fails or stops consuming early.
         with closing(translations):

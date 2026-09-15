@@ -58,7 +58,13 @@ def test_txt_translation(tmp_path, monkeypatch, capsys, explicit_output):
     assert destination.read_bytes() == b"Hallo\r\n\r\nWelt"
     assert source.read_bytes() == b"Hello\r\n\r\nWorld"
     assert calls == [("en", "de"), ("en", "de")]
-    assert str(destination) in capsys.readouterr().out
+    output = capsys.readouterr()
+    assert str(destination) in output.out
+    assert "Preparing translation" in output.err
+    assert "Paragraphs translated: 1" in output.err
+    assert "Paragraphs translated: 2" in output.err
+    assert "Elapsed:" in output.err
+    assert "Hallo" not in output.err
 
 
 @pytest.mark.parametrize(

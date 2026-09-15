@@ -73,6 +73,11 @@ Exit codes: `0` for success, `1` for expected file or translation failures, and
 `2` for invalid command arguments. Error messages go to stderr. File logging is
 planned separately.
 
+During translation, stderr shows the number of translated paragraphs and elapsed
+seconds. The initial message explains that the first paragraph may require model
+loading. No percentage is shown because paragraphs are read incrementally without
+a counting pass. The final success message appears only after output publication.
+
 ## CUDA 13.2 installation (Windows / Git Bash)
 
 For local GPU inference, activate the environment and install the CUDA build
