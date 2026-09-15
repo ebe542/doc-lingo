@@ -47,7 +47,8 @@ library must not load models, read `.env`, contact services, or modify files.
 Pass configuration and backend dependencies explicitly to library operations.
 Keep credential loading at the application boundary. Decide on the public API
 in a dedicated commit discussion before adding it. The current library exposes
-reader/writer protocols and plain-text processing; the CLI remains a translation scaffold.
+reader/writer protocols, plain-text processing, and translation orchestration
+with a caller-supplied backend; the CLI remains a translation scaffold.
 
 ### Plain-text library API
 
@@ -129,11 +130,52 @@ Keep originals intact and write a separate result for every supported format.
 The shared translation service must not assume slides, XML, or any particular
 document format. Format-specific extraction and reconstruction belong in adapters.
 
+### Translation service
+
+`TranslationBackend.translate(text, *, source_lang, target_lang)` returns a string.
+Backends know neither document paths nor segment IDs. They validate supported
+languages and raise `TranslationError` for expected translation failures, using
+messages without document text or credentials. Unexpected programming errors
+are not converted into expected backend failures.
+
+Applications supply their backend to the public service:
+
+```python
+from pathlib import Path
+
+from doc_lingo import PlainTextReader, PlainTextWriter, TranslationBackend, translate_document
+
+
+def translate_txt(backend: TranslationBackend) -> None:
+    translate_document(
+        PlainTextReader("document.txt"),
+        PlainTextWriter("document.txt"),
+        backend,
+        Path("document.de.txt"),
+        source_lang="en",
+        target_lang="de",
+    )
+```
+
+The service opens the reader context, translates each segment only when the
+writer requests it, and retains its original ID. The reader stays open throughout
+writing. The service closes its translation generator and reader context on
+success, early writer termination, and exceptions. The writer manages output
+cleanup; the caller owns the backend's lifecycle. Reader and writer must refer
+to the same unchanged original document.
+
+Backend, reader, and writer errors propagate unchanged. The service does not
+configure logging, print messages, retry, or split paragraphs into model chunks.
+One backend call handles one segment. Empty documents require no backend calls.
+Language codes are passed through unchanged; model-specific validation belongs
+to the backend. Model adapters and CLI integration will follow separately.
+
 ## Format implementation roadmap
 
 Implement support in the order **TXT, Markdown, then ODP**. Each stage builds on
 the same public library API and translation backend and is exposed through the CLI.
-The roadmap describes planned behavior; the current scaffold does not translate files.
+The roadmap describes the target behavior. TXT orchestration currently requires
+a caller-supplied backend; no model implementation or CLI integration is bundled.
 
 1. **Plain text (`.txt`):** establish reading, translation, and separate output
    writing with English-to-German translation first. Preserve paragraph structure.

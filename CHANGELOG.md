@@ -4,6 +4,9 @@
 
 ### Added
 
+- Translation backend protocol, TranslationError, and lazy document translation
+  orchestration with preserved segment IDs and managed reading sessions.
+
 - Document writer protocol and TXT reconstruction with segment validation,
   formatting preservation, and publication without overwriting existing files.
 
@@ -14,4 +17,4 @@
 - Quality and GitHub release workflows with package installation checks.
 - Git Bash development instructions and a format roadmap: TXT, Markdown, then ODP.
 
-Document translation is planned and is not included in this scaffold.
+Model backend implementations and CLI translation integration are still planned.

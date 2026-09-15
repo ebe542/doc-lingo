@@ -7,7 +7,9 @@ and formatting.
 
 This productive learning project is in its initial scaffolding phase. Installation,
 CLI help, version reporting, quality checks, and release tooling are available.
-Document translation is not implemented yet; translation requests fail explicitly.
+CLI translation is not connected yet; CLI translation requests fail explicitly.
+The library provides a document translation service with an injectable backend.
+No model backend is bundled yet.
 The library provides a shared reader protocol and incremental UTF-8 paragraph
 extraction, plus a writer that inserts ordered translations into the original TXT
 structure and protects existing output files. See the
@@ -35,7 +37,8 @@ Implement formats in this order, reusing the translation core:
    preserving styles, images, and slide structure. Longer translations may
    overflow text boxes; layout fit requires separate validation.
 
-Translation for these formats is planned; TXT paragraph extraction is available.
+TXT reading, writing, and orchestration are available for a caller-supplied
+translation backend. Markdown and ODP adapters are planned.
 
 ## Development setup
 
