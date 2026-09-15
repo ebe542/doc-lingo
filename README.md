@@ -146,6 +146,10 @@ Only synthetic, redistributable documents belong in `tests/fixtures/`.
 
 ## Quality checks
 
+See [translation quality](docs/translation-quality.md) for ten English/German
+evaluation examples, abbreviation handling, and manual assessment criteria.
+These semantic checks are separate from automated code tests.
+
 ```bash
 python scripts/check_milestone.py
 python scripts/check_release_package.py

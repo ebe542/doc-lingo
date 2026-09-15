@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "suite_version": 1,
+  "source_lang": "en",
+  "target_lang": "de",
+  "evaluation": "manual",
+  "examples": [
+    {
+      "id": "grammar-article",
+      "category": "grammar",
+      "source": "The document contains two paragraphs.",
+      "reference": "Das Dokument enthält zwei Absätze.",
+      "criteria": ["Use the neuter article for Dokument.", "Preserve the count of two paragraphs."]
+    },
+    {
+      "id": "grammar-agreement",
+      "category": "grammar",
+      "source": "The translated sentences are shorter than the original sentences, but their meaning remains unchanged.",
+      "reference": "Die übersetzten Sätze sind kürzer als die ursprünglichen Sätze, aber ihre Bedeutung bleibt unverändert.",
+      "criteria": ["Use correct plural agreement and comparison.", "Preserve the contrast and unchanged meaning."]
+    },
+    {
+      "id": "technical-terms",
+      "category": "terminology",
+      "source": "Supervised learning uses labeled training data. During inference, the model makes predictions for new inputs.",
+      "reference": "Überwachtes Lernen verwendet gelabelte Trainingsdaten. Bei der Inferenz trifft das Modell Vorhersagen für neue Eingaben.",
+      "criteria": ["Distinguish training from inference.", "Accept markierte or annotierte Trainingsdaten as alternatives to gelabelte Trainingsdaten.", "Do not introduce abbreviations absent from the source."]
+    },
+    {
+      "id": "abbreviation-first-mention",
+      "category": "abbreviations",
+      "source": "Retrieval-Augmented Generation (RAG) combines document retrieval with text generation.",
+      "reference": "Abrufgestützte Generierung (RAG = Retrieval-Augmented Generation) kombiniert den Abruf von Dokumenten mit der Textgenerierung.",
+      "criteria": ["If the term is translated, include RAG and its original English expansion at the first mention.", "Accept semantically equivalent German terminology such as abrufgestützte Textgenerierung.", "Do not invent a German abbreviation or change the meaning of RAG."]
+    },
+    {
+      "id": "abbreviation-unknown",
+      "category": "abbreviations",
+      "source": "The QZX module processes the input before translation.",
+      "reference": "Das QZX-Modul verarbeitet die Eingabe vor der Übersetzung.",
+      "criteria": ["Preserve the synthetic abbreviation QZX exactly.", "Do not invent an expansion for QZX.", "Preserve the order: processing happens before translation."]
+    },
+    {
+      "id": "meaning-negation",
+      "category": "fidelity",
+      "source": "Do not overwrite the source file. If translation fails, the program must not publish an incomplete output file.",
+      "reference": "Überschreiben Sie die Quelldatei nicht. Wenn die Übersetzung fehlschlägt, darf das Programm keine unvollständige Ausgabedatei veröffentlichen.",
+      "criteria": ["Preserve both negations and the failure condition.", "Preserve the strength of the prohibition.", "Do not add a claim that partial translations can be resumed."]
+    },
+    {
+      "id": "numbers-units",
+      "category": "numbers",
+      "source": "The file contains 1,250 records. Processing takes 2.5 seconds and uses 8 GB of memory. Accuracy increases from 90% to 95%.",
+      "reference": "Die Datei enthält 1.250 Datensätze. Die Verarbeitung dauert 2,5 Sekunden und benötigt 8 GB Speicher. Die Genauigkeit steigt von 90 % auf 95 %.",
+      "criteria": ["Preserve 1250 records, 2.5 seconds, and 8 GB; German decimal and thousands separators are allowed.", "Preserve both percentages and the direction of change.", "Do not confuse five percentage points with a five percent relative increase."]
+    },
+    {
+      "id": "wrapped-list-items",
+      "category": "structure",
+      "source": "Tasks:\n- Read the source file and\n  preserve its paragraph structure.\n1) Translate each complete list item\n   before writing the result.\n",
+      "reference": "Aufgaben:\n- Lesen Sie die Quelldatei und\n  erhalten Sie ihre Absatzstruktur.\n1) Übersetzen Sie jeden vollständigen Listenpunkt,\n   bevor Sie das Ergebnis schreiben.\n",
+      "criteria": ["Translate each wrapped list item as one semantic unit.", "Preserve the dash and numbered prefix through the document adapter.", "Preserve the order of translation before writing.", "Internal translated line wrapping may differ; do not require exact line-by-line reference matching."]
+    },
+    {
+      "id": "terminology-consistency",
+      "category": "consistency",
+      "source": "The source document remains unchanged. The translated document is written to a separate file. Compare both documents after translation.",
+      "reference": "Das Quelldokument bleibt unverändert. Das übersetzte Dokument wird in eine separate Datei geschrieben. Vergleichen Sie beide Dokumente nach der Übersetzung.",
+      "criteria": ["Use document terminology consistently across all sentences.", "Keep source and translated document roles distinct.", "Do not imply that the source is replaced."]
+    },
+    {
+      "id": "abbreviation-document-context",
+      "category": "document-context",
+      "source": "Retrieval-Augmented Generation (RAG) combines retrieval with generation.\n\nRAG can use documents as context.\n\nThe RAG system retrieves relevant passages before generating an answer.",
+      "reference": "Abrufgestützte Generierung (RAG = Retrieval-Augmented Generation) kombiniert Abruf und Generierung.\n\nRAG kann Dokumente als Kontext verwenden.\n\nDas RAG-System ruft relevante Textstellen ab, bevor es eine Antwort erzeugt.",
+      "criteria": ["At the first translated mention, retain the abbreviation and original English expansion.", "Later mentions may use RAG alone without repeatedly expanding it.", "Keep the same technical meaning across all three paragraphs."],
+      "known_limitation": "Segments currently have no shared glossary or first-mention state. Record this result separately; robust document-wide abbreviation handling is future work."
+    }
+  ]
+}

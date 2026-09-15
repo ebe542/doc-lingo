@@ -305,6 +305,11 @@ A reusable `.venv` is a development environment, not a disposable task directory
 
 ## Releases
 
+Use the [translation quality examples](translation-quality.md) to compare model
+and prompt changes. Preserve abbreviations and original expansions when translating
+technical terms, following the documented first-mention policy. Code test coverage
+alone does not measure translation quality.
+
 A release represents a coherent, usable capability with documented limitations.
 Agree on the milestone and version, update package metadata and dated changelog
 notes, then have the maintainer run quality and package installation checks.

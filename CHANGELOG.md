@@ -4,10 +4,18 @@
 
 ### Changed
 
+- Translation system prompt v2 strengthens meaning preservation, German grammar,
+  and technical abbreviation handling; model and decoding settings are unchanged.
+
 - Organize code into interfaces, translation, and document packages while
   preserving public imports from `doc_lingo`.
 
 ### Added
+
+- Ten English/German translation quality examples and manual criteria, including
+  technical abbreviations and document-wide terminology consistency.
+- Quality evaluation runner with persistent manual-review reports and offline
+  tests for document processing, failures, and temporary-file cleanup.
 
 - Simple TXT list segments with preserved bullet/number prefixes, indentation,
   and shared reader/writer boundaries.

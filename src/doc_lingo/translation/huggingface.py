@@ -1,12 +1,20 @@
 """Lazy local Qwen translation on CUDA; no hosted inference calls."""
 
-from typing import Any
+from typing import Any, Protocol, Self, cast
 
 from doc_lingo.translation.prompts import translation_messages
 from doc_lingo.translation.protocols import TranslationError
 
 DEFAULT_MODEL = "Qwen/Qwen3-1.7B"
 DEFAULT_REVISION = "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+
+
+class _LoadableModel(Protocol):
+    """Instance methods used at the dynamically typed Transformers boundary."""
+
+    def to(self, device: str) -> Self: ...
+
+    def eval(self) -> Self: ...
 
 
 class HuggingFaceBackend:
@@ -51,8 +59,13 @@ class HuggingFaceBackend:
         try:
             options = {"revision": self.revision, "local_files_only": self.local_files_only}
             tokenizer = AutoTokenizer.from_pretrained(self.model_name, **options)
-            model = AutoModelForCausalLM.from_pretrained(
-                self.model_name, dtype=torch.float16, **options
+            # The auto-factory returns a model instance. Its upstream typing can
+            # expose unbound methods; describe the instance contract explicitly.
+            model = cast(
+                _LoadableModel,
+                AutoModelForCausalLM.from_pretrained(
+                    self.model_name, dtype=torch.float16, **options
+                ),
             ).to("cuda")
             model.eval()
         except (OSError, RuntimeError, ValueError):
