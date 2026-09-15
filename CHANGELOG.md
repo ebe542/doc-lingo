@@ -9,6 +9,9 @@
 
 ### Added
 
+- CLI TXT translation with default or explicit output paths and expected-error
+  messages on stderr with nonzero exit codes.
+
 - Optional local CUDA backend with a pinned Qwen3-1.7B revision, versioned prompts,
   explicit token limits, and CUDA 13.2 setup instructions.
 
@@ -25,4 +28,4 @@
 - Quality and GitHub release workflows with package installation checks.
 - Git Bash development instructions and a format roadmap: TXT, Markdown, then ODP.
 
-CLI translation integration is still planned.
+Markdown, ODP, and optional file logging are still planned.

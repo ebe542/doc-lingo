@@ -7,7 +7,7 @@ and formatting.
 
 This productive learning project is in its initial scaffolding phase. Installation,
 CLI help, version reporting, quality checks, and release tooling are available.
-CLI translation is not connected yet; CLI translation requests fail explicitly.
+The CLI translates English UTF-8 TXT documents using the local CUDA backend.
 The library provides a document translation service with an injectable backend.
 A lazy CUDA Hugging Face backend is available through the `local` extra. See
 [local model setup](docs/local-model.md) for CUDA 13.2 installation and smoke checks.
@@ -56,11 +56,22 @@ doc-lingo --version
 On Linux or macOS, create the environment with `python3 -m venv .venv`
 and activate it with `source .venv/bin/activate`.
 
-Planned translation command (currently reports that translation is unavailable):
+After installing the `local` extra and CUDA build below, translate a document:
 
 ```bash
 doc-lingo document.txt --target-lang de
+doc-lingo document.txt --target-lang de --output translated.txt
 ```
+
+The default output is `document.de.txt` alongside the source. Existing output
+files are never overwritten. Source language is English; target codes are `de`
+and `en` (the latter retains the text). Markdown and ODP are not yet supported.
+The first real translation may download the model. Translation quality still
+requires review; long paragraphs exceeding the model limits are rejected.
+
+Exit codes: `0` for success, `1` for expected file or translation failures, and
+`2` for invalid command arguments. Error messages go to stderr. File logging is
+planned separately.
 
 ## CUDA 13.2 installation (Windows / Git Bash)
 

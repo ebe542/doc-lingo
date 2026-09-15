@@ -62,8 +62,8 @@ This command downloads model files on first use and runs one real GPU translatio
 python -c "from dotenv import load_dotenv; load_dotenv('.env', override=False); from doc_lingo import HuggingFaceBackend; backend = HuggingFaceBackend(); print(backend.translate('The document contains two paragraphs.', source_lang='en', target_lang='de'))"
 ```
 
-The backend can also be passed directly to `translate_document`. The CLI still
-does not invoke translation. Automated tests use substitutes for Torch and
+The backend can also be passed directly to `translate_document`, or invoked via
+`doc-lingo document.txt --target-lang de`. Automated tests use substitutes for Torch and
 Transformers, so they require neither CUDA nor model downloads:
 
 ```bash

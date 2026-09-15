@@ -88,7 +88,7 @@ Pass configuration and backend dependencies explicitly to library operations.
 Keep credential loading at the application boundary. Decide on the public API
 in a dedicated commit discussion before adding it. The current library exposes
 reader/writer protocols, plain-text processing, and translation orchestration
-with a caller-supplied backend; the CLI remains a translation scaffold.
+with a caller-supplied backend; the CLI connects TXT adapters to the local backend.
 
 ### Plain-text library API
 
@@ -162,9 +162,10 @@ Publication is not a guarantee of durability across power loss.
 Expected errors propagate as Python exceptions: `FileNotFoundError`,
 `FileExistsError`, `UnicodeDecodeError`, `UnicodeEncodeError`, or other `OSError`
 subclasses. Translation-iterator errors also propagate before publication.
-The library configures no logging and prints no errors. A future CLI step will
-map exceptions to concise console messages, exit codes, and optional detailed
-logging without document text or credentials.
+The library configures no logging and prints no errors. The CLI maps expected
+exceptions to concise stderr messages and exit code 1; invalid arguments use 2,
+and success uses 0. Unexpected programming errors remain visible for diagnosis.
+Optional file logging is a separate step.
 
 Keep originals intact and write a separate result for every supported format.
 The shared translation service must not assume slides, XML, or any particular
@@ -208,8 +209,11 @@ Backend, reader, and writer errors propagate unchanged. The service does not
 configure logging, print messages, retry, or split paragraphs into model chunks.
 One backend call handles one segment. Empty documents require no backend calls.
 Language codes are passed through unchanged; model-specific validation belongs
-to the backend. The local Hugging Face adapter is available; CLI integration
-will follow separately.
+to the backend. The CLI uses the local Hugging Face adapter with English source
+text and a required target language. It accepts TXT input and an optional
+`--output` path; otherwise it writes `NAME.LANG.txt` alongside the original.
+Only TXT output paths are accepted. Argument validation precedes `.env` loading,
+so help and version commands do not read local configuration.
 
 See [local model setup](local-model.md) for the CUDA Hugging Face backend,
 versioned prompt identities, installation commands, and manual GPU validation.
@@ -219,7 +223,7 @@ versioned prompt identities, installation commands, and manual GPU validation.
 Implement support in the order **TXT, Markdown, then ODP**. Each stage builds on
 the same public library API and translation backend and is exposed through the CLI.
 The roadmap describes the target behavior. TXT orchestration currently requires
-a backend, such as `HuggingFaceBackend`; CLI integration is not bundled yet.
+a backend, such as `HuggingFaceBackend`, which the CLI supplies automatically.
 
 1. **Plain text (`.txt`):** establish reading, translation, and separate output
    writing with English-to-German translation first. Preserve paragraph structure.
@@ -275,4 +279,5 @@ Commit and push the reviewed state and confirm green CI before tagging it.
 
 The existing workflow builds and publishes GitHub release assets from annotated
 version tags. See [CONTRIBUTING.md](../CONTRIBUTING.md) for its requirements.
-An initial scaffold release must clearly state that translation is unavailable.
+A release must state the supported formats, model requirements, and known
+translation-quality limitations.

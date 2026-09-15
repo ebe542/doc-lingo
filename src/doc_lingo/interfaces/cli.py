@@ -9,29 +9,69 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from doc_lingo import (
+    HuggingFaceBackend,
+    PlainTextReader,
+    PlainTextWriter,
+    SegmentMismatchError,
+    TranslationError,
+    translate_document,
+)
+
 
 def build_parser() -> argparse.ArgumentParser:
-    """Describe the planned translation interface without modifying documents."""
+    """Describe the local TXT translation interface."""
     parser = argparse.ArgumentParser(
         prog="doc-lingo",
-        description="Translate documents while preserving formatting (translation coming soon).",
+        description="Translate UTF-8 TXT documents locally on CUDA.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {version('doc-lingo')}")
-    parser.add_argument("file", type=Path, help="Source document (initial format: .odp)")
-    parser.add_argument("--target-lang", required=True, help="Target language code, for example de")
+    parser.add_argument("file", type=Path, help="English UTF-8 source document (.txt)")
+    parser.add_argument(
+        "--target-lang", required=True, choices=["en", "de"], help="Target language"
+    )
+    parser.add_argument("--output", type=Path, help="New output file (default: NAME.LANG.txt)")
     return parser
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Expose the CLI contract; fail explicitly until translation is implemented."""
+    """Translate one document and report expected failures without a traceback."""
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.file.suffix.lower() != ".txt":
+        parser.error("Only .txt source documents are supported")
+    destination = args.output or args.file.with_name(f"{args.file.stem}.{args.target_lang}.txt")
+    if destination.suffix.lower() != ".txt":
+        parser.error("Output must use the .txt extension")
     # Environment loading is optional. A missing or unreadable .env must not
     # prevent commands that do not need Hugging Face authentication.
     with suppress(OSError, UnicodeError):
         load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
 
-    parser = build_parser()
-    parser.parse_args(argv)
-    parser.error("Document translation is not implemented yet. No files were changed.")
+    try:
+        translate_document(
+            PlainTextReader(args.file),
+            PlainTextWriter(args.file),
+            HuggingFaceBackend(),
+            destination,
+            source_lang="en",
+            target_lang=args.target_lang,
+        )
+    except FileExistsError:
+        parser.exit(1, f"Error: Output already exists: {destination}. Choose another --output.\n")
+    except FileNotFoundError:
+        parser.exit(1, "Error: Source file or output directory does not exist.\n")
+    except PermissionError:
+        parser.exit(1, "Error: Permission denied while reading or writing the document.\n")
+    except UnicodeError:
+        parser.exit(1, "Error: Source or translated text is not valid UTF-8.\n")
+    except SegmentMismatchError:
+        parser.exit(1, "Error: Translated segments do not match the source document.\n")
+    except TranslationError as error:
+        parser.exit(1, f"Error: {error}\n")
+    except OSError:
+        parser.exit(1, "Error: Document I/O failed; check storage and hard-link support.\n")
+    print(f"Translation written to {destination}")
 
 
 if __name__ == "__main__":
