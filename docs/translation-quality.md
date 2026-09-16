@@ -59,7 +59,7 @@ grammar-article example and would receive `minor_issue` if meaning is unchanged.
 
 ## Running the evaluation
 
-The runner supports `--backend qwen` (default) and `--backend marian`. See
+The runner supports `--backend marian` (default) and `--backend qwen`. See
 [Marian setup](marian-model.md) for its extra tokenizer dependencies and limits.
 Marian reports contain no chat prompt identities because that backend uses none.
 
@@ -68,7 +68,7 @@ the real reader, translation service, and writer. It reuses the loaded model.
 From the project root in Git Bash, after installing the `local` extra:
 
 ```bash
-python scripts/evaluate_translation_quality.py --output local-data/quality/baseline-v1
+python scripts/evaluate_translation_quality.py --backend qwen --output local-data/quality/baseline-v1
 ```
 
 This is a real GPU run and may download the model. The script loads the current
@@ -111,7 +111,7 @@ or example-specific corrections are embedded in the prompt.
 Keep the existing v1 baseline and generate a separate candidate report:
 
 ```bash
-python scripts/evaluate_translation_quality.py --output local-data/quality/prompt-v2
+python scripts/evaluate_translation_quality.py --backend qwen --output local-data/quality/prompt-v2
 ```
 
 Compare all cases, including regressions, using the same criteria. A longer prompt
@@ -146,4 +146,6 @@ remain correct. Retaining the original English RAG expansion is permitted.
 
 Marian is the stronger candidate on this small development set. This result does
 not establish quality on arbitrary documents or robust document-wide glossary
-handling. The regular CLI still uses Qwen; changing its default is separate work.
+handling. Marian is now the default in the CLI and quality runner; Qwen remains
+explicitly selectable. Unsupported suite language pairs exit with code 2 before
+loading the runtime or creating a report directory.

@@ -68,3 +68,6 @@ extend-exclude = [".pytest-*"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+line-ending = "lf"

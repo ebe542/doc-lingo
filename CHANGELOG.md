@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Default the CLI and quality runner to Marian, retain explicit Qwen selection,
+  and reject unsupported language pairs before runtime loading or output creation.
+
 - Translation system prompt v2 strengthens meaning preservation, German grammar,
   and technical abbreviation handling; model and decoding settings are unchanged.
 

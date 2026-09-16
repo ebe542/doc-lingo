@@ -1,6 +1,6 @@
-# Marian comparison backend
+# Marian translation backend
 
-The comparison candidate is
+The default CLI and quality-runner model is
 [Helsinki-NLP/opus-mt-en-de](https://huggingface.co/Helsinki-NLP/opus-mt-en-de),
 developed by the University of Helsinki Language Technology Research Group.
 The model card specifies CC-BY-4.0. This model license is separate from doc-lingo's
@@ -24,7 +24,8 @@ python scripts/evaluate_translation_quality.py --backend marian --output local-d
 
 The last command performs real GPU inference and may download model weights.
 Compare its report against the existing Qwen report on the same fixture version.
-The regular CLI and the evaluation runner without `--backend` still use Qwen.
+The regular CLI and evaluation runner default to Marian. Use `--backend qwen`
+to select Qwen explicitly. Marian accepts only English-to-German requests.
 The public library exports `MarianBackend`, which can also be passed directly to
 `translate_document`.
 

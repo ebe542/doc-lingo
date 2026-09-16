@@ -89,7 +89,7 @@ def test_unexpected_failure_preserves_completed_results_and_cleans_temp(tmp_path
 
 
 @pytest.mark.parametrize("selection", [None, "qwen", "marian"])
-def test_runner_selects_backend_without_changing_default(tmp_path, monkeypatch, selection):
+def test_runner_selects_backend_with_marian_default(tmp_path, monkeypatch, selection):
     backends = {"qwen": object(), "marian": object()}
     monkeypatch.setattr(runner, "HuggingFaceBackend", lambda: backends["qwen"])
     monkeypatch.setattr(runner, "MarianBackend", lambda: backends["marian"])
@@ -106,4 +106,28 @@ def test_runner_selects_backend_without_changing_default(tmp_path, monkeypatch, 
     if selection is not None:
         arguments += ["--backend", selection]
     runner.main(arguments)
-    assert calls == [backends[selection or "qwen"]]
+    assert calls == [backends[selection or "marian"]]
+
+
+@pytest.mark.parametrize(
+    "backend,source,target",
+    [
+        ("marian", "de", "en"),
+        ("marian", "en", "en"),
+        ("qwen", "en", "fr"),
+    ],
+)
+def test_runner_rejects_languages_before_runtime(
+    tmp_path, monkeypatch, capsys, backend, source, target
+):
+    suite = load_suite(DEFAULT_SUITE)
+    suite.update(source_lang=source, target_lang=target)
+    monkeypatch.setattr(runner, "load_suite", lambda path: suite)
+    monkeypatch.setattr(runner, "load_dotenv", lambda *a, **kw: pytest.fail("Environment loaded"))
+    monkeypatch.setattr(runner, "runtime_metadata", lambda b: pytest.fail("Runtime loaded"))
+    output = tmp_path / "report"
+    with pytest.raises(SystemExit) as error:
+        runner.main(["--backend", backend, "--output", str(output)])
+    assert error.value.code == 2
+    assert "supports only" in capsys.readouterr().err
+    assert not output.exists()

@@ -242,7 +242,7 @@ Backend, reader, and writer errors propagate unchanged. The service does not
 configure logging, print messages, retry, or split paragraphs into model chunks.
 One backend call handles one segment. Empty documents require no backend calls.
 Language codes are passed through unchanged; model-specific validation belongs
-to the backend. The CLI uses the local Hugging Face adapter with English source
+to the backend. The CLI defaults to Marian, with Qwen selectable via `--backend qwen`, and English source
 text and a required target language. It accepts TXT input and an optional
 `--output` path; otherwise it writes `NAME.LANG.txt` alongside the original.
 Only TXT output paths are accepted. Argument validation precedes `.env` loading,
@@ -256,7 +256,10 @@ versioned prompt identities, installation commands, and manual GPU validation.
 Implement support in the order **TXT, Markdown, then ODP**. Each stage builds on
 the same public library API and translation backend and is exposed through the CLI.
 The roadmap describes the target behavior. TXT orchestration currently requires
-a backend, such as `HuggingFaceBackend`, which the CLI supplies automatically.
+a backend, such as `MarianBackend` or `HuggingFaceBackend`. The CLI selects it
+explicitly and validates the language pair before loading the runtime. Shared
+application defaults live in `translation/selection.py`; library callers continue
+to inject a backend directly.
 
 1. **Plain text (`.txt`):** establish reading, translation, and separate output
    writing with English-to-German translation first. Preserve paragraph structure.

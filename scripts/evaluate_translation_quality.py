@@ -26,6 +26,7 @@ from doc_lingo import (
     translate_document,
 )
 from doc_lingo.translation.prompts import TRANSLATION_DIRECTION, TRANSLATION_SYSTEM
+from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, validate_language_pair
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SUITE = PROJECT_ROOT / "tests/fixtures/translation_quality/en-de.json"
@@ -176,11 +177,20 @@ def runtime_metadata(backend: HuggingFaceBackend | MarianBackend) -> dict[str, A
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Generate translations for manual quality review")
     parser.add_argument("--suite", type=Path, default=DEFAULT_SUITE)
-    parser.add_argument("--backend", choices=["qwen", "marian"], default="qwen")
+    parser.add_argument(
+        "--backend",
+        choices=BACKEND_NAMES,
+        default=DEFAULT_BACKEND,
+        help="Local backend (default: marian; en to de only)",
+    )
     parser.add_argument("--output", type=Path, required=True, help="New report directory")
     args = parser.parse_args(argv)
     try:
         suite = load_suite(args.suite)
+        try:
+            validate_language_pair(args.backend, suite["source_lang"], suite["target_lang"])
+        except ValueError as error:
+            parser.error(str(error))
         load_dotenv(Path.cwd() / ".env", override=False)
         backend = MarianBackend() if args.backend == "marian" else HuggingFaceBackend()
         report = evaluate_suite(suite, backend, args.output, metadata=runtime_metadata(backend))

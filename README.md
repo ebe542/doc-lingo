@@ -24,7 +24,8 @@ structure and protects existing output files. See the
 - Write a separate output, such as `document.de.txt`, preserving the original.
 - Expose translation through both an importable library and a CLI.
 
-The initial backend runs Qwen3-1.7B locally on CUDA with versioned prompts.
+Marian is the default local CUDA backend for English-to-German translation.
+Qwen3-1.7B remains available with `--backend qwen` and versioned prompts.
 
 ## Format roadmap
 
@@ -61,11 +62,13 @@ After installing the `local` extra and CUDA build below, translate a document:
 ```bash
 doc-lingo document.txt --target-lang de
 doc-lingo document.txt --target-lang de --output translated.txt
+doc-lingo document.txt --target-lang de --backend qwen --output translated-qwen.txt
 ```
 
 The default output is `document.de.txt` alongside the source. Existing output
 files are never overwritten. Source language is English; target codes are `de`
-and `en` (the latter retains the text). Markdown and ODP are not yet supported.
+and `en` (`en` requires `--backend qwen` and retains the text). Marian accepts
+only `de`; incompatible requests fail before model loading or file creation. Markdown and ODP are not yet supported.
 The first real translation may download the model. Translation quality still
 requires review; long paragraphs exceeding the model limits are rejected.
 
@@ -146,9 +149,9 @@ Only synthetic, redistributable documents belong in `tests/fixtures/`.
 
 ## Quality checks
 
-An optional [Marian comparison backend](docs/marian-model.md) translates English
-to German without chat prompts. Select it in the quality runner with
-`--backend marian`; the normal CLI continues to use Qwen.
+The [Marian backend](docs/marian-model.md) translates English to German without
+chat prompts and is the default in both the CLI and quality runner. Select
+`--backend qwen` explicitly for Qwen comparisons.
 
 See [translation quality](docs/translation-quality.md) for ten English/German
 evaluation examples, abbreviation handling, and manual assessment criteria.

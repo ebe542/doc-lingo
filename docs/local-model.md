@@ -63,7 +63,7 @@ python -c "from dotenv import load_dotenv; load_dotenv('.env', override=False); 
 ```
 
 The backend can also be passed directly to `translate_document`, or invoked via
-`doc-lingo document.txt --target-lang de`. Automated tests use substitutes for Torch and
+`doc-lingo document.txt --target-lang de --backend qwen`. Automated tests use substitutes for Torch and
 Transformers, so they require neither CUDA nor model downloads:
 
 ```bash

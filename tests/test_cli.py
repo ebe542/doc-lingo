@@ -38,7 +38,8 @@ def test_translation_requires_file_and_target_language(arguments):
 
 
 @pytest.mark.parametrize("explicit_output", [False, True])
-def test_txt_translation(tmp_path, monkeypatch, capsys, explicit_output):
+@pytest.mark.parametrize("selection", [None, "marian", "qwen"])
+def test_txt_translation(tmp_path, monkeypatch, capsys, explicit_output, selection):
     source = tmp_path / "book.txt"
     source.write_bytes(b"Hello\r\n\r\nWorld")
     destination = tmp_path / ("custom.txt" if explicit_output else "book.de.txt")
@@ -49,9 +50,14 @@ def test_txt_translation(tmp_path, monkeypatch, capsys, explicit_output):
             calls.append((source_lang, target_lang))
             return text.replace("Hello", "Hallo").replace("World", "Welt")
 
-    monkeypatch.setattr(cli, "HuggingFaceBackend", Backend)
+    selected_class = "HuggingFaceBackend" if selection == "qwen" else "MarianBackend"
+    other_class = "MarianBackend" if selection == "qwen" else "HuggingFaceBackend"
+    monkeypatch.setattr(cli, selected_class, Backend)
+    monkeypatch.setattr(cli, other_class, lambda: pytest.fail("Wrong backend constructed"))
     monkeypatch.setattr(cli, "load_dotenv", lambda **kwargs: None)
     arguments = [str(source), "--target-lang", "de"]
+    if selection:
+        arguments += ["--backend", selection]
     if explicit_output:
         arguments += ["--output", str(destination)]
     main(arguments)
@@ -98,3 +104,23 @@ def test_invalid_output_extension(capsys):
         main(["book.txt", "--target-lang", "de", "--output", "book.odp"])
     assert error.value.code == 2
     assert "Output must" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("options", [[], ["--backend", "marian"], ["--backend", "unknown"]])
+def test_invalid_backend_request_has_no_side_effects(tmp_path, monkeypatch, capsys, options):
+    monkeypatch.setattr(cli, "load_dotenv", lambda **kw: pytest.fail("Environment loaded"))
+    monkeypatch.setattr(cli, "MarianBackend", lambda: pytest.fail("Model constructed"))
+    with pytest.raises(SystemExit) as error:
+        main([str(tmp_path / "book.txt"), "--target-lang", "en", *options])
+    assert error.value.code == 2
+    assert not list(tmp_path.iterdir())
+    assert not capsys.readouterr().out
+
+
+def test_qwen_same_language_retains_text_without_loading_model(tmp_path, monkeypatch):
+    source = tmp_path / "book.txt"
+    source.write_bytes(b"Hello\r\n")
+    monkeypatch.setattr(cli, "load_dotenv", lambda **kw: None)
+    monkeypatch.setattr(cli.HuggingFaceBackend, "_load", lambda self: pytest.fail("Model loaded"))
+    main([str(source), "--target-lang", "en", "--backend", "qwen"])
+    assert (tmp_path / "book.en.txt").read_bytes() == source.read_bytes()
