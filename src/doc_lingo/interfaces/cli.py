@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from contextlib import suppress
+from dataclasses import asdict
 from importlib.metadata import version
 from pathlib import Path
 from time import monotonic
@@ -78,18 +80,36 @@ def main(argv: list[str] | None = None) -> None:
             flush=True,
         )
 
+    issues_path = destination.with_name(destination.name + ".issues.jsonl")
+    issue_count = 0
+    report_created = False
+
     try:
-        translate_document(
-            PlainTextReader(args.file),
-            PlainTextWriter(args.file),
-            MarianBackend() if args.backend == "marian" else HuggingFaceBackend(),
-            destination,
-            source_lang="en",
-            target_lang=args.target_lang,
-            on_progress=show_progress,
-        )
+        with issues_path.open("x", encoding="utf-8", newline="\n") as report_file:
+            report_created = True
+
+            def record_issue(issue):
+                nonlocal issue_count
+                report_file.write(json.dumps(asdict(issue), ensure_ascii=False) + "\n")
+                report_file.flush()
+                issue_count += 1
+
+            translate_document(
+                PlainTextReader(args.file),
+                PlainTextWriter(args.file),
+                MarianBackend() if args.backend == "marian" else HuggingFaceBackend(),
+                destination,
+                source_lang="en",
+                target_lang=args.target_lang,
+                on_progress=show_progress,
+                on_issue=record_issue,
+            )
     except FileExistsError:
-        parser.exit(1, f"Error: Output already exists: {destination}. Choose another --output.\n")
+        parser.exit(
+            1,
+            f"Error: Output already exists or issue report exists: {destination}. "
+            "Choose another --output.\n",
+        )
     except FileNotFoundError:
         parser.exit(1, "Error: Source file or output directory does not exist.\n")
     except PermissionError:
@@ -102,6 +122,14 @@ def main(argv: list[str] | None = None) -> None:
         parser.exit(1, f"Error: {error}\n")
     except OSError:
         parser.exit(1, "Error: Document I/O failed; check storage and hard-link support.\n")
+    finally:
+        if report_created and issue_count == 0:
+            issues_path.unlink()
+    if issue_count:
+        print(f"Partially translated document written to {destination}")
+        parser.exit(
+            3, f"Warning: {issue_count} original text units retained. Report: {issues_path}\n"
+        )
     print(f"Translation written to {destination}")
 
 

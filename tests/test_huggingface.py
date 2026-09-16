@@ -94,3 +94,38 @@ def test_no_model_needed_for_empty_or_same_language(runtime):
     assert backend.translate(" \n", source_lang="en", target_lang="de") == " \n"
     assert backend.translate("Hello", source_lang="en", target_lang="en") == "Hello"
     runtime[3].AutoTokenizer.from_pretrained.assert_not_called()
+
+
+@pytest.mark.parametrize("preparation_error", [False, True])
+def test_token_aware_splitting_uses_complete_inputs(runtime, preparation_error):
+    tokenizer, model, _, _ = runtime
+    tokenizer.apply_chat_template.side_effect = lambda messages, **kw: messages[-1]["content"]
+    # Reserve output space: context, rather than max_input_tokens, is binding.
+    model.config.max_position_embeddings = 24
+
+    def tokenize(text, **kwargs):
+        if preparation_error:
+            raise ValueError("private tokenizer diagnostic")
+        inputs = MagicMock()
+        # Model-specific special/prompt overhead must count toward the limit.
+        inputs.__getitem__.return_value.shape = (1, len(text) + 4)
+        inputs.to.return_value = {"input_ids": text}
+        return inputs
+
+    tokenizer.side_effect = tokenize
+    tokenizer.decode.side_effect = lambda *args, **kw: model.generate.call_args.kwargs[
+        "input_ids"
+    ].upper()
+    backend = HuggingFaceBackend(max_input_tokens=24, max_new_tokens=8)
+    if preparation_error:
+        with pytest.raises(TranslationError) as error:
+            backend.translate("First sentence. Next sentence.", source_lang="en", target_lang="de")
+        assert "private tokenizer diagnostic" not in str(error.value)
+        model.generate.assert_not_called()
+    else:
+        text = "First sentence. Next sentence."
+        assert backend.translate(text, source_lang="en", target_lang="de") == text.upper()
+        chunks = [call.kwargs["input_ids"] for call in model.generate.call_args_list]
+        assert len(chunks) > 1
+        assert " ".join(chunks) == text
+        assert all(len(chunk) + 4 <= 16 for chunk in chunks)

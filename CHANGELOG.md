@@ -15,6 +15,15 @@
 
 ### Added
 
+- Continue CLI translation after recoverable text-unit failures, retaining source
+  text with segment-linked JSONL diagnostics and partial-success exit code 3.
+
+- Conservative TXT heading detection, reflow of collapsed multiline translations,
+  and sentence-sized model calls independent of maximum context capacity.
+
+- Token-aware splitting of oversized segments for Marian and Qwen, preferring
+  sentence boundaries and retaining one document segment with atomic output.
+
 - Lazy CUDA Marian backend for English-to-German translation and backend selection
   in the quality runner, with separate model and generation metadata.
 

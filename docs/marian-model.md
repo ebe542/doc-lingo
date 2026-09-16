@@ -42,10 +42,11 @@ including special tokens. Output allows at most 511 new tokens, reserving the
 decoder's starting token. The model's encoder and decoder have separate position
 limits; the source length is not subtracted from the decoder limit.
 
-The adapter rejects oversized input without truncation. Forced EOS is disabled
+The adapter splits oversized input at sentence or word boundaries, counting
+special tokens in every chunk; it never truncates the source. Forced EOS is disabled
 so reaching the output cap cannot masquerade as a completed translation. Missing
-EOS and empty translations raise `TranslationError`. Long-segment splitting remains
-future work. Generation settings are based on the pinned model configuration with
+EOS and empty translations raise `TranslationError`. See
+[segment splitting](segment-splitting.md) for boundary rules and limitations. Generation settings are based on the pinned model configuration with
 the documented overrides above, and are recorded in the report.
 
 The local CUDA run completed all ten examples. Manual review found eight passes,

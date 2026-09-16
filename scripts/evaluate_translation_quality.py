@@ -151,6 +151,7 @@ def runtime_metadata(backend: HuggingFaceBackend | MarianBackend) -> dict[str, A
         "max_new_tokens": backend.max_new_tokens,
         "dtype": "float32" if is_marian else "float16",
         "do_sample": False,
+        "input_splitting": "sentence-word-v2",
         "enable_thinking": None if is_marian else False,
         "prompts": []
         if is_marian

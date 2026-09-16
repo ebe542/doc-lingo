@@ -2,6 +2,8 @@
 
 from typing import Any, Protocol, Self, cast
 
+from doc_lingo.translation.chunks import translate_chunks
+from doc_lingo.translation.issues import RecoverableTranslationError
 from doc_lingo.translation.protocols import TranslationError
 
 DEFAULT_MODEL = "Helsinki-NLP/opus-mt-en-de"
@@ -67,12 +69,30 @@ class MarianBackend:
         self._torch, self._tokenizer, self._model = torch, tokenizer, model
 
     def translate(self, text: str, *, source_lang: str, target_lang: str) -> str:
-        """Translate the full segment or fail; never silently truncate input/output."""
+        """Translate a segment, splitting oversized input at source boundaries."""
         if (source_lang, target_lang) != ("en", "de"):
             raise TranslationError("This Marian model supports only en to de")
         if not text.strip():
             return text
         self._load()
+        try:
+
+            def fits(part: str) -> bool:
+                inputs = self._tokenizer(part, return_tensors="pt", truncation=False)
+                return inputs["input_ids"].shape[-1] <= self.max_input_tokens
+
+            return translate_chunks(
+                text,
+                fits,
+                lambda part: self._translate_chunk(
+                    part, source_lang=source_lang, target_lang=target_lang
+                ),
+            )
+        except (OSError, RuntimeError, ValueError):
+            raise TranslationError("Marian input preparation failed") from None
+
+    def _translate_chunk(self, text: str, *, source_lang: str, target_lang: str) -> str:
+        """Generate one measured chunk and reject incomplete output."""
         try:
             inputs = self._tokenizer(text, return_tensors="pt", truncation=False)
             if inputs["input_ids"].shape[-1] > self.max_input_tokens:
@@ -94,13 +114,15 @@ class MarianBackend:
                 )
             generated = output[0]
             if len(generated) <= 1 or generated[-1].item() != self._tokenizer.eos_token_id:
-                raise TranslationError("Marian translation did not finish within the output limit")
+                raise RecoverableTranslationError(
+                    "Marian translation did not finish within the output limit"
+                )
             # Encoder-decoder output contains no source prefix to slice off.
             result = self._tokenizer.decode(generated, skip_special_tokens=True).strip()
             if not result:
-                raise TranslationError("Marian returned an empty translation")
+                raise RecoverableTranslationError("Marian returned an empty translation")
             return result
-        except (OSError, RuntimeError, ValueError):
-            raise TranslationError(
+        except (RuntimeError, ValueError):
+            raise RecoverableTranslationError(
                 "Marian generation failed; check GPU memory and configuration"
             ) from None

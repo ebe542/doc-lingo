@@ -2,6 +2,8 @@
 
 from typing import Any, Protocol, Self, cast
 
+from doc_lingo.translation.chunks import translate_chunks
+from doc_lingo.translation.issues import RecoverableTranslationError
 from doc_lingo.translation.prompts import translation_messages
 from doc_lingo.translation.protocols import TranslationError
 
@@ -21,7 +23,7 @@ class HuggingFaceBackend:
     """Load once on first use; require CUDA and keep model state caller-owned.
 
     Initial scope is en/de translation with Qwen3-compatible chat templates.
-    No automatic CPU fallback, quantization, retries, or paragraph splitting.
+    No automatic CPU fallback, quantization, or generation retries.
     Model downloads may occur unless local_files_only is enabled. Hugging Face
     resolves authentication from its standard environment/cache, never from .env.
     """
@@ -75,22 +77,59 @@ class HuggingFaceBackend:
         self._torch, self._tokenizer, self._model = torch, tokenizer, model
 
     def translate(self, text: str, *, source_lang: str, target_lang: str) -> str:
-        """Generate only translated text; reject oversized or unfinished output."""
+        """Split input using the full chat prompt and reserved output context."""
         try:
-            messages = translation_messages(text, source_lang, target_lang)
+            translation_messages(text, source_lang, target_lang)
         except ValueError:
             raise TranslationError("Supported language codes are en and de") from None
         if not text.strip() or source_lang == target_lang:
             return text
         self._load()
         try:
-            prompt = self._tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
+            limit = min(
+                self.max_input_tokens,
+                self._model.config.max_position_embeddings - self.max_new_tokens,
             )
-            inputs = self._tokenizer(prompt, return_tensors="pt", add_special_tokens=False)
+            if limit < 1:
+                raise TranslationError("No input budget remains in the model context window")
+
+            def fits(part: str) -> bool:
+                prompt = self._tokenizer.apply_chat_template(
+                    translation_messages(part, source_lang, target_lang),
+                    tokenize=False,
+                    add_generation_prompt=True,
+                    enable_thinking=False,
+                )
+                inputs = self._tokenizer(
+                    prompt, return_tensors="pt", add_special_tokens=False, truncation=False
+                )
+                return inputs["input_ids"].shape[-1] <= limit
+
+            return translate_chunks(
+                text,
+                fits,
+                lambda part: self._translate_chunk(
+                    part, source_lang=source_lang, target_lang=target_lang
+                ),
+            )
+        except (OSError, RuntimeError, ValueError):
+            raise TranslationError("Local input preparation failed") from None
+
+    def _translate_chunk(self, text: str, *, source_lang: str, target_lang: str) -> str:
+        """Generate one measured chunk and reject incomplete output."""
+        try:
+            prompt = self._tokenizer.apply_chat_template(
+                translation_messages(text, source_lang, target_lang),
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=False,
+            )
+            inputs = self._tokenizer(
+                prompt, return_tensors="pt", add_special_tokens=False, truncation=False
+            )
             input_length = inputs["input_ids"].shape[-1]
             if input_length > self.max_input_tokens:
-                raise TranslationError(
+                raise RecoverableTranslationError(
                     "Paragraph exceeds the input token limit; splitting is required"
                 )
             if input_length + self.max_new_tokens > self._model.config.max_position_embeddings:
@@ -107,12 +146,14 @@ class HuggingFaceBackend:
             eos = self._model.generation_config.eos_token_id
             eos_ids = eos if isinstance(eos, list) else [eos]
             if not len(generated) or generated[-1].item() not in eos_ids:
-                raise TranslationError("Translation did not finish within the output token limit")
+                raise RecoverableTranslationError(
+                    "Translation did not finish within the output token limit"
+                )
             result = self._tokenizer.decode(generated, skip_special_tokens=True).strip()
             if not result:
-                raise TranslationError("The model returned an empty translation")
+                raise RecoverableTranslationError("The model returned an empty translation")
             return result
-        except (OSError, RuntimeError, ValueError):
-            raise TranslationError(
+        except (RuntimeError, ValueError):
+            raise RecoverableTranslationError(
                 "Local translation failed; check GPU memory and model configuration"
             ) from None

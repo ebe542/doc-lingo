@@ -5,6 +5,7 @@ from contextlib import closing
 from pathlib import Path
 
 from doc_lingo.documents import DocumentReader, DocumentWriter, TextSegment
+from doc_lingo.translation.issues import TranslationIssue, issue_sink
 from doc_lingo.translation.protocols import TranslationBackend
 
 
@@ -17,6 +18,7 @@ def translate_document(
     source_lang: str,
     target_lang: str,
     on_progress: Callable[[int, str], None] | None = None,
+    on_issue: Callable[[TranslationIssue], None] | None = None,
 ) -> None:
     """Translate ordered segments while keeping the reading session open.
 
@@ -27,16 +29,45 @@ def translate_document(
     count and segment type before handing the segment to the writer. This does
     not indicate publication. Translated segments retain their original type.
     Callback exceptions propagate and trigger normal resource cleanup.
+
+    Supplying on_issue enables source retention for recoverable local-backend
+    failures. Without it, library calls remain strict. The scoped context carries
+    diagnostics without adding document-specific parameters to TranslationBackend;
+    it is reset before yielding, including on exceptions and nested calls.
     """
     with reader.iter_segments() as segments:
 
         def translated_segments() -> Generator[TextSegment, None, None]:
+            paragraph = 0
             for count, segment in enumerate(segments, start=1):
+                if segment.type == "paragraph":
+                    paragraph += 1
+
+                def report(
+                    original: str, reason: str, segment=segment, count=count, paragraph=paragraph
+                ) -> None:
+                    if on_issue is not None:
+                        on_issue(
+                            TranslationIssue(
+                                original,
+                                reason,
+                                segment.id,
+                                segment.type,
+                                count,
+                                paragraph if segment.type == "paragraph" else None,
+                            )
+                        )
+
+                token = issue_sink.set(report if on_issue is not None else None)
+                try:
+                    text = backend.translate(
+                        segment.text, source_lang=source_lang, target_lang=target_lang
+                    )
+                finally:
+                    issue_sink.reset(token)
                 translated = TextSegment(
                     id=segment.id,
-                    text=backend.translate(
-                        segment.text, source_lang=source_lang, target_lang=target_lang
-                    ),
+                    text=text,
                     type=segment.type,
                 )
                 if on_progress is not None:

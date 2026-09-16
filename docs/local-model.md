@@ -48,9 +48,11 @@ hardware or of translation quality. Qwen's model card recommends sampling for
 general non-thinking tasks; compare quality before a production release.
 
 The input limit is 2048 tokens including instructions; the output limit is 1024
-new tokens. Oversized input is rejected rather than truncated. Missing EOS or an
+new tokens. Oversized input is split at sentence or word boundaries, counting
+the full chat prompt and reserving output space in the model context. Missing EOS or an
 empty response is rejected rather than published as a completed translation.
-Automatic splitting and retries remain separate work. The model generates text,
+See [segment splitting](segment-splitting.md). Generation retries remain future
+work. The model generates text,
 so semantic accuracy and resistance to instructions inside source documents must
 be evaluated with representative examples.
 

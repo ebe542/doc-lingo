@@ -70,14 +70,17 @@ files are never overwritten. Source language is English; target codes are `de`
 and `en` (`en` requires `--backend qwen` and retains the text). Marian accepts
 only `de`; incompatible requests fail before model loading or file creation. Markdown and ODP are not yet supported.
 The first real translation may download the model. Translation quality still
-requires review; long paragraphs exceeding the model limits are rejected.
+requires review. Segments are translated internally in sentence-sized units; oversized sentences
+are split at word boundaries using the selected tokenizer. An indivisible oversized word or incomplete generated unit is retained in its
+original language and recorded in a local `.issues.jsonl` report. See [segment splitting](docs/segment-splitting.md) for limits.
 
 Exit codes: `0` for success, `1` for expected file or translation failures, and
-`2` for invalid command arguments. Error messages go to stderr. File logging is
+`2` for invalid command arguments, and `3` for a published document containing
+original-text fallbacks. Error messages go to stderr. File logging is
 planned separately.
 
 During translation, stderr shows the translated segment count, segment type, and
-elapsed seconds. Types are `paragraph`, `bullet_item`, and `numbered_item`.
+elapsed seconds. Types are `paragraph`, `heading`, `bullet_item`, and `numbered_item`.
 The initial message explains that the first segment may require model
 loading. No percentage is shown because paragraphs are read incrementally without
 a counting pass. The final success message appears only after output publication.

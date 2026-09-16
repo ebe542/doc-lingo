@@ -1,6 +1,8 @@
 """Reconstruct UTF-8 documents from ordered translated paragraphs."""
 
 import os
+import re
+import textwrap
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -15,7 +17,8 @@ class PlainTextWriter:
     """Retain the original BOM, separator lines, and paragraph-ending newlines.
 
     The source must remain unchanged since extraction. Internal line breaks come
-    from the translation; trailing CR/LF characters are replaced with the original
+    from the translation, with collapsed multiline prose reflowed; trailing CR/LF
+    characters are replaced with the original
     paragraph ending. The caller owns and closes any translation generator.
     """
 
@@ -63,7 +66,24 @@ class PlainTextWriter:
                 translated = next(translations, None)
                 if translated is None or translated.id != str(number):
                     raise SegmentMismatchError(f"Expected translation for segment {number}")
-                output.write(translated.text.rstrip("\r\n"))
+                text = translated.text.rstrip("\r\n")
+                source_lines = block.text.splitlines()
+                # Reflow collapsed multiline prose in the document adapter,
+                # without asking the model to reproduce physical line breaks.
+                if len(source_lines) > 1 and "\n" not in text and "\r" not in text:
+                    width = max(40, min(100, max(len(line) for line in source_lines)))
+                    ending = re.search(r"\r\n|\r|\n", block.text)
+                    assert ending is not None
+                    text = ending.group().join(
+                        textwrap.wrap(
+                            text,
+                            width=width,
+                            break_long_words=False,
+                            break_on_hyphens=False,
+                            subsequent_indent=" " * len(block.prefix),
+                        )
+                    )
+                output.write(text)
                 output.write(block.ending)
         if next(translations, None) is not None:
             raise SegmentMismatchError(f"Unexpected translation after {number} segments")
