@@ -53,3 +53,29 @@ python scripts/check_milestone.py && python scripts/check_release_package.py
 
 Commit and push reviewed changes, then confirm GitHub Actions succeeds before
 creating and pushing a release tag. A local check alone does not verify CI.
+
+For the prepared 0.1.0 release, first install release tooling if needed and run
+the package check (the script builds and installs into disposable storage):
+
+```bash
+python -m pip install -e ".[dev,release]"
+python scripts/check_milestone.py
+python scripts/check_release_package.py
+```
+
+The dated changelog section must use the actual release date; update it if the
+release is postponed. After reviewing, committing and pushing the release notes,
+wait for green quality CI on that commit. From a clean, up-to-date `main`, create
+an annotated tag and publish that tag explicitly:
+
+```bash
+git status --short
+git tag -a v0.1.0 -m "Release 0.1.0"
+git push origin v0.1.0
+```
+
+Pushing the tag starts the release workflow and publishes the GitHub release
+automatically after verification. Do not move or overwrite an existing release
+tag. Confirm the Release workflow succeeds and the wheel and source archive are
+attached. The source archive contains documentation and examples; the wheel
+contains the importable package and CLI, not the repository's example files.

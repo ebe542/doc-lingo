@@ -5,8 +5,10 @@ and formatting.
 
 ## Status
 
-This productive learning project is in its initial scaffolding phase. Installation,
-CLI help, version reporting, quality checks, and release tooling are available.
+Version 0.1.0 is the first release target of this productive learning project.
+TXT translation, reusable terminology glossaries, quality checks, and release
+tooling are available. Translations require human review; see the
+[release limitations](CHANGELOG.md#010---2026-09-18).
 The CLI translates English UTF-8 TXT documents using the local CUDA backend.
 The library provides a document translation service with an injectable backend.
 A lazy CUDA Hugging Face backend is available through the `local` extra. See
