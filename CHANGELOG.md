@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Replace glossary regex alternation with prefix-trie matching and capitalize
+  translated glossary targets at sentence starts while preserving keep rules.
+
 - Default the CLI and quality runner to Marian, retain explicit Qwen selection,
   and reject unsupported language pairs before runtime loading or output creation.
 
@@ -14,6 +17,13 @@
   preserving public imports from `doc_lingo`.
 
 ### Added
+
+- Gzip glossary loading, a 36-entry terminology example with source notes, and
+  an offline glossary storage/matching benchmark. Match resolution avoids a
+  per-hit scan of the full glossary.
+
+- Optional reusable terminology glossaries for the library, CLI, and quality
+  runner, with placeholder validation and original-segment fallback diagnostics.
 
 - Continue CLI translation after recoverable text-unit failures, retaining source
   text with segment-linked JSONL diagnostics and partial-success exit code 3.

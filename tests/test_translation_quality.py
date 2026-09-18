@@ -9,6 +9,41 @@ from scripts import evaluate_translation_quality as runner
 from scripts.evaluate_translation_quality import DEFAULT_SUITE, evaluate_suite, load_suite
 
 
+def test_report_records_retained_source_without_assigning_a_pass(tmp_path):
+    from doc_lingo.translation.issues import retain_original
+
+    class Backend:
+        def translate(self, text, **kwargs):
+            return retain_original(text, "Test unit could not be translated")
+
+    suite = load_suite(DEFAULT_SUITE)
+    suite["examples"] = suite["examples"][:1]
+    report = evaluate_suite(suite, Backend(), tmp_path / "report", metadata={})
+    result = report["results"][0]
+    assert report["complete"]
+    assert result["actual"] == result["source"]
+    assert result["verdict"] == "pending"
+    assert result["error"] is None
+    assert result["issues"][0]["original"] == result["source"]
+    assert result["issues"][0]["segment_id"] == "1"
+    assert result["issues"][0]["paragraph_number"] == 1
+
+
+def test_runner_signals_retained_source(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "load_dotenv", lambda *a, **kw: None)
+    monkeypatch.setattr(runner, "runtime_metadata", lambda backend: {})
+    monkeypatch.setattr(
+        runner,
+        "evaluate_suite",
+        lambda *a, **kw: {
+            "results": [{"verdict": "pending", "issues": [{"reason": "Test fallback"}]}]
+        },
+    )
+    with pytest.raises(SystemExit) as error:
+        runner.main(["--output", str(tmp_path / "report")])
+    assert error.value.code == 3
+
+
 def test_committed_suite_has_ten_unique_examples():
     suite = load_suite(DEFAULT_SUITE)
     assert len(suite["examples"]) == 10

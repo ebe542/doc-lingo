@@ -19,7 +19,7 @@ Keep the working CUDA 13.2 PyTorch installation. From Git Bash:
 ```bash
 python -m pip install -e ".[dev,local]"
 python scripts/check_milestone.py
-python scripts/evaluate_translation_quality.py --backend marian --output local-data/quality/marian-v1
+python scripts/evaluate_translation_quality.py --backend marian --output local-data/quality/marian-without-glossary-run-01
 ```
 
 The last command performs real GPU inference and may download model weights.

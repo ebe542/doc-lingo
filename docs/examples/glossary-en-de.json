@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "source_lang": "en",
+  "target_lang": "de",
+  "entries": [
+    {
+      "source": "classification",
+      "mode": "translate",
+      "target": "Klassifikation"
+    },
+    {
+      "source": "multiclass classification",
+      "mode": "annotate",
+      "target": "Mehrklassenklassifikation"
+    },
+    {
+      "source": "reinforcement learning",
+      "mode": "annotate",
+      "target": "bestärkendes Lernen"
+    },
+    {
+      "source": "Machine Learning",
+      "mode": "keep"
+    },
+    {
+      "source": "Retrieval-Augmented Generation (RAG)",
+      "mode": "translate",
+      "target": "abrufgestützte Generierung (RAG = Retrieval-Augmented Generation)"
+    },
+    {
+      "source": "supervised learning",
+      "mode": "annotate",
+      "target": "überwachtes Lernen"
+    },
+    {
+      "source": "unsupervised learning",
+      "mode": "annotate",
+      "target": "unüberwachtes Lernen"
+    },
+    {
+      "source": "binary classification",
+      "mode": "annotate",
+      "target": "binäre Klassifikation"
+    },
+    {
+      "source": "neural network",
+      "mode": "annotate",
+      "target": "neuronales Netz"
+    },
+    {
+      "source": "neural networks",
+      "mode": "annotate",
+      "target": "neuronale Netze"
+    },
+    {
+      "source": "deep learning",
+      "mode": "keep"
+    },
+    {
+      "source": "generative AI",
+      "mode": "annotate",
+      "target": "generative KI"
+    },
+    {
+      "source": "training data",
+      "mode": "annotate",
+      "target": "Trainingsdaten"
+    },
+    {
+      "source": "labeled training data",
+      "mode": "annotate",
+      "target": "annotierte Trainingsdaten"
+    },
+    {
+      "source": "test data",
+      "mode": "annotate",
+      "target": "Testdaten"
+    },
+    {
+      "source": "validation data",
+      "mode": "annotate",
+      "target": "Validierungsdaten"
+    },
+    {
+      "source": "training dataset",
+      "mode": "annotate",
+      "target": "Trainingsdatensatz"
+    },
+    {
+      "source": "test dataset",
+      "mode": "annotate",
+      "target": "Testdatensatz"
+    },
+    {
+      "source": "learning rate",
+      "mode": "annotate",
+      "target": "Lernrate"
+    },
+    {
+      "source": "loss function",
+      "mode": "annotate",
+      "target": "Verlustfunktion"
+    },
+    {
+      "source": "gradient descent",
+      "mode": "annotate",
+      "target": "Gradientenabstieg"
+    },
+    {
+      "source": "decision tree",
+      "mode": "annotate",
+      "target": "Entscheidungsbaum"
+    },
+    {
+      "source": "decision trees",
+      "mode": "annotate",
+      "target": "Entscheidungsbäume"
+    },
+    {
+      "source": "overfitting",
+      "mode": "annotate",
+      "target": "Überanpassung"
+    },
+    {
+      "source": "underfitting",
+      "mode": "annotate",
+      "target": "Unteranpassung"
+    },
+    {
+      "source": "clustering",
+      "mode": "keep"
+    },
+    {
+      "source": "embedding",
+      "mode": "keep"
+    },
+    {
+      "source": "embeddings",
+      "mode": "keep"
+    },
+    {
+      "source": "fine-tuning",
+      "mode": "keep"
+    },
+    {
+      "source": "inference",
+      "mode": "annotate",
+      "target": "Inferenz"
+    },
+    {
+      "source": "document retrieval",
+      "mode": "annotate",
+      "target": "Dokumentabruf"
+    },
+    {
+      "source": "large language model",
+      "mode": "annotate",
+      "target": "großes Sprachmodell"
+    },
+    {
+      "source": "large language models",
+      "mode": "annotate",
+      "target": "große Sprachmodelle"
+    },
+    {
+      "source": "large language model (LLM)",
+      "mode": "translate",
+      "target": "großes Sprachmodell (LLM = large language model)"
+    },
+    {
+      "source": "RAG",
+      "mode": "keep"
+    },
+    {
+      "source": "LLM",
+      "mode": "keep"
+    }
+  ]
+}

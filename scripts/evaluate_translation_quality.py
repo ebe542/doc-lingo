@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+from dataclasses import asdict
 from datetime import UTC, datetime
 from hashlib import sha256
 from importlib.metadata import PackageNotFoundError, version
@@ -25,6 +26,7 @@ from doc_lingo import (
     TranslationError,
     translate_document,
 )
+from doc_lingo.translation.glossary import Glossary, GlossaryBackend
 from doc_lingo.translation.prompts import TRANSLATION_DIRECTION, TRANSLATION_SYSTEM
 from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, validate_language_pair
 
@@ -93,13 +95,13 @@ def evaluate_suite(
 
     def save() -> None:
         (output / "report.json").write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
         )
 
     save()
     for index, example in enumerate(suite["examples"], 1):
         result = dict(example)
-        result.update(actual=None, verdict="pending", notes="", error=None)
+        result.update(actual=None, verdict="pending", notes="", error=None, issues=[])
         started = monotonic()
         with TemporaryDirectory(prefix=".quality-", dir=output) as temporary:
             source = Path(temporary) / "source.txt"
@@ -113,6 +115,7 @@ def evaluate_suite(
                     destination,
                     source_lang=suite["source_lang"],
                     target_lang=suite["target_lang"],
+                    on_issue=lambda issue, result=result: result["issues"].append(asdict(issue)),
                 )
                 result["actual"] = destination.read_bytes().decode("utf-8")
             except (TranslationError, SegmentMismatchError, OSError, UnicodeError) as error:
@@ -152,6 +155,7 @@ def runtime_metadata(backend: HuggingFaceBackend | MarianBackend) -> dict[str, A
         "dtype": "float32" if is_marian else "float16",
         "do_sample": False,
         "input_splitting": "sentence-word-v2",
+        "failure_policy": "retain-original-with-issues-v1",
         "enable_thinking": None if is_marian else False,
         "prompts": []
         if is_marian
@@ -178,6 +182,7 @@ def runtime_metadata(backend: HuggingFaceBackend | MarianBackend) -> dict[str, A
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Generate translations for manual quality review")
     parser.add_argument("--suite", type=Path, default=DEFAULT_SUITE)
+    parser.add_argument("--glossary", type=Path, help="Optional terminology JSON file")
     parser.add_argument(
         "--backend",
         choices=BACKEND_NAMES,
@@ -194,12 +199,31 @@ def main(argv: list[str] | None = None) -> None:
             parser.error(str(error))
         load_dotenv(Path.cwd() / ".env", override=False)
         backend = MarianBackend() if args.backend == "marian" else HuggingFaceBackend()
-        report = evaluate_suite(suite, backend, args.output, metadata=runtime_metadata(backend))
+        metadata = runtime_metadata(backend)
+        selected: TranslationBackend = backend
+        if args.glossary:
+            glossary = Glossary.load(args.glossary)
+            if (glossary.source_lang, glossary.target_lang) != (
+                suite["source_lang"],
+                suite["target_lang"],
+            ):
+                parser.error("Glossary language mismatch")
+            metadata["glossary"] = {
+                "fingerprint": sha256(
+                    json.dumps(asdict(glossary), sort_keys=True, ensure_ascii=False).encode("utf-8")
+                ).hexdigest(),
+                "policy": "protected-terms-v3",
+                "matcher": "prefix-trie-v1",
+            }
+            selected = GlossaryBackend(backend, glossary)
+        report = evaluate_suite(suite, selected, args.output, metadata=metadata)
     except (OSError, ValueError, ImportError):
         parser.exit(1, "Error: Check the suite, new output path, and installed local extra.\n")
     print(f"Review translations in {args.output / 'report.json'}; pending is not a quality pass.")
     if any(result["verdict"] == "blocked" for result in report["results"]):
         parser.exit(1, "Some examples were blocked; review the report.\n")
+    if any(result.get("issues") for result in report["results"]):
+        parser.exit(3, "Original text was retained in some examples; review their issues.\n")
 
 
 if __name__ == "__main__":

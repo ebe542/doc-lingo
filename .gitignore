@@ -50,5 +50,5 @@ Desktop.ini
 !tests/fixtures/**
 
 # Local test documents and generated translations
-# Everything in this directory must remain reproducible.
+# Private inputs and generated results stay local; reusable fixtures belong in tests/fixtures.
 local-data/

@@ -19,9 +19,11 @@ from doc_lingo import (
     PlainTextReader,
     PlainTextWriter,
     SegmentMismatchError,
+    TranslationBackend,
     TranslationError,
     translate_document,
 )
+from doc_lingo.translation.glossary import Glossary, GlossaryBackend
 from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, validate_language_pair
 
 
@@ -37,6 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--target-lang", required=True, choices=["en", "de"], help="Target language"
     )
     parser.add_argument("--output", type=Path, help="New output file (default: NAME.LANG.txt)")
+    parser.add_argument("--glossary", type=Path, help="Optional terminology JSON file")
     parser.add_argument(
         "--backend",
         choices=BACKEND_NAMES,
@@ -59,6 +62,14 @@ def main(argv: list[str] | None = None) -> None:
     destination = args.output or args.file.with_name(f"{args.file.stem}.{args.target_lang}.txt")
     if destination.suffix.lower() != ".txt":
         parser.error("Output must use the .txt extension")
+    glossary = None
+    if args.glossary:
+        try:
+            glossary = Glossary.load(args.glossary)
+            if (glossary.source_lang, glossary.target_lang) != ("en", args.target_lang):
+                raise ValueError("Glossary language mismatch")
+        except (OSError, UnicodeError, ValueError):
+            parser.error("Cannot use glossary; check its file, schema, entries and languages")
     # Environment loading is optional. A missing or unreadable .env must not
     # prevent commands that do not need Hugging Face authentication.
     with suppress(OSError, UnicodeError):
@@ -94,10 +105,15 @@ def main(argv: list[str] | None = None) -> None:
                 report_file.flush()
                 issue_count += 1
 
+            backend: TranslationBackend = (
+                MarianBackend() if args.backend == "marian" else HuggingFaceBackend()
+            )
+            if glossary is not None:
+                backend = GlossaryBackend(backend, glossary)
             translate_document(
                 PlainTextReader(args.file),
                 PlainTextWriter(args.file),
-                MarianBackend() if args.backend == "marian" else HuggingFaceBackend(),
+                backend,
                 destination,
                 source_lang="en",
                 target_lang=args.target_lang,

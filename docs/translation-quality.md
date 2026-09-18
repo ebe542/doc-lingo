@@ -149,3 +149,120 @@ not establish quality on arbitrary documents or robust document-wide glossary
 handling. Marian is now the default in the CLI and quality runner; Qwen remains
 explicitly selectable. Unsupported suite language pairs exit with code 2 before
 loading the runtime or creating a report directory.
+
+
+## Recheck after TXT processing changes
+
+Keep suite version 1 unchanged for a direct comparison with `marian-v1` and
+`prompt-v2`. New runs use sentence-sized calls, TXT heading recognition, and
+original-text fallback with diagnostics. They evaluate the complete current
+processing path, not a model-only change. The runner now records per-example
+`issues`, matching CLI recovery. Pending results still require manual review;
+retained originals must not be counted as successful translations automatically.
+Exit code 3 indicates retained source units, while blocked cases take precedence
+with exit code 1. Historical reports without `issues` predate this reporting field.
+
+Run each command separately in Git Bash so one backend's nonzero status does not
+prevent the other comparison:
+
+```bash
+python scripts/check_milestone.py
+python scripts/evaluate_translation_quality.py --backend marian --output local-data/quality/marian-processing-v2
+python scripts/evaluate_translation_quality.py --backend qwen --output local-data/quality/qwen-processing-v2
+```
+
+Review every result against its source and criteria. Record verdict changes from
+the old reports, retained originals, and the document-context result separately.
+Do not overwrite previous runs or infer semantic quality from exit status alone.
+
+For a reproducible long-document check, use the committed synthetic input:
+
+```bash
+mkdir -p local-data/translations
+doc-lingo tests/fixtures/translation_quality/long-technical-document.en.txt --target-lang de --output local-data/translations/long-technical-document.marian.run-01.de.txt
+```
+
+Compare the sensor-data introduction, classification, training/evaluation,
+retrieval/generation, and final review sections. Check headings, negations,
+enumerations, numbers, and terminology. See [evaluation files](evaluation-files.md)
+for the current commands and output naming. The dated results below refer to the
+earlier local input, not this new synthetic document.
+
+## Processing comparison reviewed 2026-09-18
+
+Both new reports completed all ten examples without blocked cases or recorded
+fallbacks. Suite fingerprints and model revisions match the respective earlier
+runs. These are assistant manual judgments of the saved outputs, not new GPU runs.
+
+| Report | pass | minor_issue | major_issue | Document context (included) |
+| --- | ---: | ---: | ---: | --- |
+| Marian marian-v1 | 8 | 1 | 1 | pass |
+| Marian marian-processing-v2 | 8 | 1 | 1 | pass |
+| Qwen prompt-v2 | 1 | 4 | 5 | major_issue |
+| Qwen qwen-processing-v2 | 1 | 7 | 2 | minor_issue |
+
+Marian retains its earlier quality level; the missing article in the numbers
+example is corrected, but percent spacing and the incorrect rendering of document
+retrieval remain. Qwen improves supervised-learning terminology, the overwriting
+prohibition, and the document-context expansion from major to minor issues.
+Its standalone RAG explanation and numbered-list instruction still change or omit
+meaning. Grammar remains weak. Marian remains the preferred backend on this set.
+
+The local long-text output `ex_long_quality_v2.de.txt` now includes all reviewed
+sections: ML introduction, both rainfall approaches, classification, unsupervised
+learning, reinforcement learning, and generative AI through the final product-image
+example. The previously missing classification and final training material are
+present. This is a section-by-section review, not proof of complete semantic fidelity.
+
+Remaining long-text issues include:
+
+- `Classification` becomes `Einreihung`, an unsuitable ML heading.
+- `multiclass classification` becomes `mehrstufige Klassifikation`, confusing
+  multiple classes with multiple stages.
+- `sleet` becomes `Schleuder`, a clear meaning error.
+- `Reinforcement learning` becomes `Staerkung des Lernens` as a heading, with
+  inconsistent terminology in the following prose.
+- Sentence completion is rendered as the malformed phrase `autokomplette Saetze`.
+- The description of additional supervised/reinforcement training has substantial
+  grammar problems, although its main subject matter is present.
+
+Some physical lines remain long because existing model/sentence line breaks bypass
+the writer's collapsed-single-line reflow. Heading separation is retained. The
+source itself announces a partial list without supplying that list; this is not a
+translation omission. The processing changes improve observed coverage but do not
+make unattended book translation reliable. Terminology and fluency need further
+work, followed by evaluation on additional independent examples.
+
+## Expanded glossary reviewed 2026-09-18
+
+`marian-glossary-expanded-v1` completed all ten examples without recorded issues
+or blocked cases. Manual review assigns 6 pass, 4 minor_issue, 0 major_issue.
+The document-context example is minor_issue and is included in the totals.
+
+Compared with `marian-processing-v2` (8/1/1), document retrieval is now correct
+and original terms are included as requested. However, verbatim replacements
+produce lowercase sentence starts in technical-terms, abbreviation-first-mention,
+and abbreviation-document-context. Numbers-units retains its percent-spacing
+issue. More minor issues therefore accompany the removal of the major meaning
+error; pass counts alone would conceal the tradeoff.
+
+The fixture's historical document-context limitation mentions no shared glossary;
+this run does have the optional glossary, but still has no first-mention state.
+Original fixture text and generated translations remain unchanged in the report.
+See [glossary measurements](glossary.md#first-measured-results-2026-09-18) for
+performance results and the remaining limitations. No new long-document review
+is implied by this ten-example report.
+
+## Trie and capitalization review (2026-09-18)
+
+The latest `marian-with-glossary-run-01` short report scores 8 pass, 2 minor_issue,
+0 major_issue and 0 blocked, with no recorded fallbacks. The document-context
+case passes. The previous three sentence-start capitalization defects are fixed;
+input terminology and percent spacing remain minor issues.
+
+The separately reviewed committed long fixture has one fallback, recorded in
+`long-technical-document.marian-glossary.run-01.de.txt.issues.jsonl`: heading
+segment 3, Classification, remains original. Its other sections and final
+requirement are present, but grammar and terminology remain imperfect. This
+long-document result must not be conflated with the ten-example success rate.
+See the glossary guide for the measured trie speed and memory changes.

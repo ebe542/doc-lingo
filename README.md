@@ -152,6 +152,16 @@ Only synthetic, redistributable documents belong in `tests/fixtures/`.
 
 ## Quality checks
 
+See [evaluation inputs and commands](docs/evaluation-files.md) for committed
+sample files, generated reports, and consistent output naming.
+
+An optional [terminology glossary](docs/glossary.md) can preserve terms, supply
+fixed translations, or include the original term alongside a translation. Use
+`--glossary docs/examples/glossary-en-de.json` in the CLI or quality runner.
+Compressed `.json.gz` glossaries use the same option. The example contains 36
+ML/AI rules with documented sources; an offline benchmark measures larger synthetic
+glossaries without model inference. See the glossary guide for commands and limits.
+
 The [Marian backend](docs/marian-model.md) translates English to German without
 chat prompts and is the default in both the CLI and quality runner. Select
 `--backend qwen` explicitly for Qwen comparisons.
