@@ -1,6 +1,7 @@
 """Document translation with formatting preservation."""
 
 from doc_lingo.documents import DocumentReader, DocumentWriter, SegmentMismatchError, TextSegment
+from doc_lingo.documents.markdown import MarkdownReader, MarkdownWriter
 from doc_lingo.documents.plain_text import PlainTextReader
 from doc_lingo.documents.plain_text_writer import PlainTextWriter
 from doc_lingo.translation import TranslationBackend, TranslationError, translate_document
@@ -17,6 +18,8 @@ __all__ = [
     "DocumentWriter",
     "HuggingFaceBackend",
     "MarianBackend",
+    "MarkdownReader",
+    "MarkdownWriter",
     "PlainTextReader",
     "PlainTextWriter",
     "SegmentMismatchError",

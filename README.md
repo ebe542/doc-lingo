@@ -5,11 +5,13 @@ and formatting.
 
 ## Status
 
-Version 0.1.0 is the first release target of this productive learning project.
+Version 0.1.0 is the first release of this productive learning project.
 TXT translation, reusable terminology glossaries, quality checks, and release
 tooling are available. Translations require human review; see the
 [release limitations](CHANGELOG.md#010---2026-09-18).
-The CLI translates English UTF-8 TXT documents using the local CUDA backend.
+The development version also supports Markdown; see the
+[Markdown scope and limitations](docs/markdown.md).
+The CLI translates English UTF-8 TXT and Markdown documents using the local CUDA backend.
 The library provides a document translation service with an injectable backend.
 A lazy CUDA Hugging Face backend is available through the `local` extra. See
 [local model setup](docs/local-model.md) for CUDA 13.2 installation and smoke checks.
@@ -41,8 +43,8 @@ Implement formats in this order, reusing the translation core:
    preserving styles, images, and slide structure. Longer translations may
    overflow text boxes; layout fit requires separate validation.
 
-TXT reading, writing, and orchestration are available for a caller-supplied
-translation backend. Markdown and ODP adapters are planned.
+TXT and Markdown reading, writing, and orchestration are available for a
+caller-supplied translation backend. ODP adapters are planned.
 
 ## Development setup
 

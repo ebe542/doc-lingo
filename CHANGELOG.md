@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- Markdown reader/writer and CLI format selection, preserving source syntax,
+  code, destinations and unsupported HTML. Table headers and body cells are
+  translated separately while preserving delimiters and column alignment.
+- Format-independent protected segment ranges and adapter validation, with
+  original-segment retention and issue reporting when syntax protection fails.
+- Offline Markdown regression tests and a portable manual translation example.
+
+### Limitations
+
+- Markdown parsing retains the document in memory to resolve reference links.
+- Markdown extensions beyond the documented subset are not supported. Images,
+  implicit reference labels and paragraphs containing HTML remain untranslated.
+
 ## [0.1.0] - 2026-09-18
 
 First release of the document translation library and CLI, focused on local

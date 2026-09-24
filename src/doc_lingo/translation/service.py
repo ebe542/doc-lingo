@@ -5,7 +5,8 @@ from contextlib import closing
 from pathlib import Path
 
 from doc_lingo.documents import DocumentReader, DocumentWriter, TextSegment
-from doc_lingo.translation.issues import TranslationIssue, issue_sink
+from doc_lingo.translation.issues import TranslationIssue, issue_sink, retain_original
+from doc_lingo.translation.protected import translate_segment
 from doc_lingo.translation.protocols import TranslationBackend
 
 
@@ -60,9 +61,13 @@ def translate_document(
 
                 token = issue_sink.set(report if on_issue is not None else None)
                 try:
-                    text = backend.translate(
-                        segment.text, source_lang=source_lang, target_lang=target_lang
+                    text = translate_segment(
+                        segment, backend, source_lang=source_lang, target_lang=target_lang
                     )
+                    if not segment.accepts_translation(text):
+                        text = retain_original(
+                            segment.text, "Document structure changed; source retained"
+                        )
                 finally:
                     issue_sink.reset(token)
                 translated = TextSegment(

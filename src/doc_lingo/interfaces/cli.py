@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 from doc_lingo import (
     HuggingFaceBackend,
     MarianBackend,
+    MarkdownReader,
+    MarkdownWriter,
     PlainTextReader,
     PlainTextWriter,
     SegmentMismatchError,
@@ -28,17 +30,17 @@ from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, vali
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Describe the local TXT translation interface."""
+    """Describe the local document translation interface."""
     parser = argparse.ArgumentParser(
         prog="doc-lingo",
-        description="Translate UTF-8 TXT documents locally on CUDA.",
+        description="Translate UTF-8 TXT and Markdown documents locally on CUDA.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {version('doc-lingo')}")
-    parser.add_argument("file", type=Path, help="English UTF-8 source document (.txt)")
+    parser.add_argument("file", type=Path, help="English UTF-8 source document (.txt or .md)")
     parser.add_argument(
         "--target-lang", required=True, choices=["en", "de"], help="Target language"
     )
-    parser.add_argument("--output", type=Path, help="New output file (default: NAME.LANG.txt)")
+    parser.add_argument("--output", type=Path, help="New output file (default: NAME.LANG.EXT)")
     parser.add_argument("--glossary", type=Path, help="Optional terminology JSON file")
     parser.add_argument(
         "--backend",
@@ -57,11 +59,14 @@ def main(argv: list[str] | None = None) -> None:
         validate_language_pair(args.backend, "en", args.target_lang)
     except ValueError as error:
         parser.error(str(error))
-    if args.file.suffix.lower() != ".txt":
-        parser.error("Only .txt source documents are supported")
-    destination = args.output or args.file.with_name(f"{args.file.stem}.{args.target_lang}.txt")
-    if destination.suffix.lower() != ".txt":
-        parser.error("Output must use the .txt extension")
+    extension = args.file.suffix.lower()
+    if extension not in (".txt", ".md"):
+        parser.error("Only .txt and .md source documents are supported")
+    destination = args.output or args.file.with_name(
+        f"{args.file.stem}.{args.target_lang}{extension}"
+    )
+    if destination.suffix.lower() != extension:
+        parser.error(f"Output must use the {extension} extension")
     glossary = None
     if args.glossary:
         try:
@@ -111,8 +116,8 @@ def main(argv: list[str] | None = None) -> None:
             if glossary is not None:
                 backend = GlossaryBackend(backend, glossary)
             translate_document(
-                PlainTextReader(args.file),
-                PlainTextWriter(args.file),
+                MarkdownReader(args.file) if extension == ".md" else PlainTextReader(args.file),
+                MarkdownWriter(args.file) if extension == ".md" else PlainTextWriter(args.file),
                 backend,
                 destination,
                 source_lang="en",

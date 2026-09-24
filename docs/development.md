@@ -46,6 +46,7 @@ src/doc_lingo/
     errors.py                 SegmentMismatchError
     plain_text.py             TXT reader
     plain_text_writer.py      TXT writer
+    markdown.py               Markdown reader/writer and syntax validation
     text_blocks.py            Shared prose/list boundaries and formatting
 ```
 
@@ -89,7 +90,21 @@ Pass configuration and backend dependencies explicitly to library operations.
 Keep credential loading at the application boundary. Decide on the public API
 in a dedicated commit discussion before adding it. The current library exposes
 reader/writer protocols, plain-text processing, and translation orchestration
-with a caller-supplied backend; the CLI connects TXT adapters to the local backend.
+with a caller-supplied backend; the CLI connects TXT or Markdown adapters to the local backend.
+
+### Markdown library API
+
+`MarkdownReader` and `MarkdownWriter` implement the same document protocols.
+See [Markdown translation](markdown.md) for supported constructs, source retention,
+memory requirements and a manual example.
+
+`TextSegment.protected_spans` defaults to an empty tuple. Adapters can supply
+ordered, non-overlapping `(start, end)` string offsets for syntax that must remain
+unchanged. `TextSegment.accepts_translation(text)` normally returns `True`;
+Markdown segments override it to validate parsed structure. The service applies
+protection and validation within the existing issue-reporting context. The public
+backend protocol remains unchanged. Translated output segments contain restored
+text; source offsets are not copied into translated text.
 
 ### Plain-text library API
 
@@ -243,9 +258,9 @@ configure logging, print messages, retry, or split paragraphs into model chunks.
 One backend call handles one segment. Empty documents require no backend calls.
 Language codes are passed through unchanged; model-specific validation belongs
 to the backend. The CLI defaults to Marian, with Qwen selectable via `--backend qwen`, and English source
-text and a required target language. It accepts TXT input and an optional
-`--output` path; otherwise it writes `NAME.LANG.txt` alongside the original.
-Only TXT output paths are accepted. Argument validation precedes `.env` loading,
+text and a required target language. It accepts TXT or Markdown input and an optional
+`--output` path; otherwise it writes `NAME.LANG.EXT` alongside the original.
+Output must retain the input format's extension. Argument validation precedes `.env` loading,
 so help and version commands do not read local configuration.
 
 See [local model setup](local-model.md) for the CUDA Hugging Face backend,
@@ -265,8 +280,8 @@ to inject a backend directly.
    writing with English-to-German translation first. Preserve paragraph structure.
    Agree on encoding handling and output naming before implementation.
 2. **Markdown (`.md`):** translate prose while preserving headings, lists, emphasis,
-   code blocks, and link destinations. Define which text elements are translatable
-   and how structure is retained before implementing the adapter.
+   code blocks, and link destinations. The initial adapter is available; its
+   supported subset and limitations are documented in [markdown.md](markdown.md).
 3. **OpenDocument presentations (`.odp`):** preserve document structure, styles,
    images, and non-text content while changing translatable text. Longer translations
    may overflow existing text boxes; validate layout fit separately from formatting.
