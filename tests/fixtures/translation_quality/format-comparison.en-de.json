@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "suite_version": 1,
+  "evaluation": "manual",
+  "source_lang": "en",
+  "target_lang": "de",
+  "capture_backend_input": true,
+  "examples": [
+    {
+      "id": "classification-txt", "comparison_id": "classification", "format": "txt",
+      "category": "format-comparison",
+      "source": "The classification model processes new observations and predicts a category.",
+      "reference": "Das Klassifikationsmodell verarbeitet neue Beobachtungen und sagt eine Kategorie voraus.",
+      "criteria": ["Translate processes as a verb, not the noun Prozesse.", "Retain both processing and prediction."]
+    },
+    {
+      "id": "classification-markdown", "comparison_id": "classification", "format": "markdown",
+      "category": "format-comparison",
+      "source": "The **classification model** processes *new observations* and predicts a category.",
+      "reference": "Das **Klassifikationsmodell** verarbeitet *neue Beobachtungen* und sagt eine Kategorie voraus.",
+      "criteria": ["Translate processes as a verb, not the noun Prozesse.", "Check that emphasized text stays inside its delimiters."]
+    },
+    {
+      "id": "classification-html", "comparison_id": "classification", "format": "html",
+      "category": "format-comparison",
+      "source": "<p>The <strong>classification model</strong> processes <em>new observations</em> and predicts a category.</p>",
+      "reference": "<p>Das <strong>Klassifikationsmodell</strong> verarbeitet <em>neue Beobachtungen</em> und sagt eine Kategorie voraus.</p>",
+      "criteria": ["Translate processes as a verb, not the noun Prozesse.", "Inspect empty emphasis and any formatting repair."]
+    },
+    {
+      "id": "guide-txt", "comparison_id": "guide", "format": "txt",
+      "category": "format-comparison",
+      "source": "Read the user guide before starting.",
+      "reference": "Lesen Sie vor dem Start das Benutzerhandbuch.",
+      "criteria": ["Use grammatical German; Bedienungsanleitung is also acceptable."]
+    },
+    {
+      "id": "guide-markdown", "comparison_id": "guide", "format": "markdown",
+      "category": "format-comparison",
+      "source": "Read the [user guide](https://example.org/guide \"User guide\") before starting.",
+      "reference": "Lesen Sie vor dem Start das [Benutzerhandbuch](https://example.org/guide \"User guide\").",
+      "criteria": ["Use grammatical German and retain the complete link label.", "Keep the URL and title unchanged."]
+    },
+    {
+      "id": "guide-html", "comparison_id": "guide", "format": "html",
+      "category": "format-comparison",
+      "source": "<p>Read the <a href=\"https://example.org/guide\" title=\"User guide\">user guide</a> before starting.</p>",
+      "reference": "<p>Lesen Sie vor dem Start das <a href=\"https://example.org/guide\" title=\"User guide\">Benutzerhandbuch</a>.</p>",
+      "criteria": ["Use grammatical German and retain the complete link label.", "Keep all attributes unchanged."]
+    },
+    {
+      "id": "keep-code-txt", "comparison_id": "keep-code", "format": "txt",
+      "category": "format-comparison",
+      "source": "Keep model.predict(data) unchanged and review the result.",
+      "reference": "Lassen Sie model.predict(data) unverändert und überprüfen Sie das Ergebnis.",
+      "criteria": ["Preserve the instruction to leave the call unchanged.", "Note whether the unprotected call changes."]
+    },
+    {
+      "id": "keep-code-markdown", "comparison_id": "keep-code", "format": "markdown",
+      "category": "format-comparison",
+      "source": "Keep `model.predict(data)` unchanged and review the result.",
+      "reference": "Lassen Sie `model.predict(data)` unverändert und überprüfen Sie das Ergebnis.",
+      "criteria": ["Preserve the instruction, regardless of German verb position.", "Keep inline code unchanged."]
+    },
+    {
+      "id": "keep-code-html", "comparison_id": "keep-code", "format": "html",
+      "category": "format-comparison",
+      "source": "<p>Keep <code>model.predict(data)</code> unchanged and review the result.</p>",
+      "reference": "<p>Lassen Sie <code>model.predict(data)</code> unverändert und überprüfen Sie das Ergebnis.</p>",
+      "criteria": ["Preserve the instruction, regardless of German verb position.", "Keep code contents unchanged."]
+    }
+  ]
+}

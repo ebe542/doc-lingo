@@ -2,7 +2,15 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Allow translated prose to move around preserved Markdown inline elements.
+  Keep checking nesting, nonempty inline containers, links and code contents.
+
 ### Added
+
+- Paired TXT, Markdown and embedded HTML quality fixtures with opt-in backend
+  input capture, using the existing manual evaluation runner.
 
 - Markdown reader/writer and CLI format selection, preserving source syntax,
   code and destinations. Table headers and body cells are

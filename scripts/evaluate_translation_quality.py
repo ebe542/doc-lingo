@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 from doc_lingo import (
     HuggingFaceBackend,
     MarianBackend,
+    MarkdownReader,
+    MarkdownWriter,
     PlainTextReader,
     PlainTextWriter,
     SegmentMismatchError,
@@ -35,6 +37,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SUITE = PROJECT_ROOT / "tests/fixtures/translation_quality/en-de.json"
 
 
+class _RecordingBackend:
+    """Record service-to-backend input before backend-internal sentence splitting."""
+
+    def __init__(self, backend: TranslationBackend, calls: list[str]) -> None:
+        self.backend = backend
+        self.calls = calls
+
+    def translate(self, text: str, *, source_lang: str, target_lang: str) -> str:
+        self.calls.append(text)
+        return self.backend.translate(text, source_lang=source_lang, target_lang=target_lang)
+
+
 def load_suite(path: Path) -> dict[str, Any]:
     """Validate the fixture before model loading or creating an output directory."""
     suite = json.loads(path.read_text(encoding="utf-8"))
@@ -44,6 +58,8 @@ def load_suite(path: Path) -> dict[str, Any]:
         raise ValueError("Expected a positive suite version")
     if suite.get("evaluation") != "manual":
         raise ValueError("Only manual evaluation suites are supported")
+    if type(suite.get("capture_backend_input", False)) is not bool:
+        raise ValueError("capture_backend_input must be a boolean")
     for field in ("source_lang", "target_lang"):
         if not isinstance(suite.get(field), str) or not suite[field].strip():
             raise ValueError(f"Missing {field}")
@@ -60,6 +76,8 @@ def load_suite(path: Path) -> dict[str, Any]:
         if example["id"] in ids:
             raise ValueError("Example IDs must be unique")
         ids.add(example["id"])
+        if example.get("format", "txt") not in ("txt", "markdown", "html"):
+            raise ValueError("Example format must be txt, markdown or html")
         criteria = example.get("criteria")
         if (
             not isinstance(criteria, list)
@@ -103,16 +121,22 @@ def evaluate_suite(
     for index, example in enumerate(suite["examples"], 1):
         result = dict(example)
         result.update(actual=None, verdict="pending", notes="", error=None, issues=[])
+        selected = backend
+        if suite.get("capture_backend_input", False):
+            result["backend_inputs"] = []
+            selected = _RecordingBackend(backend, result["backend_inputs"])
         started = monotonic()
         with TemporaryDirectory(prefix=".quality-", dir=output) as temporary:
-            source = Path(temporary) / "source.txt"
-            destination = Path(temporary) / "translated.txt"
+            is_markdown = example.get("format", "txt") in ("markdown", "html")
+            extension = ".md" if is_markdown else ".txt"
+            source = Path(temporary) / ("source" + extension)
+            destination = Path(temporary) / ("translated" + extension)
             source.write_bytes(example["source"].encode("utf-8"))
             try:
                 translate_document(
-                    PlainTextReader(source),
-                    PlainTextWriter(source),
-                    backend,
+                    MarkdownReader(source) if is_markdown else PlainTextReader(source),
+                    MarkdownWriter(source) if is_markdown else PlainTextWriter(source),
+                    selected,
                     destination,
                     source_lang=suite["source_lang"],
                     target_lang=suite["target_lang"],
@@ -225,7 +249,9 @@ def main(argv: list[str] | None = None) -> None:
     if any(result["verdict"] == "blocked" for result in report["results"]):
         parser.exit(1, "Some examples were blocked; review the report.\n")
     if any(result.get("issues") for result in report["results"]):
-        parser.exit(3, "Original text was retained in some examples; review their issues.\n")
+        parser.exit(
+            3, "Some examples retained source text or repaired formatting; review their issues.\n"
+        )
 
 
 if __name__ == "__main__":

@@ -6,6 +6,10 @@ exact-string unit test or evidence that the current model passes. English is use
 for metadata and criteria; source and reference texts use their respective languages.
 The local comparison results below record a manual review of all ten examples.
 
+For paired TXT, Markdown and embedded HTML cases, see the separate
+[format comparison](format-comparison.md). It records protected backend inputs
+to help investigate format-dependent translation differences.
+
 ## Abbreviations and technical terms
 
 When a technical term is translated, keep its established abbreviation and

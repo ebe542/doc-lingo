@@ -27,7 +27,21 @@ def _structure(text: str, environment: dict) -> list[tuple]:
     parser = MarkdownIt("commonmark").enable(["table", "strikethrough"])
     result = []
     for token in parser.parse(text, dict(environment)):
+        inline_containers: list[int] = []
         for item in [token, *(token.children or [])]:
+            # Translated words may move before/after inline syntax. Text-token
+            # positions are therefore not structural. Keep a content-presence
+            # flag on inline containers so an emptied link/emphasis still fails.
+            if item.type in ("text", "code_inline") and item.content.strip():
+                for index in inline_containers:
+                    result[index] = (*result[index][:-1], True)
+            if item.type == "text":
+                continue
+            opens_inline = item is not token and item.nesting == 1
+            if opens_inline:
+                inline_containers.append(len(result))
+            elif item is not token and item.nesting == -1:
+                inline_containers.pop()
             result.append(
                 (
                     item.type,
@@ -36,6 +50,7 @@ def _structure(text: str, environment: dict) -> list[tuple]:
                     item.markup,
                     item.attrs,
                     item.content if item.type in ("code_inline", "code_block", "fence") else "",
+                    False if opens_inline else None,
                 )
             )
     return result
@@ -76,7 +91,15 @@ class _MarkdownSegment(TextSegment):
         after = _structure(text, self.environment)
         if len(before) != len(after):
             errors.append(f"markdown_token_count_changed: {len(before)} -> {len(after)}")
-        fields = ("type", "tag", "nesting", "markup", "attributes", "protected_content")
+        fields = (
+            "type",
+            "tag",
+            "nesting",
+            "markup",
+            "attributes",
+            "protected_content",
+            "has_visible_text",
+        )
         for index, (original, translated) in enumerate(zip(before, after, strict=False)):
             if original != translated:
                 changed = ", ".join(
