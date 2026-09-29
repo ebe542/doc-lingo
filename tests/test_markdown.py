@@ -121,8 +121,7 @@ def test_identity_roundtrip(tmp_path, content):
         "```python\nHello = 1\n```\n",
         "~~~\nHello\n~~~\n",
         "    Hello\n",
-        "<div>\nHello\n</div>\n",
-        "Hello <span>world</span>.\n",
+        "<div translate='no'>\nHello\n</div>\n",
         '![Hello](image.png "Hello")\n',
         "[Hello]\n\n[Hello]: https://example.org\n",
         "[Hello][]\n\n[Hello]: https://example.org\n",
@@ -188,7 +187,22 @@ def test_unsafe_translation_retains_whole_segment_and_continues(tmp_path, failur
     assert len(issues) == 1
     assert issues[0].segment_id == "1"
     assert issues[0].original == "Hello **world** again.\n"
-    assert "DLM" not in str(issues)
+    assert "DLM" not in issues[0].original
+    assert "DLM" not in issues[0].reason
+    assert issues[0].diagnostics is not None
+    diagnostics = issues[0].diagnostics
+    assert diagnostics.attempted_translation is not None
+    expected = {
+        "missing": "missing_marker:",
+        "duplicate": "duplicate_marker:",
+        "reordered": "marker_order_changed",
+        "recovery": "backend_recovery:",
+        "markup": "markdown_token_changed:",
+    }[failure]
+    assert any(error.startswith(expected) for error in diagnostics.validation_errors)
+    assert diagnostics.stage == ("restored" if failure == "markup" else "protected")
+    if failure != "markup":
+        assert diagnostics.protected_fragments
 
 
 def test_strict_library_rejects_changed_structure(tmp_path):

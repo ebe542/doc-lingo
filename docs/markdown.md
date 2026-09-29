@@ -23,14 +23,17 @@ in [local-model.md](local-model.md).
 - Emphasis, strong emphasis and strikethrough retain their source delimiters.
 - Table headers and body cells are translated individually as `table_cell`
   segments. Delimiters, alignment rows, padding and empty cells are retained.
-  Escaped pipes, inline code and link destinations remain protected. Cells with
-  inline HTML stay unchanged. Missing cells and surplus source cells are not
+  Escaped pipes, inline code and link destinations remain protected. Inline HTML
+  text in cells is translated too. Missing cells and surplus source cells are not
   rewritten. A generated line break or additional column triggers source retention.
 - Inline link labels and explicit reference-link labels are translated. Link
   destinations, titles and reference definitions remain unchanged.
+- HTML blocks and inline HTML translate visible text while preserving every tag
+  and attribute. HTML paragraphs, headings, list items and table cells form
+  separate text runs (`html_text` in HTML blocks). Nested inline tags keep the
+  surrounding sentence together. See [HTML text rules](html-text.md).
 - Inline code, fenced and indented code blocks, images (including alt text),
-  autolinks and HTML remain unchanged. A paragraph containing inline HTML
-  is retained in full. Shortcut/collapsed reference links remain unchanged because
+  and autolinks remain unchanged. Shortcut/collapsed reference links remain unchanged because
   their visible labels also identify their references.
 - Leading YAML front matter is retained. An opening `---` without a closing
   `---` or `...` conservatively retains the entire document.
@@ -53,11 +56,26 @@ internal ranges while translating the surrounding text together. Leading and
 trailing protected syntax is kept outside inference. Models do not receive code
 contents or link destinations.
 
+Document and glossary markers now use `deterministic-prefix-v2`: candidate
+prefixes derive from SHA-256 of the namespace and collision counter, using its
+first 32 hexadecimal characters. The first unused candidate is selected, with separate `DLM`
+and `DLG` namespaces and a case-insensitive collision check. Their existing
+32-hex-character prefix shape and restoration checks are retained. The same
+source and configuration therefore produce the same protected backend input
+across repeated calls and process restarts. This removes marker randomness;
+model/runtime reproducibility and translation quality still need validation.
+The initial v1 trials were byte-identical but retained six original segments in
+each run: the model shortened or lengthened the zero-padded marker prefixes.
+V2 removes those long zero runs; its model behavior requires a new comparison.
+
 Markers must return exactly once and in their original order. Markdown segments
 also validate the parsed structure, link attributes and code after translation.
 Lost markers, nested backend recovery or changed structure retain the original
 segment with an issue in CLI mode (exit status 3); strict library calls raise
-`RecoverableTranslationError`. Diagnostics contain original text, not markers.
+`RecoverableTranslationError`. The report's `original` field contains source text.
+Optional `diagnostics` record the intermediate translation and the concrete
+validation errors; the `protected` stage can contain unresolved markers and is
+not a usable translated document. See [HTML text rules](html-text.md#diagnostic-reports).
 These checks cannot prove semantic translation quality or correct placement of
 emphasis within a translated sentence. Model-dependent marker preservation must
 be checked using real translations.
@@ -80,10 +98,11 @@ Run from the repository root in Git Bash:
 python -m scripts.check_milestone
 ```
 
-`tests/test_markdown.py`, `tests/test_markdown_tables.py` and
+`tests/test_markdown.py`, `tests/test_markdown_tables.py`, `tests/test_markdown_html.py` and
 `tests/test_protected_translation.py` cover offline
 translation, context, identity reconstruction, protected content, malformed
 markers, structure changes, cleanup, glossary composition and CLI selection.
 The example above provides a separate manual CUDA smoke check. Compare source and
 output in a Markdown preview; table text should be translated while table
-structure, HTML and code remain unchanged.
+structure, HTML tags and attributes, and code remain unchanged. Visible HTML text
+should be translated; excluded HTML content must retain its original text.

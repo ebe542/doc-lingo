@@ -47,8 +47,20 @@ src/doc_lingo/
     plain_text.py             TXT reader
     plain_text_writer.py      TXT writer
     markdown.py               Markdown reader/writer and syntax validation
+    html_text.py              Embedded HTML text ranges and exclusion context
     text_blocks.py            Shared prose/list boundaries and formatting
 ```
+
+Document segments may provide `repair_translation(text)` for a narrowly scoped
+formatting repair. The service uses it only with issue reporting enabled.
+`TextSegment.unrepaired_text` is an optional keyword-only field carrying the
+pre-repair translation so the Markdown writer can independently recompute and
+validate the repair. The issue `action` distinguishes `formatting_repaired` from
+`retained_original`; existing source-retention reports default to the latter.
+`TranslationIssue.diagnostics` optionally contains a `TranslationDiagnostics`
+value with the attempted translation, validation stage, failed checks and marker
+mapping. Adapters expose `validation_errors(text)` alongside the boolean check.
+Diagnostic context is scoped to an issue callback and reset even if it raises.
 
 Interfaces depend on the translation service. The service depends on document
 and backend contracts, not concrete providers. Document adapters own formatting;

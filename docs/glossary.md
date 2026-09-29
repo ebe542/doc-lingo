@@ -38,9 +38,14 @@ python scripts/evaluate_translation_quality.py --backend marian --glossary docs/
 
 The format-independent `GlossaryBackend(backend, Glossary.load(path))` wraps a
 translator and can be passed directly to `translate_document`. The base backend
-still owns token limits and generation. Random per-segment placeholders protect
-terms. Every expected placeholder must return exactly once; unexpected markers
-with the same prefix are rejected. Model behavior can vary with the placeholders.
+still owns token limits and generation. Deterministic per-segment placeholders
+protect terms. Document protection uses the separate `DLM` namespace; glossary
+protection uses `DLG`. Both choose the first prefix absent from the input,
+including case variants, without shared counters or randomness. Equal input and
+configuration produce equal protected backend input. Every expected placeholder
+must return exactly once; unexpected markers with the same prefix are rejected.
+The unchanged marker shape still affects model input; reproducible markers do
+not by themselves improve translation quality or guarantee identical GPU results.
 Exact counts do not prove correct placement or grammatical agreement.
 
 If protection fails or the underlying backend reports a recovery in protected
@@ -51,6 +56,10 @@ This conservative fallback may retain more text than a translation without a
 glossary. Assess both terminology improvements and fallback rates before adopting
 a glossary for routine use. Compare against the no-glossary reports; the runner
 records the glossary fingerprint without embedding its contents in metadata.
+New quality reports record `marker_policy: deterministic-prefix-v2`. Prefixes
+use mixed hexadecimal characters derived from SHA-256 of the namespace and
+collision counter, avoiding the long zero runs damaged in the v1 model trials.
+Older reports may use random markers or deterministic v1 and remain unchanged.
 
 ## Compressed input
 

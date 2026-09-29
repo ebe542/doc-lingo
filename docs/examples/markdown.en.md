@@ -24,4 +24,14 @@ message = "This code must remain unchanged."
 | --- | --- |
 | Sample | 12 |
 
-<div>This HTML block remains unchanged.</div>
+<div class="translation-example" title="This attribute remains unchanged.">
+  <h3>Review the prediction</h3>
+  <p>The <strong>classification model</strong> predicts a category.</p>
+  <p>Keep <code>model.predict(data)</code> unchanged and review the result.</p>
+  <p translate="no">This complete paragraph remains unchanged.</p>
+  <!-- This comment remains unchanged. -->
+</div>
+
+Read the <span title="This attribute remains unchanged.">user guide</span> before starting.
+
+<pre>print("This code remains unchanged.")</pre>

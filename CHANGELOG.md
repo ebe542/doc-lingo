@@ -5,17 +5,28 @@
 ### Added
 
 - Markdown reader/writer and CLI format selection, preserving source syntax,
-  code, destinations and unsupported HTML. Table headers and body cells are
+  code and destinations. Table headers and body cells are
   translated separately while preserving delimiters and column alignment.
 - Format-independent protected segment ranges and adapter validation, with
   original-segment retention and issue reporting when syntax protection fails.
 - Offline Markdown regression tests and a portable manual translation example.
+- Embedded HTML text translation with exact tag/attribute preservation, block
+  text segments, inherited exclusions and HTML structure validation.
+- Keep translations when newly emptied, attribute-free HTML emphasis can be
+  removed safely. Report formatting repairs separately from retained source text.
+- Include intermediate translations, validation stages and concrete document
+  protection failures in issue reports to explain unexpected source retention.
+- Use deterministic, collision-checked document and glossary marker prefixes;
+  record `deterministic-prefix-v2` in new quality-report metadata. Derive mixed
+  hexadecimal prefixes instead of the zero runs damaged in v1 model trials.
 
 ### Limitations
 
 - Markdown parsing retains the document in memory to resolve reference links.
 - Markdown extensions beyond the documented subset are not supported. Images,
-  implicit reference labels and paragraphs containing HTML remain untranslated.
+  implicit reference labels and excluded HTML content remain untranslated.
+- Embedded HTML processing is conservative: mismatched tags and unalignable
+  container-prefixed HTML blocks are retained rather than repaired or rewritten.
 
 ## [0.1.0] - 2026-09-18
 

@@ -27,6 +27,7 @@ from doc_lingo import (
     translate_document,
 )
 from doc_lingo.translation.glossary import Glossary, GlossaryBackend
+from doc_lingo.translation.markers import MARKER_POLICY
 from doc_lingo.translation.prompts import TRANSLATION_DIRECTION, TRANSLATION_SYSTEM
 from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, validate_language_pair
 
@@ -155,6 +156,7 @@ def runtime_metadata(backend: HuggingFaceBackend | MarianBackend) -> dict[str, A
         "dtype": "float32" if is_marian else "float16",
         "do_sample": False,
         "input_splitting": "sentence-word-v2",
+        "marker_policy": MARKER_POLICY,
         "failure_policy": "retain-original-with-issues-v1",
         "enable_thinking": None if is_marian else False,
         "prompts": []

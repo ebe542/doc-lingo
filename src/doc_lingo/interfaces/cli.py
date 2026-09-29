@@ -98,6 +98,7 @@ def main(argv: list[str] | None = None) -> None:
 
     issues_path = destination.with_name(destination.name + ".issues.jsonl")
     issue_count = 0
+    repair_count = 0
     report_created = False
 
     try:
@@ -105,10 +106,11 @@ def main(argv: list[str] | None = None) -> None:
             report_created = True
 
             def record_issue(issue):
-                nonlocal issue_count
+                nonlocal issue_count, repair_count
                 report_file.write(json.dumps(asdict(issue), ensure_ascii=False) + "\n")
                 report_file.flush()
                 issue_count += 1
+                repair_count += issue.action == "formatting_repaired"
 
             backend: TranslationBackend = (
                 MarianBackend() if args.backend == "marian" else HuggingFaceBackend()
@@ -147,9 +149,16 @@ def main(argv: list[str] | None = None) -> None:
         if report_created and issue_count == 0:
             issues_path.unlink()
     if issue_count:
-        print(f"Partially translated document written to {destination}")
+        status = (
+            "Partially translated document"
+            if issue_count > repair_count
+            else "Translation with formatting warnings"
+        )
+        print(f"{status} written to {destination}")
         parser.exit(
-            3, f"Warning: {issue_count} original text units retained. Report: {issues_path}\n"
+            3,
+            f"Warning: {issue_count - repair_count} original text units retained; "
+            f"{repair_count} segments with formatting repaired. Report: {issues_path}\n",
         )
     print(f"Translation written to {destination}")
 

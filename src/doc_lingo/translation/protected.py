@@ -1,14 +1,16 @@
 """Translate a complete segment while retaining adapter-owned syntax."""
 
 import re
-from uuid import uuid4
+from collections import Counter
 
 from doc_lingo.documents.models import TextSegment
 from doc_lingo.translation.issues import (
     RecoverableTranslationError,
+    TranslationDiagnostics,
     issue_sink,
     retain_original,
 )
+from doc_lingo.translation.markers import marker_prefix
 from doc_lingo.translation.protocols import TranslationBackend
 
 
@@ -38,9 +40,7 @@ def translate_segment(
             + backend.translate(body, source_lang=source_lang, target_lang=target_lang)
             + trailing
         )
-    prefix = "DLM" + uuid4().hex.upper()
-    while prefix in segment.text:
-        prefix = "DLM" + uuid4().hex.upper()
+    prefix = marker_prefix(segment.text, namespace="DLM")
     pieces = []
     replacements = {}
     padding = {}
@@ -58,10 +58,13 @@ def translate_segment(
         cursor = end
     pieces.append(segment.text[cursor:limit])
     failed = False
+    failure_reasons: list[str] = []
+    produced_output = True
 
     def record_failure(original: str, reason: str) -> None:
         nonlocal failed
         failed = True
+        failure_reasons.append(reason)
 
     token = issue_sink.set(record_failure)
     try:
@@ -69,19 +72,37 @@ def translate_segment(
             translated = backend.translate(
                 "".join(pieces), source_lang=source_lang, target_lang=target_lang
             )
-        except RecoverableTranslationError:
+        except RecoverableTranslationError as error:
             failed = True
+            failure_reasons.append(str(error))
+            produced_output = False
             translated = ""
     finally:
         issue_sink.reset(token)
     pattern = re.compile(re.escape(prefix) + r"X[0-9]+Z")
-    if (
-        failed
-        or pattern.findall(translated) != list(replacements)
-        or prefix in pattern.sub("", translated)
-        or not pattern.sub("", translated).strip()
-    ):
-        return retain_original(segment.text, "Document syntax protection failed; source retained")
+    actual = pattern.findall(translated)
+    counts = Counter(actual)
+    errors = [f"backend_recovery: {reason}" for reason in failure_reasons] if failed else []
+    errors.extend(f"missing_marker: {marker}" for marker in replacements if counts[marker] == 0)
+    errors.extend(f"duplicate_marker: {marker}" for marker, count in counts.items() if count > 1)
+    errors.extend(f"unexpected_marker: {marker}" for marker in counts if marker not in replacements)
+    if actual != list(replacements) and Counter(actual) == Counter(replacements.keys()):
+        errors.append("marker_order_changed")
+    if prefix in pattern.sub("", translated):
+        errors.append("damaged_marker")
+    if not pattern.sub("", translated).strip():
+        errors.append("empty_translated_text")
+    if errors:
+        return retain_original(
+            segment.text,
+            "Document syntax protection failed; source retained",
+            diagnostics=TranslationDiagnostics(
+                translated if produced_output else None,
+                "protected",
+                tuple(errors),
+                dict(replacements),
+            ),
+        )
     padded = re.compile(r"([ \t]*)(" + pattern.pattern + r")([ \t]*)")
 
     def restore(match: re.Match[str]) -> str:

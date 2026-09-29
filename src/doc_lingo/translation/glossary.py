@@ -7,9 +7,9 @@ import zlib
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from uuid import uuid4
 
 from doc_lingo.translation.issues import issue_sink, retain_original
+from doc_lingo.translation.markers import marker_prefix
 from doc_lingo.translation.protocols import TranslationBackend, TranslationError
 from doc_lingo.translation.term_matcher import TermMatcher, character_key
 
@@ -110,9 +110,7 @@ class GlossaryBackend:
                 if entry.mode != "keep" and replacement[:1].islower():
                     replacement = replacement[0].upper() + replacement[1:]
                 return text[:start] + replacement + text[end:]
-        prefix = "DLG" + uuid4().hex.upper()
-        while prefix in text:
-            prefix = "DLG" + uuid4().hex.upper()
+        prefix = marker_prefix(text, namespace="DLG")
         replacements = {}
 
         pieces = []

@@ -5,7 +5,13 @@ from contextlib import closing
 from pathlib import Path
 
 from doc_lingo.documents import DocumentReader, DocumentWriter, TextSegment
-from doc_lingo.translation.issues import TranslationIssue, issue_sink, retain_original
+from doc_lingo.translation.issues import (
+    TranslationDiagnostics,
+    TranslationIssue,
+    issue_details,
+    issue_sink,
+    retain_original,
+)
 from doc_lingo.translation.protected import translate_segment
 from doc_lingo.translation.protocols import TranslationBackend
 
@@ -45,7 +51,14 @@ def translate_document(
                     paragraph += 1
 
                 def report(
-                    original: str, reason: str, segment=segment, count=count, paragraph=paragraph
+                    original: str,
+                    reason: str,
+                    segment=segment,
+                    count=count,
+                    paragraph=paragraph,
+                    *,
+                    action: str = "retained_original",
+                    diagnostics: TranslationDiagnostics | None = None,
                 ) -> None:
                     if on_issue is not None:
                         on_issue(
@@ -56,24 +69,43 @@ def translate_document(
                                 segment.type,
                                 count,
                                 paragraph if segment.type == "paragraph" else None,
+                                action=action,
+                                diagnostics=diagnostics or issue_details.get(),
                             )
                         )
 
                 token = issue_sink.set(report if on_issue is not None else None)
+                unrepaired_text = None
                 try:
                     text = translate_segment(
                         segment, backend, source_lang=source_lang, target_lang=target_lang
                     )
                     if not segment.accepts_translation(text):
-                        text = retain_original(
-                            segment.text, "Document structure changed; source retained"
+                        diagnostics = TranslationDiagnostics(
+                            text, "restored", segment.validation_errors(text)
                         )
+                        repair = segment.repair_translation(text) if on_issue is not None else None
+                        if repair is not None:
+                            unrepaired_text, text = text, repair
+                            report(
+                                segment.text,
+                                "Translation retained; newly empty emphasis removed",
+                                action="formatting_repaired",
+                                diagnostics=diagnostics,
+                            )
+                        else:
+                            text = retain_original(
+                                segment.text,
+                                "Document structure changed; source retained",
+                                diagnostics=diagnostics,
+                            )
                 finally:
                     issue_sink.reset(token)
                 translated = TextSegment(
                     id=segment.id,
                     text=text,
                     type=segment.type,
+                    unrepaired_text=unrepaired_text,
                 )
                 if on_progress is not None:
                     on_progress(count, segment.type)

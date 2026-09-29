@@ -9,7 +9,8 @@ Version 0.1.0 is the first release of this productive learning project.
 TXT translation, reusable terminology glossaries, quality checks, and release
 tooling are available. Translations require human review; see the
 [release limitations](CHANGELOG.md#010---2026-09-18).
-The development version also supports Markdown; see the
+The development version also supports Markdown, including table cells and
+embedded HTML text with protected tags and attributes; see the
 [Markdown scope and limitations](docs/markdown.md).
 The CLI translates English UTF-8 TXT and Markdown documents using the local CUDA backend.
 The library provides a document translation service with an injectable backend.

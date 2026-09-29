@@ -5,7 +5,7 @@ import re
 import pytest
 
 from doc_lingo import RecoverableTranslationError, TextSegment, TranslationError
-from doc_lingo.translation.issues import issue_sink
+from doc_lingo.translation.issues import issue_details, issue_sink
 from doc_lingo.translation.protected import translate_segment
 
 
@@ -65,3 +65,38 @@ def test_fatal_errors_propagate_and_restore_context():
     with pytest.raises(TranslationError, match="Loading failed"):
         translate(segment, fail)
     assert issue_sink.get() is None
+
+
+@pytest.mark.parametrize("failure", ["exception", "extra", "partial", "empty"])
+def test_protected_diagnostics_distinguish_output_from_exception(failure):
+    segment = TextSegment("1", "Hello `code` world", protected_spans=((6, 12),))
+    captured = []
+
+    def transform(text):
+        if failure == "exception":
+            raise RecoverableTranslationError("Generation failed")
+        marker = re.search(r"DLM[0-9A-F]+X0Z", text).group()
+        if failure == "extra":
+            return text + marker.replace("X0Z", "X99Z")
+        if failure == "partial":
+            return text + marker.split("X")[0]
+        return marker
+
+    token = issue_sink.set(lambda original, reason: captured.append(issue_details.get()))
+    try:
+        assert translate(segment, transform) == segment.text
+    finally:
+        issue_sink.reset(token)
+    assert issue_details.get() is None
+    details = captured[0]
+    assert details is not None
+    assert details.stage == "protected"
+    assert list(details.protected_fragments.values()) == ["`code`"]
+    expected = {
+        "exception": "backend_recovery:",
+        "extra": "unexpected_marker:",
+        "partial": "damaged_marker",
+        "empty": "empty_translated_text",
+    }[failure]
+    assert any(error.startswith(expected) for error in details.validation_errors)
+    assert (details.attempted_translation is None) == (failure == "exception")

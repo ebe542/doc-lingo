@@ -4,7 +4,7 @@ import os
 import re
 from collections.abc import Generator, Iterable, Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -13,6 +13,13 @@ from markdown_it.rules_block.table import escapedSplit
 from markdown_it.rules_inline.state_inline import StateInline
 
 from doc_lingo.documents.errors import SegmentMismatchError
+from doc_lingo.documents.html_text import (
+    HtmlContext,
+    HtmlSegment,
+    HtmlText,
+    protected_ranges,
+    remove_empty_emphasis,
+)
 from doc_lingo.documents.models import TextSegment
 
 
@@ -37,17 +44,52 @@ def _structure(text: str, environment: dict) -> list[tuple]:
 @dataclass(frozen=True)
 class _MarkdownSegment(TextSegment):
     environment: dict = field(default_factory=dict, repr=False, compare=False)
+    html_context: HtmlContext = field(default=(), repr=False, compare=False)
+
+    def repair_translation(self, text: str) -> str | None:
+        repair = remove_empty_emphasis(
+            _html_layout(self.text, self.environment, self.html_context),
+            _html_layout(text, self.environment, self.html_context),
+        )
+        if repair is not None:
+            baseline, repaired = repair
+            if replace(self, text=baseline, protected_spans=()).accepts_translation(repaired):
+                return repaired
+        return None
 
     def accepts_translation(self, text: str) -> bool:
         """Reject added/lost markup, changed links and broken emphasis boundaries."""
+        return not self.validation_errors(text)
+
+    def validation_errors(self, text: str) -> tuple[str, ...]:
         if self.type == "table_cell" and (
             "\n" in text
             or "\r" in text
             or len(escapedSplit(text)) != 1
             or (text.endswith("\\") and not self.text.endswith("\\"))
         ):
-            return False
-        return _structure(self.text, self.environment) == _structure(text, self.environment)
+            return ("markdown_table_cell_boundary_changed",)
+        original_html = _html_layout(self.text, self.environment, self.html_context)
+        translated_html = _html_layout(text, self.environment, self.html_context)
+        errors = list(translated_html.validation_errors(original_html))
+        before = _structure(self.text, self.environment)
+        after = _structure(text, self.environment)
+        if len(before) != len(after):
+            errors.append(f"markdown_token_count_changed: {len(before)} -> {len(after)}")
+        fields = ("type", "tag", "nesting", "markup", "attributes", "protected_content")
+        for index, (original, translated) in enumerate(zip(before, after, strict=False)):
+            if original != translated:
+                changed = ", ".join(
+                    name
+                    for name, left, right in zip(fields, original, translated, strict=True)
+                    if left != right
+                )
+                errors.append(
+                    f"markdown_token_changed: index={index}, fields={changed}, "
+                    f"type={original[0]} -> {translated[0]}"
+                )
+                break
+        return tuple(errors)
 
 
 @dataclass(frozen=True)
@@ -79,7 +121,9 @@ def _cell_ranges(line: str) -> list[tuple[int, int]]:
     ]
 
 
-def _inline_ranges(text: str, environment: dict) -> list[tuple[int, int]]:
+def _inline_ranges(
+    text: str, environment: dict, html_ranges: list[tuple[int, int]] | None = None
+) -> list[tuple[int, int]]:
     """Record consumed syntax using parser rules, including nested link labels.
 
     Inline tokens have no source offsets. Wrapping the parser's rule API retains
@@ -98,6 +142,8 @@ def _inline_ranges(text: str, environment: dict) -> list[tuple[int, int]]:
             matched = rule(state, silent)
             if matched and not silent and state.src is text and name != "text":
                 end = state.pos
+                if name == "html_inline" and html_ranges is not None:
+                    html_ranges.append((start, end))
                 if name == "link" and state.src[label_end + 1 : end] not in ("", "[]"):
                     ranges.extend(((start, start + 1), (label_end, end)))
                 else:
@@ -117,6 +163,12 @@ def _inline_ranges(text: str, environment: dict) -> list[tuple[int, int]]:
         parser.inline.ruler.at(name, instrument(name, rule))
     parser.inline.parse(text, parser, environment, [])
     return ranges
+
+
+def _html_layout(text: str, environment: dict, context: HtmlContext) -> HtmlText:
+    html_ranges: list[tuple[int, int]] = []
+    ranges = _inline_ranges(text, environment, html_ranges)
+    return HtmlText(text, context, tuple(span for span in ranges if span not in html_ranges))
 
 
 def _regions(source: str) -> Iterator[_Region]:
@@ -143,6 +195,7 @@ def _regions(source: str) -> Iterator[_Region]:
     stack = []
     number = 0
     column = 0
+    html_context: HtmlContext = ()
     for token in tokens:
         if token.type == "tr_open":
             column = 0
@@ -150,6 +203,31 @@ def _regions(source: str) -> Iterator[_Region]:
             stack.append(token.type)
         elif token.nesting == -1:
             stack.pop()
+        if token.type == "html_block" and token.map is not None:
+            first, last = token.map
+            if first < ignored_until:
+                continue
+            raw = "".join(lines[first:last])
+            # Container prefixes require separate source alignment. Keep such
+            # blocks unchanged, but still carry their exclusion context forward.
+            aligned = raw.replace("\r\n", "\n").replace("\r", "\n") == token.content
+            layout = HtmlText(raw if aligned else token.content, html_context)
+            html_context = layout.context
+            if not aligned or not layout.safe:
+                continue
+            cuts = sorted(layout.cuts)
+            for start, end in zip(cuts[:-1], cuts[1:], strict=True):
+                part = raw[start:end]
+                editable = {i - start for i in range(start, end) if i in layout.editable}
+                if not any(part[i].isalnum() for i in editable) or not HtmlText(part).safe:
+                    continue
+                number += 1
+                yield _Region(
+                    offsets[first] + start,
+                    offsets[first] + end,
+                    HtmlSegment(str(number), part, "html_text", protected_ranges(part, editable)),
+                )
+            continue
         if token.type != "inline" or token.map is None:
             continue
         in_table = "table_open" in stack
@@ -157,7 +235,7 @@ def _regions(source: str) -> Iterator[_Region]:
         if in_table:
             column += 1
         first, last = token.map
-        if first < ignored_until or any(t.type == "html_inline" for t in token.children or []):
+        if first < ignored_until:
             continue
         raw = "".join(lines[first:last])
         region_start, region_end = offsets[first], offsets[last]
@@ -198,7 +276,12 @@ def _regions(source: str) -> Iterator[_Region]:
             cursor += len(line)
         if len(mapping) != len(content):
             continue
-        editable = set(mapping)
+        context_before = html_context
+        layout = _html_layout(content, environment, html_context)
+        html_context = layout.context
+        if not layout.safe:
+            continue
+        editable = {mapping[i] for i in layout.editable}
         for start, end in _inline_ranges(content, environment):
             editable.difference_update(mapping[start:end])
         # Physical line endings and outer syntax belong to the document adapter.
@@ -229,7 +312,7 @@ def _regions(source: str) -> Iterator[_Region]:
         yield _Region(
             region_start,
             region_end,
-            _MarkdownSegment(str(number), raw, kind, tuple(protected), environment),
+            _MarkdownSegment(str(number), raw, kind, tuple(protected), environment, context_before),
         )
 
 
@@ -273,7 +356,12 @@ class MarkdownWriter:
                     segment = next(translated, None)
                     if segment is None or segment.id != region.segment.id:
                         raise SegmentMismatchError(f"Expected segment {region.segment.id}")
-                    if not region.segment.accepts_translation(segment.text):
+                    valid_repair = (
+                        segment.unrepaired_text is not None
+                        and region.segment.repair_translation(segment.unrepaired_text)
+                        == segment.text
+                    )
+                    if not valid_repair and not region.segment.accepts_translation(segment.text):
                         raise SegmentMismatchError("Translation changes Markdown structure")
                     output.write(source[cursor : region.start])
                     output.write(segment.text)

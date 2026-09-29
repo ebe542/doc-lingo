@@ -69,7 +69,7 @@ def test_invalid_cell_retained_and_following_cells_continue(tmp_path, bad):
     assert [issue.segment_type for issue in issues] == ["table_cell", "table_cell"]
 
 
-def test_html_empty_missing_and_extra_cells_remain_unchanged(tmp_path):
+def test_html_cells_are_extracted_but_missing_and_extra_cells_are_unchanged(tmp_path):
     content = (
         "| Hello | world |\n| --- | --- |\n| <div>Hello</div> | |\n"
         "| Hello |\n| Hello | world | extra |\n"
@@ -78,7 +78,7 @@ def test_html_empty_missing_and_extra_cells_remain_unchanged(tmp_path):
     source.write_text(content, encoding="utf-8", newline="")
     with MarkdownReader(source).iter_segments() as segments:
         texts = [segment.text for segment in segments]
-    assert texts == ["Hello", "world", "Hello", "Hello", "world"]
+    assert texts == ["Hello", "world", "<div>Hello</div>", "Hello", "Hello", "world"]
 
     class Identity:
         def translate(self, text, **kwargs):
