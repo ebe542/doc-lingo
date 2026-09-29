@@ -9,6 +9,10 @@
 
 ### Added
 
+- Opt-in source layout values with nested outer/inner ranges and wrapper
+  extraction. Automatic adapter integration and translation alignment are not
+  yet implemented; existing translation behavior is unchanged.
+
 - Paired TXT, Markdown and embedded HTML quality fixtures with opt-in backend
   input capture, using the existing manual evaluation runner.
 

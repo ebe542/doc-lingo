@@ -43,6 +43,7 @@ src/doc_lingo/
     __init__.py
     protocols.py              DocumentReader and DocumentWriter
     models.py                 TextSegment
+    source_layout.py          Source ranges and opt-in wrapper extraction
     errors.py                 SegmentMismatchError
     plain_text.py             TXT reader
     plain_text_writer.py      TXT writer
