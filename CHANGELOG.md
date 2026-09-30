@@ -9,6 +9,10 @@
 
 ### Added
 
+- Opt-in Markdown and embedded HTML source-range discovery on document segments,
+  with nested emphasis and explicit link labels. Opaque content is retained;
+  the active translation path still uses existing protection.
+
 - Opt-in source layout values with nested outer/inner ranges and wrapper
   extraction. Automatic adapter integration and translation alignment are not
   yet implemented; existing translation behavior is unchanged.

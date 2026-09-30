@@ -20,7 +20,9 @@ from doc_lingo.documents.html_text import (
     protected_ranges,
     remove_empty_emphasis,
 )
+from doc_lingo.documents.markdown_layout import inline_source_layout
 from doc_lingo.documents.models import TextSegment
+from doc_lingo.documents.source_layout import SourceLayout
 
 
 def _structure(text: str, environment: dict) -> list[tuple]:
@@ -60,6 +62,13 @@ def _structure(text: str, environment: dict) -> list[tuple]:
 class _MarkdownSegment(TextSegment):
     environment: dict = field(default_factory=dict, repr=False, compare=False)
     html_context: HtmlContext = field(default=(), repr=False, compare=False)
+
+    def source_layout(self) -> SourceLayout:
+        return inline_source_layout(
+            self.text,
+            self.environment,
+            _html_layout(self.text, self.environment, self.html_context),
+        )
 
     def repair_translation(self, text: str) -> str | None:
         repair = remove_empty_emphasis(

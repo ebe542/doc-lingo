@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass, field
 
+from doc_lingo.documents.source_layout import SourceLayout
+
 
 @dataclass(frozen=True)
 class TextSegment:
@@ -20,6 +22,10 @@ class TextSegment:
             if not previous <= start < end <= len(self.text):
                 raise ValueError("Invalid protected text range")
             previous = end
+
+    def source_layout(self) -> SourceLayout:
+        """Return source-local inline wrappers for opt-in extraction."""
+        return SourceLayout(self.text)
 
     def accepts_translation(self, text: str) -> bool:
         """Adapters may reject translations that would change document structure."""

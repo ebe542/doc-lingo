@@ -6,6 +6,7 @@ from html import unescape
 from html.parser import HTMLParser
 
 from doc_lingo.documents.models import TextSegment
+from doc_lingo.documents.source_layout import SourceLayout, SourceRange
 
 _VOID = frozenset(
     [
@@ -76,6 +77,7 @@ class _Element:
     opening_end: int
     closing_start: int | None = None
     end: int | None = None
+    excluded: bool = False
 
 
 class HtmlText(HTMLParser):
@@ -142,6 +144,19 @@ class HtmlText(HTMLParser):
             )
         return tuple(errors)
 
+    def source_layout(self) -> SourceLayout:
+        """Expose complete, editable elements; retain excluded or open syntax."""
+        if not self.safe:
+            return SourceLayout(self.source)
+        return SourceLayout(
+            self.source,
+            tuple(
+                SourceRange(item.start, item.opening_end, item.closing_start, item.end)
+                for item in self.locations
+                if not item.excluded and item.closing_start is not None and item.end is not None
+            ),
+        )
+
     def _mark_text(self, text: str) -> None:
         index = self.text_stack[-1] if self.text_stack else None
         if text.strip() and index is not None:
@@ -179,7 +194,13 @@ class HtmlText(HTMLParser):
             self.text_stack.append(len(self.text_present))
             self.text_present.append(False)
             self.locations.append(
-                _Element(tag, bool(attrs), self._position(), self._position() + len(raw))
+                _Element(
+                    tag,
+                    bool(attrs),
+                    self._position(),
+                    self._position() + len(raw),
+                    excluded=excluded,
+                )
             )
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
@@ -328,6 +349,9 @@ def protected_ranges(text: str, editable: set[int]) -> tuple[tuple[int, int], ..
 @dataclass(frozen=True)
 class HtmlSegment(TextSegment):
     """A raw HTML text run; block tags remain outside its replacement range."""
+
+    def source_layout(self) -> SourceLayout:
+        return HtmlText(self.text).source_layout()
 
     def repair_translation(self, text: str) -> str | None:
         repair = remove_empty_emphasis(HtmlText(self.text), HtmlText(text))

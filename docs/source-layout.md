@@ -27,10 +27,26 @@ assign formatting to translated text. Adapters will supply these semantics in
 later changes. Not every document construct is an enclosing inline range.
 
 This initial library building block is not connected to the translation service.
-Existing readers, writers and marker protection remain active. Automatic
-Markdown/HTML range discovery is the next step; target alignment and formatting
-restoration require separate work. No persistent clean-text coordinates are
+Existing readers, writers and marker protection remain active. Markdown/HTML
+segments now expose opt-in discovery through `segment.source_layout()`; target
+alignment and formatting restoration require separate work. No persistent clean-text coordinates are
 stored. Original positions distinguish identical words at different locations.
+
+## Adapter discovery
+
+Call `source_layout()` on a segment returned by a reader. Plain text segments
+return an empty range list. Markdown segments discover matched emphasis,
+strikethrough and explicit link labels using parser rules, including nested
+formatting and document-resolved reference links. HTML elements use the existing
+source-preserving parser's opening and closing positions. Attributes remain in
+the original outer slices.
+
+Code, images, autolinks, implicit reference labels, excluded HTML and standalone
+HTML events such as comments remain opaque. Open HTML elements spanning segments
+do not receive invented closing positions. Unsafe or crossing layouts are kept
+as source. Entities and escapes remain encoded. Consequently, extracted text is
+an intermediate representation, not yet a ready-to-translate input. No alignment,
+target rendering or change to the active translation service is included.
 
 ## Validation cases
 
