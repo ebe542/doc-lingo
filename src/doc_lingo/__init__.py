@@ -2,8 +2,7 @@
 
 from doc_lingo.documents import DocumentReader, DocumentWriter, SegmentMismatchError, TextSegment
 from doc_lingo.documents.markdown import MarkdownReader, MarkdownWriter
-from doc_lingo.documents.plain_text import PlainTextReader
-from doc_lingo.documents.plain_text_writer import PlainTextWriter
+from doc_lingo.documents.plain_text import PlainTextReader, PlainTextWriter
 from doc_lingo.translation import TranslationBackend, TranslationError, translate_document
 from doc_lingo.translation.glossary import Glossary, GlossaryBackend, GlossaryEntry
 from doc_lingo.translation.huggingface import HuggingFaceBackend

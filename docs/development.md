@@ -45,11 +45,20 @@ src/doc_lingo/
     models.py                 TextSegment
     source_layout.py          Source ranges and opt-in wrapper extraction
     errors.py                 SegmentMismatchError
-    plain_text.py             TXT reader
-    plain_text_writer.py      TXT writer
-    markdown.py               Markdown reader/writer and syntax validation
-    html_text.py              Embedded HTML text ranges and exclusion context
-    text_blocks.py            Shared prose/list boundaries and formatting
+    plain_text/
+      __init__.py             TXT adapter exports
+      reader.py               Incremental TXT reader
+      writer.py               Source-preserving TXT writer
+      blocks.py               Shared prose/list boundaries
+    markdown/
+      __init__.py             Markdown adapter exports
+      reader.py               Markdown reader
+      writer.py               Markdown writer
+      _parser.py              Shared regions and syntax validation
+      layout.py               Inline source-range discovery
+    html/
+      __init__.py             Embedded HTML exports
+      text.py                 HTML ranges and exclusion context
 ```
 
 Document segments may provide `repair_translation(text)` for a narrowly scoped
@@ -162,7 +171,7 @@ segments alone; the writer rereads the unchanged original to preserve structure.
 
 ### Plain-text writing and errors
 
-Reader and writer use `documents/text_blocks.py` for identical segment boundaries.
+Reader and writer use `documents/plain_text/blocks.py` for identical segment boundaries.
 Prose is grouped until a blank line or recognized list item. Each list item
 starts with optional spaces/tabs, then `-`, `*`, `•`, or an
 ASCII number followed by `.` or `)`, followed by spaces/tabs and nonblank text.

@@ -4,7 +4,7 @@ from markdown_it import MarkdownIt
 from markdown_it.rules_inline.state_inline import StateInline
 from markdown_it.token import Token
 
-from doc_lingo.documents.html_text import HtmlText
+from doc_lingo.documents.html.text import HtmlText
 from doc_lingo.documents.source_layout import SourceLayout, SourceRange
 
 

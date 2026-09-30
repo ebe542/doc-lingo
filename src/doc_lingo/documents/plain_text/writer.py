@@ -10,7 +10,7 @@ from typing import TextIO
 
 from doc_lingo.documents.errors import SegmentMismatchError
 from doc_lingo.documents.models import TextSegment
-from doc_lingo.documents.text_blocks import iter_text_blocks
+from doc_lingo.documents.plain_text.blocks import iter_text_blocks
 
 
 class PlainTextWriter:

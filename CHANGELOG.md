@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Organize document adapters into `plain_text`, `markdown`, and `html` packages.
+  Keep root library exports and Markdown adapter imports stable; separate
+  Markdown readers/writers from shared parsing. Internal module imports move
+  with their format packages. Standalone HTML translation is not added.
+
 ### Fixed
 
 - Allow translated prose to move around preserved Markdown inline elements.

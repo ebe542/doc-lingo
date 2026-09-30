@@ -1,26 +1,21 @@
 """Source-preserving Markdown adapters; no Markdown rendering or normalization."""
 
-import os
 import re
-from collections.abc import Generator, Iterable, Iterator
-from contextlib import contextmanager
+from collections.abc import Iterator
 from dataclasses import dataclass, field, replace
-from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from markdown_it import MarkdownIt
 from markdown_it.rules_block.table import escapedSplit
 from markdown_it.rules_inline.state_inline import StateInline
 
-from doc_lingo.documents.errors import SegmentMismatchError
-from doc_lingo.documents.html_text import (
+from doc_lingo.documents.html.text import (
     HtmlContext,
     HtmlSegment,
     HtmlText,
     protected_ranges,
     remove_empty_emphasis,
 )
-from doc_lingo.documents.markdown_layout import inline_source_layout
+from doc_lingo.documents.markdown.layout import inline_source_layout
 from doc_lingo.documents.models import TextSegment
 from doc_lingo.documents.source_layout import SourceLayout
 
@@ -346,59 +341,3 @@ def _regions(source: str) -> Iterator[_Region]:
             region_end,
             _MarkdownSegment(str(number), raw, kind, tuple(protected), environment, context_before),
         )
-
-
-class MarkdownReader:
-    """Extract ordered Markdown text; preserve unsupported constructs verbatim."""
-
-    def __init__(self, source: str | Path) -> None:
-        self.source = Path(source)
-
-    @contextmanager
-    def iter_segments(self) -> Generator[Iterator[TextSegment], None, None]:
-        with self.source.open(encoding="utf-8-sig", newline="") as stream:
-            segments = (region.segment for region in _regions(stream.read()))
-            try:
-                yield segments
-            finally:
-                segments.close()
-
-
-class MarkdownWriter:
-    """Publish validated translations atomically without replacing any output."""
-
-    def __init__(self, source: str | Path) -> None:
-        self.source = Path(source)
-
-    def write(self, destination: Path, translations: Iterable[TextSegment]) -> None:
-        destination = Path(destination)
-        if os.path.lexists(destination):
-            raise FileExistsError(f"Output file already exists: {destination}")
-        with self.source.open(encoding="utf-8", newline="") as stream:
-            original = stream.read()
-        bom = "\ufeff" if original.startswith("\ufeff") else ""
-        source = original[len(bom) :]
-        translated = iter(translations)
-        with TemporaryDirectory(prefix=".doc-lingo-", dir=destination.parent) as directory:
-            temporary = Path(directory) / "output.md"
-            with temporary.open("w", encoding="utf-8", newline="") as output:
-                output.write(bom)
-                cursor = 0
-                for region in _regions(source):
-                    segment = next(translated, None)
-                    if segment is None or segment.id != region.segment.id:
-                        raise SegmentMismatchError(f"Expected segment {region.segment.id}")
-                    valid_repair = (
-                        segment.unrepaired_text is not None
-                        and region.segment.repair_translation(segment.unrepaired_text)
-                        == segment.text
-                    )
-                    if not valid_repair and not region.segment.accepts_translation(segment.text):
-                        raise SegmentMismatchError("Translation changes Markdown structure")
-                    output.write(source[cursor : region.start])
-                    output.write(segment.text)
-                    cursor = region.end
-                if next(translated, None) is not None:
-                    raise SegmentMismatchError("Unexpected extra Markdown translation")
-                output.write(source[cursor:])
-            os.link(temporary, destination)

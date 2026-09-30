@@ -3,9 +3,9 @@
 import pytest
 
 from doc_lingo.documents import TextSegment
-from doc_lingo.documents.html_text import HtmlSegment, HtmlText
+from doc_lingo.documents.html.text import HtmlSegment, HtmlText
 from doc_lingo.documents.markdown import MarkdownReader, MarkdownWriter
-from doc_lingo.documents.markdown_layout import inline_source_layout
+from doc_lingo.documents.markdown.layout import inline_source_layout
 
 
 @pytest.mark.parametrize(

@@ -10,7 +10,7 @@ from doc_lingo import (
     TextSegment,
     translate_document,
 )
-from doc_lingo.documents.html_text import HtmlSegment
+from doc_lingo.documents.html.text import HtmlSegment
 
 
 class Backend:
@@ -135,7 +135,7 @@ def test_leading_autolink_is_not_mistaken_for_an_unfinished_html_tag(tmp_path):
 
 @pytest.mark.parametrize("declaration", ["<![unsupported[Hello]]>", "<!unsupported Hello>"])
 def test_unsupported_html_parser_declaration_is_retained(declaration):
-    from doc_lingo.documents.html_text import HtmlText
+    from doc_lingo.documents.html.text import HtmlText
 
     assert not HtmlText(declaration).safe
 

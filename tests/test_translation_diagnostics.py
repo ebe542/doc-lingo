@@ -6,7 +6,7 @@ from dataclasses import asdict
 import pytest
 
 from doc_lingo import MarkdownReader, MarkdownWriter, TranslationDiagnostics, translate_document
-from doc_lingo.documents.html_text import HtmlSegment
+from doc_lingo.documents.html.text import HtmlSegment
 from doc_lingo.translation.issues import issue_details, issue_sink, retain_original
 
 
