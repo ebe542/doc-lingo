@@ -48,6 +48,26 @@ as source. Entities and escapes remain encoded. Consequently, extracted text is
 an intermediate representation, not yet a ready-to-translate input. No alignment,
 target rendering or change to the active translation service is included.
 
+## Structured translation input
+
+`segment.translation_input()` combines the discovered layout with the adapter's
+existing protected ranges. Its `parts` partition the complete original segment
+into `text`, `protected`, and `syntax` source slices. Recognized wrappers take
+precedence over old protection ranges; unrecognized protected syntax remains
+opaque. Parts store only source offsets and a role, not copies of their contents.
+The layout still owns the outer/inner formatting relationships.
+
+`prepared.text` omits recognized wrappers but retains protected slices verbatim.
+It is an inspection view, not a backend request: code delimiters, excluded HTML,
+entities and other opaque content may remain. Passing that string alone to a
+model would discard its protection metadata. The active translation service has
+not been switched to this representation.
+
+Preparation neither splits sentences nor translates anything. A formatting range
+covering multiple sentences stays attached to the entire source segment. Future
+chunking and alignment must carry that relationship across translation units;
+this change does not yet implement that mapping or target reconstruction.
+
 ## Validation cases
 
 Before committing, cover plain text, emphasis, link labels, nested emphasis,

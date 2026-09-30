@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 
 from doc_lingo.documents.source_layout import SourceLayout
+from doc_lingo.documents.translation_input import TranslationInput
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,10 @@ class TextSegment:
     def source_layout(self) -> SourceLayout:
         """Return source-local inline wrappers for opt-in extraction."""
         return SourceLayout(self.text)
+
+    def translation_input(self) -> TranslationInput:
+        """Prepare source-backed parts without changing active translation."""
+        return TranslationInput.from_layout(self.source_layout(), self.protected_spans)
 
     def accepts_translation(self, text: str) -> bool:
         """Adapters may reject translations that would change document structure."""

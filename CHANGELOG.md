@@ -16,6 +16,10 @@
 
 ### Added
 
+- Source-backed translation input parts distinguish translatable text, removable
+  wrappers and protected content. Preserve formatting relationships across
+  sentences without changing the active translation service.
+
 - Opt-in Markdown and embedded HTML source-range discovery on document segments,
   with nested emphasis and explicit link labels. Opaque content is retained;
   the active translation path still uses existing protection.
