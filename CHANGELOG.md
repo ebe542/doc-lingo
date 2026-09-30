@@ -16,6 +16,10 @@
 
 ### Added
 
+- Opt-in model-input preparation removes known wrappers and uses validated
+  content markers for protected inline parts. Fully protected input bypasses
+  model preparation; active translation and formatting alignment are unchanged.
+
 - Source-backed translation input parts distinguish translatable text, removable
   wrappers and protected content. Preserve formatting relationships across
   sentences without changing the active translation service.

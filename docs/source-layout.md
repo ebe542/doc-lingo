@@ -68,6 +68,29 @@ covering multiple sentences stays attached to the entire source segment. Future
 chunking and alignment must carry that relationship across translation units;
 this change does not yet implement that mapping or target reconstruction.
 
+## Preparing model text
+
+The opt-in `translation.model_input.prepare_model_input()` function accepts a
+`TranslationInput`. It removes recognized formatting wrappers and replaces each
+remaining non-whitespace protected part with one deterministic content marker.
+No quotation marks or semantic labels are added. Whitespace stays literal.
+Fully protected inputs return `text=None`, meaning no model call is needed;
+document readers already omit standalone code blocks from translation segments.
+
+`ModelInput.restore_content()` checks that expected markers occur exactly once,
+rejects unexpected or damaged markers, and replaces them with original contents.
+Marker movement is allowed because word order may change. This verifies identity,
+not linguistic placement. With an issue sink, failures report diagnostics and
+return the full original source; without one, the existing strict recovery
+exception is raised. No speculative translation of protected contents is used.
+
+This is not connected to the active service. Successful restoration still lacks
+formatting alignment and must not be published directly as a formatted document.
+Unknown protected syntax remains opaque and can still receive a content marker;
+more precise adapter classification is required before claiming all formatting
+is invisible. Token budgeting and chunking will operate on the prepared model
+text, including its actual markers, in a later step.
+
 ## Validation cases
 
 Before committing, cover plain text, emphasis, link labels, nested emphasis,
