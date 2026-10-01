@@ -2,8 +2,9 @@
 
 `doc_lingo.translation.TextAligner` defines `align(source, target)` for the exact
 strings of one model call, before marker restoration or text normalization.
-It has no document-format dependencies. No concrete aligner is supplied yet and
-the active translation path is unchanged.
+It has no document-format dependencies. An optional SimAlign adapter is available
+for evaluation; the active translation path is unchanged. See the
+[method comparison and run instructions](alignment-methods.md).
 
 `AlignmentResult` binds links to those two strings. `TextRange(start, end)` uses
 nonempty, half-open Python character offsets, not bytes, tokenizer positions or

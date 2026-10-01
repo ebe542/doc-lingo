@@ -29,6 +29,16 @@ Repository = "https://github.com/ebe542/doc-lingo"
 doc-lingo = "doc_lingo.interfaces.cli:main"
 
 [project.optional-dependencies]
+awesome = [
+  "awesome-align==0.1.7",
+  "torch>=2.12,<2.14",
+  "huggingface-hub>=1,<2",
+]
+alignment = [
+  "simalign==0.4",
+  "torch>=2.12,<2.14",
+  "transformers>=5,<6",
+]
 dev = [
   "pytest>=8,<10",
   "pytest-cov>=5,<8",

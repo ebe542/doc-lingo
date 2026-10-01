@@ -16,6 +16,13 @@
 
 ### Added
 
+- Optional awesome-align baseline using the same fixed pairs and pinned mBERT
+  revision as SimAlign, with shared word-to-character alignment conversion.
+
+- Optional SimAlign adapter and fixed-pair Argmax/IterMax evaluation with exact
+  character ranges and encoder-length checks. Document alignment alternatives;
+  real model compatibility and quality remain subject to local evaluation.
+
 - Format-independent alignment protocol and validated many-to-many source/target
   ranges, including explicit unaligned and ambiguous source regions. No alignment
   algorithm or active translation integration is included.
