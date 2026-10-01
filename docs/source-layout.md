@@ -118,6 +118,9 @@ and must account for retained units when restoring markers and formatting.
 
 ## Validation cases
 
+The next stage uses the [alignment contract](alignment.md) for exact model input
+and output strings. Source associations are not themselves target alignments.
+
 Before committing, cover plain text, emphasis, link labels, nested emphasis,
 adjacent ranges, repeated words, Unicode, empty inner content and unchanged
 line endings. Check invalid boundary order, negative and out-of-bounds offsets,

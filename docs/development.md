@@ -36,6 +36,7 @@ src/doc_lingo/
   translation/
     __init__.py
     protocols.py              TranslationBackend and TranslationError
+    alignment.py              Alignment contract and validated text correspondences
     model_input.py            Opt-in content marker preparation and validation
     model_chunks.py           Budgeted units with source and formatting references
     service.py                translate_document orchestration

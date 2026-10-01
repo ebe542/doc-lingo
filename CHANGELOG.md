@@ -16,6 +16,10 @@
 
 ### Added
 
+- Format-independent alignment protocol and validated many-to-many source/target
+  ranges, including explicit unaligned and ambiguous source regions. No alignment
+  algorithm or active translation integration is included.
+
 - Opt-in token-budgeted model input units preserve source references and shared
   formatting ranges across splits. Content markers remain indivisible; oversized
   units use source-based recovery rather than exposing markers in retained text.
