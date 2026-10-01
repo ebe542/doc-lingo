@@ -16,6 +16,10 @@
 
 ### Added
 
+- Opt-in token-budgeted model input units preserve source references and shared
+  formatting ranges across splits. Content markers remain indivisible; oversized
+  units use source-based recovery rather than exposing markers in retained text.
+
 - Opt-in model-input preparation removes known wrappers and uses validated
   content markers for protected inline parts. Fully protected input bypasses
   model preparation; active translation and formatting alignment are unchanged.

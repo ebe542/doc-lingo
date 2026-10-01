@@ -88,8 +88,33 @@ This is not connected to the active service. Successful restoration still lacks
 formatting alignment and must not be published directly as a formatted document.
 Unknown protected syntax remains opaque and can still receive a content marker;
 more precise adapter classification is required before claiming all formatting
-is invisible. Token budgeting and chunking will operate on the prepared model
-text, including its actual markers, in a later step.
+is invisible. Token budgeting uses the prepared text, including its markers.
+
+## Budgeted input units
+
+`translation.model_chunks.split_model_input(prepared, fits)` lazily yields
+`ModelChunk` units. Supply a backend-specific `fits(text)` callback that measures
+the real tokenizer and includes prompt and special-token overhead. Fitting
+segments stay whole. Oversized segments reuse the existing whitespace splitter,
+which prefers sentence boundaries. Its sentence detection is a punctuation
+heuristic. No model calls or target alignment happen during preparation.
+
+Each unit has model `text`, its following `separator`, original source slices,
+and indexes into the shared layout's formatting ranges. Source slices and
+`original` include the separator and exclude removed wrappers. Formatting can
+therefore refer to several units without duplicating its source boundaries.
+Temporary model offsets are derived internally, not stored as target positions.
+
+Markers are indivisible. If a marker or word cannot fit, recovery reports the
+original content, never its generated marker. That unit has `text=None`: retain
+its `original` instead of invoking the model. With no issue sink the existing
+strict exception policy applies. Fully protected input bypasses even `fits`.
+For normal units, translate `text` and keep `separator` separately; retained
+units already include their spacing in `original`.
+
+This remains opt-in. The active backend's existing sentence splitting is
+unchanged. Future integration must avoid splitting prepared units a second time
+and must account for retained units when restoring markers and formatting.
 
 ## Validation cases
 
