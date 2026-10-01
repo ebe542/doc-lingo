@@ -91,6 +91,34 @@ python -m pip install -e ".[dev,release]"
 This does not remove an already installed `local` extra or replace a compatible
 CUDA build. Tests continue to live in the existing `tests/` directory.
 
+### Test organization
+
+Keep tests outside the distributable `src/` package. Organize them by the main
+responsibility under test:
+
+```text
+tests/
+  documents/
+    plain_text/       TXT reading, writing and block handling
+    markdown/         Markdown and embedded HTML adapter behavior
+    test_source_layout.py
+    test_translation_input.py
+  translation/        Backends, alignment, chunking, markers and glossary
+  interfaces/         CLI behavior
+  scripts/            Evaluation and benchmark tooling
+  integration/        Service orchestration, progress and diagnostics
+  fixtures/           Shared, versioned input data
+```
+
+Some adapter and translation test files also contain integration cases. Keep
+these coherent files together rather than splitting them solely for directory
+purity. Add a dedicated `documents/html/` directory when standalone HTML module
+tests warrant it. Use `conftest.py` only when shared pytest fixtures are needed.
+No test package `__init__.py` files are required: pytest uses importlib mode and
+recursively discovers tests beneath the existing `testpaths = ["tests"]` root.
+Resolve shared file fixtures from the repository/test root rather than assuming
+every test lives directly under `tests/`.
+
 Publish one Python distribution, `doc-lingo`, containing both an importable
 `doc_lingo` library and the `doc-lingo` command-line entry point. Other Python
 applications must be able to use translation without invoking the CLI.

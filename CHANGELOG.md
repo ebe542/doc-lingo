@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Organize tests by document format, translation, interfaces, scripts and
+  integration responsibilities, retaining shared fixtures under `tests/fixtures`.
+
 - Organize document adapters into `plain_text`, `markdown`, and `html` packages.
   Keep root library exports and Markdown adapter imports stable; separate
   Markdown readers/writers from shared parsing. Internal module imports move

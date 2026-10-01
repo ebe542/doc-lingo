@@ -7,7 +7,10 @@ import pytest
 
 from scripts.evaluate_translation_quality import evaluate_suite, load_suite
 
-SUITE = Path(__file__).parent / "fixtures/translation_quality/format-comparison.en-de.json"
+SUITE = (
+    Path(__file__).resolve().parents[1]
+    / "fixtures/translation_quality/format-comparison.en-de.json"
+)
 
 
 def test_paired_examples_roundtrip_and_capture_protected_backend_input(tmp_path):

@@ -101,7 +101,7 @@ not download models, need CUDA, or judge the linguistic quality of translations.
 Run them and then the project gate:
 
 ```bash
-python -m pytest tests/test_translation_quality.py -q
+python -m pytest tests/scripts/test_translation_quality.py -q
 python scripts/check_milestone.py
 ```
 

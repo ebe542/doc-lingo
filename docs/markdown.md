@@ -98,8 +98,8 @@ Run from the repository root in Git Bash:
 python -m scripts.check_milestone
 ```
 
-`tests/test_markdown.py`, `tests/test_markdown_tables.py`, `tests/test_markdown_html.py` and
-`tests/test_protected_translation.py` cover offline
+`tests/documents/markdown/test_markdown.py`, `tests/documents/markdown/test_markdown_tables.py`, `tests/documents/markdown/test_markdown_html.py` and
+`tests/translation/test_protected_translation.py` cover offline
 translation, context, identity reconstruction, protected content, malformed
 markers, structure changes, cleanup, glossary composition and CLI selection.
 The example above provides a separate manual CUDA smoke check. Compare source and

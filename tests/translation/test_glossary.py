@@ -14,7 +14,7 @@ from doc_lingo.translation.issues import issue_sink, retain_original
 def test_json_and_gzip_have_identical_rules(tmp_path):
     from pathlib import Path
 
-    example = Path(__file__).resolve().parents[1] / "docs/examples/glossary-en-de.json"
+    example = Path(__file__).resolve().parents[2] / "docs/examples/glossary-en-de.json"
     plain = tmp_path / "terms.json"
     packed = tmp_path / "terms.json.gz"
     plain.write_bytes(example.read_bytes())
