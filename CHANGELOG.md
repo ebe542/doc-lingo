@@ -19,6 +19,9 @@
 
 ### Added
 
+- Opt-in exact content-marker alignment overrides conflicting statistical links;
+  validate marker identities and mark affected surrounding prose as ambiguous.
+
 - Optional awesome-align baseline using the same fixed pairs and pinned mBERT
   revision as SimAlign, with shared word-to-character alignment conversion.
 

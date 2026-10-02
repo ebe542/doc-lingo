@@ -1,5 +1,24 @@
 # Alignment contract
 
+## Exact content-marker anchors
+
+`translation.marker_alignment.anchor_content_markers(result, prepared)` replaces
+statistical marker links with exact registered identities. The alignment source
+must equal the complete `ModelInput.text`; applying it to individual chunks
+requires a future chunk-specific registry. Both strings must contain each
+registered marker exactly once, with no unexpected or damaged markers in the
+reserved namespace. Invalid input raises `AlignmentError` before any result is
+modified; the caller will handle document-level recovery during integration.
+
+Any statistical link touching a source or target marker is removed as a whole.
+Remaining source portions of such a phrase become `ambiguous`, rather than
+assuming the leftover target words correspond to them. Exact marker ranges are
+removed from previous unaligned/ambiguous regions. Unrelated links remain intact.
+No marker content is replaced and no model is called. Identity anchors do not
+prove correct linguistic placement or resolve repeated ordinary words.
+
+This is opt-in and does not change the active translation or evaluation runner.
+
 `doc_lingo.translation.TextAligner` defines `align(source, target)` for the exact
 strings of one model call, before marker restoration or text normalization.
 It has no document-format dependencies. An optional SimAlign adapter is available
