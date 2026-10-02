@@ -1,0 +1,235 @@
+[
+  {
+    "id": "simple",
+    "source": "The model works.",
+    "target": "Das Modell funktioniert.",
+    "expected": [
+      [
+        "model",
+        "Modell"
+      ]
+    ]
+  },
+  {
+    "id": "split-verb",
+    "source": "She turned off the light.",
+    "target": "Sie schaltete das Licht aus.",
+    "expected": [
+      [
+        "turned off",
+        "schaltete … aus"
+      ]
+    ]
+  },
+  {
+    "id": "repeated",
+    "source": "The model checks another model.",
+    "target": "Das Modell prüft ein anderes Modell.",
+    "expected": [
+      [
+        "model (first)",
+        "Modell (first)"
+      ],
+      [
+        "model (second)",
+        "Modell (second)"
+      ]
+    ]
+  },
+  {
+    "id": "terminology",
+    "source": "Machine learning processes new observations.",
+    "target": "Maschinelles Lernen verarbeitet neue Beobachtungen.",
+    "expected": [
+      [
+        "Machine learning",
+        "Maschinelles Lernen"
+      ],
+      [
+        "processes",
+        "verarbeitet"
+      ]
+    ]
+  },
+  {
+    "id": "omission",
+    "source": "Keep the red model.",
+    "target": "Das Modell behalten.",
+    "expected": [
+      [
+        "red",
+        "unaligned"
+      ]
+    ]
+  },
+  {
+    "id": "addition",
+    "source": "Read the guide.",
+    "target": "Bitte lesen Sie die Anleitung.",
+    "expected": [
+      [
+        "guide",
+        "Anleitung"
+      ]
+    ]
+  },
+  {
+    "id": "marker",
+    "source": "Keep DLMD8B763120364A81332B2765008969E9AX0Z unchanged.",
+    "target": "DLMD8B763120364A81332B2765008969E9AX0Z unverändert lassen.",
+    "expected": [
+      [
+        "marker",
+        "same marker; identity must be validated separately"
+      ]
+    ],
+    "marker_prefix": "DLMD8B763120364A81332B2765008969E9A",
+    "markers": [
+      "DLMD8B763120364A81332B2765008969E9AX0Z"
+    ]
+  },
+  {
+    "id": "polite-open",
+    "source": "Open the file.",
+    "target": "Bitte öffnen Sie die Datei.",
+    "expected": [
+      [
+        "Open",
+        "öffnen"
+      ],
+      [
+        "file",
+        "Datei"
+      ]
+    ]
+  },
+  {
+    "id": "polite-keep",
+    "source": "Please keep the model unchanged.",
+    "target": "Lassen Sie das Modell bitte unverändert.",
+    "expected": [
+      [
+        "Please",
+        "bitte"
+      ],
+      [
+        "keep",
+        "Lassen"
+      ],
+      [
+        "unchanged",
+        "unverändert"
+      ]
+    ]
+  },
+  {
+    "id": "split-switch-on",
+    "source": "He switched the device on.",
+    "target": "Er schaltete das Gerät ein.",
+    "expected": [
+      [
+        "switched … on",
+        "schaltete … ein"
+      ]
+    ]
+  },
+  {
+    "id": "reordered-repeated",
+    "source": "The first model checks the second model.",
+    "target": "Das zweite Modell wird vom ersten Modell geprüft.",
+    "expected": [
+      [
+        "first model",
+        "ersten Modell"
+      ],
+      [
+        "second model",
+        "zweite Modell"
+      ],
+      [
+        "checks",
+        "geprüft"
+      ]
+    ]
+  },
+  {
+    "id": "omitted-adverb",
+    "source": "Carefully read the guide.",
+    "target": "Lesen Sie die Anleitung.",
+    "expected": [
+      [
+        "Carefully",
+        "unaligned"
+      ],
+      [
+        "read",
+        "Lesen"
+      ]
+    ]
+  },
+  {
+    "id": "added-adjective",
+    "source": "Read the guide.",
+    "target": "Lesen Sie die ausführliche Anleitung.",
+    "expected": [
+      [
+        "guide",
+        "Anleitung"
+      ],
+      [
+        "ausführliche",
+        "no direct source counterpart"
+      ]
+    ]
+  },
+  {
+    "id": "two-markers",
+    "source": "Replace DLMD8B763120364A81332B2765008969E9AX0Z with DLMD8B763120364A81332B2765008969E9AX1Z.",
+    "target": "Verwenden Sie DLMD8B763120364A81332B2765008969E9AX1Z anstelle von DLMD8B763120364A81332B2765008969E9AX0Z.",
+    "expected": [
+      [
+        "DLMD8B763120364A81332B2765008969E9AX0Z",
+        "DLMD8B763120364A81332B2765008969E9AX0Z"
+      ],
+      [
+        "DLMD8B763120364A81332B2765008969E9AX1Z",
+        "DLMD8B763120364A81332B2765008969E9AX1Z"
+      ],
+      [
+        "Replace … with",
+        "Verwenden … anstelle von (phrase-level review)"
+      ]
+    ],
+    "marker_prefix": "DLMD8B763120364A81332B2765008969E9A",
+    "markers": [
+      "DLMD8B763120364A81332B2765008969E9AX0Z",
+      "DLMD8B763120364A81332B2765008969E9AX1Z"
+    ]
+  },
+  {
+    "id": "negation",
+    "source": "Do not delete the model.",
+    "target": "Löschen Sie das Modell nicht.",
+    "expected": [
+      [
+        "not",
+        "nicht"
+      ],
+      [
+        "delete",
+        "Löschen"
+      ]
+    ]
+  },
+  {
+    "id": "compound",
+    "source": "Check the input file.",
+    "target": "Prüfen Sie die Eingabedatei.",
+    "expected": [
+      [
+        "input file",
+        "Eingabedatei"
+      ]
+    ]
+  }
+]

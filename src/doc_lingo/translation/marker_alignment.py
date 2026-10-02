@@ -37,15 +37,30 @@ def anchor_content_markers(result: AlignmentResult, prepared: ModelInput) -> Ali
     if prepared.text is None or result.source != prepared.text:
         raise AlignmentError("Alignment source does not match prepared model input")
     tokens = tuple(item.token for item in prepared.markers)
+    return anchor_registered_markers(result, tokens=tokens, prefix=prepared.prefix)
+
+
+def anchor_registered_markers(
+    result: AlignmentResult, *, tokens: tuple[str, ...], prefix: str
+) -> AlignmentResult:
+    """Anchor an explicitly supplied registry, never infer one from model output.
+
+    This entry point also supports fixed evaluation pairs without fabricating a
+    source document or ModelInput. Registry ownership remains with the caller.
+    """
+    if not prefix:
+        raise AlignmentError("Marker namespace must not be empty")
+    pattern = re.compile(re.escape(prefix) + r"X[0-9]+Z")
+    if any(pattern.fullmatch(token) is None for token in tokens):
+        raise AlignmentError("Registered marker does not match its namespace")
     if len(set(tokens)) != len(tokens):
         raise AlignmentError("Duplicate registered marker identity")
-    pattern = re.compile(re.escape(prepared.prefix) + r"X[0-9]+Z")
     positions = []
     for text in (result.source, result.target):
         matches = list(pattern.finditer(text))
         if Counter(m.group() for m in matches) != Counter(tokens):
             raise AlignmentError("Missing, duplicate or unexpected content marker")
-        if prepared.prefix.casefold() in pattern.sub("", text).casefold():
+        if prefix.casefold() in pattern.sub("", text).casefold():
             raise AlignmentError("Damaged content marker")
         positions.append({m.group(): TextRange(m.start(), m.end()) for m in matches})
     source_positions, target_positions = positions

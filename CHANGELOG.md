@@ -19,6 +19,13 @@
 
 ### Added
 
+- Separate 30-case alignment evaluation suite covering longer paragraphs,
+  repeated terms, registered markers and selected formatting scopes, with
+  occurrence-specific review ranges and fixture consistency checks.
+
+- Optional exact marker anchoring in alignment reports with raw results retained,
+  plus configurable awesome-align threshold comparisons on registered fixtures.
+
 - Opt-in exact content-marker alignment overrides conflicting statistical links;
   validate marker identities and mark affected surrounding prose as ambiguous.
 

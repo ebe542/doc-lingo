@@ -1,4 +1,4 @@
-"""Compare SimAlign methods on fixed pairs without translating documents."""
+"""Compare alignment settings on fixed pairs without translating documents."""
 
 import argparse
 import json
@@ -11,7 +11,34 @@ from time import perf_counter
 
 from doc_lingo.translation.alignment import AlignmentError
 from doc_lingo.translation.awesome_adapter import AwesomeAlignAdapter
+from doc_lingo.translation.marker_alignment import anchor_registered_markers
 from doc_lingo.translation.simalign_adapter import SimAlignAdapter
+
+
+def evaluate_case(adapter, case: dict, *, anchor_markers: bool = False) -> dict:
+    """Preserve raw links even when marker validation rejects their correction."""
+    start = perf_counter()
+    raw = None
+    corrected = None
+    error = None
+    try:
+        result = adapter.align(case["source"], case["target"])
+        raw = asdict(result)
+        if anchor_markers and "markers" in case:
+            result = anchor_registered_markers(
+                result, tokens=tuple(case["markers"]), prefix=case["marker_prefix"]
+            )
+        corrected = asdict(result)
+    except AlignmentError as exc:
+        error = str(exc)
+    return {
+        "case": case,
+        "alignment": corrected,
+        "raw_alignment": raw,
+        "error": error,
+        "seconds": perf_counter() - start,
+        "verdict": "pending",
+    }
 
 
 def main() -> int:
@@ -22,7 +49,14 @@ def main() -> int:
     parser.add_argument("--revision", default="main")
     parser.add_argument("--device", default="cpu", choices=("cpu", "cuda"))
     parser.add_argument("--backend", default="simalign", choices=("simalign", "awesome"))
+    parser.add_argument("--thresholds", nargs="+", type=float)
+    parser.add_argument("--anchor-markers", action="store_true")
     args = parser.parse_args()
+    if args.thresholds is not None and args.backend != "awesome":
+        parser.error("--thresholds requires --backend awesome")
+    thresholds = args.thresholds if args.thresholds is not None else [0.001]
+    if any(not 0 < value < 1 for value in thresholds) or len(set(thresholds)) != len(thresholds):
+        parser.error("Thresholds must be distinct values between zero and one")
     if args.output.exists():
         parser.error("Output already exists; choose a new report path")
     raw = args.suite.read_bytes()
@@ -52,31 +86,31 @@ def main() -> int:
         "python": platform.python_version(),
         "suite_sha256": sha256(raw).hexdigest(),
         "packages": {name: version(name) for name in packages},
-        "softmax_threshold": 0.001 if args.backend == "awesome" else None,
+        "softmax_threshold": thresholds[0]
+        if args.backend == "awesome" and len(thresholds) == 1
+        else None,
+        "thresholds": thresholds if args.backend == "awesome" else [],
+        "anchor_markers": args.anchor_markers,
         "tokenization": "unicode-words-punctuation-v1",
         "layer": 8,
         "results": [],
     }
     for case in cases:
-        for method in methods:
+        for method, threshold in (
+            (method, threshold)
+            for method in methods
+            for threshold in (thresholds if args.backend == "awesome" else [None])
+        ):
             if isinstance(adapter, SimAlignAdapter):
                 adapter.method = method
-            start = perf_counter()
-            try:
-                result = asdict(adapter.align(case["source"], case["target"]))
-                error = None
-            except AlignmentError as exc:
-                result, error = None, str(exc)
-            report["results"].append(
-                {
-                    "case": case,
-                    "method": method,
-                    "alignment": result,
-                    "error": error,
-                    "seconds": perf_counter() - start,
-                    "verdict": "pending",
-                }
-            )
+            else:
+                assert threshold is not None
+                adapter = AwesomeAlignAdapter(
+                    adapter.model, adapter.tokenizer, device=args.device, threshold=threshold
+                )
+            row = evaluate_case(adapter, case, anchor_markers=args.anchor_markers)
+            row.update(method=method, softmax_threshold=threshold)
+            report["results"].append(row)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8", newline="\n") as stream:
         json.dump(report, stream, ensure_ascii=False, indent=2)

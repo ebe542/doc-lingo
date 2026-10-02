@@ -120,3 +120,24 @@ def test_load_failure(monkeypatch):
     monkeypatch.setitem(sys.modules, "awesome_align.modeling", None)
     with pytest.raises(AlignmentError, match="Could not load"):
         AwesomeAlignAdapter.load("snapshot")
+
+
+@pytest.mark.parametrize("threshold", [0, 1, -0.1, float("nan"), float("inf")])
+def test_invalid_threshold(threshold):
+    with pytest.raises(ValueError, match="threshold"):
+        AwesomeAlignAdapter(None, None, threshold=threshold)
+
+
+def test_threshold_reaches_upstream(upstream):
+    adapter = make_adapter()
+    calls = []
+
+    def align(*args, **kwargs):
+        calls.append(kwargs)
+        return [{(0, 0)}]
+
+    adapter.model.get_aligned_word = align
+    configured = AwesomeAlignAdapter(adapter.model, adapter.tokenizer, threshold=0.01)
+    configured.align("word", "Wort")
+    assert calls[0]["softmax_threshold"] == 0.01
+    assert calls[0]["align_layer"] == 8

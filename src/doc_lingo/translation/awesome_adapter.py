@@ -12,10 +12,15 @@ _WORDS = re.compile(r"\w+|[^\w\s]", re.UNICODE)
 class AwesomeAlignAdapter:
     """Use upstream softmax extraction, layer 8, without local fine-tuning."""
 
-    def __init__(self, model: Any, tokenizer: Any, *, device: str = "cpu") -> None:
+    def __init__(
+        self, model: Any, tokenizer: Any, *, device: str = "cpu", threshold: float = 0.001
+    ) -> None:
+        if not 0 < threshold < 1:
+            raise ValueError("Softmax threshold must be between zero and one")
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
+        self.threshold = threshold
 
     @classmethod
     def load(cls, path: str, *, device: str = "cpu") -> "AwesomeAlignAdapter":
@@ -85,7 +90,7 @@ class AwesomeAlignAdapter:
                         0,
                         align_layer=8,
                         extraction="softmax",
-                        softmax_threshold=0.001,
+                        softmax_threshold=self.threshold,
                         test=True,
                     )[0]
             finally:

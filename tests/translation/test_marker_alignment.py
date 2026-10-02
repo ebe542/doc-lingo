@@ -11,7 +11,7 @@ from doc_lingo.translation.alignment import (
     AlignmentResult,
     TextRange,
 )
-from doc_lingo.translation.marker_alignment import anchor_content_markers
+from doc_lingo.translation.marker_alignment import anchor_content_markers, anchor_registered_markers
 from doc_lingo.translation.model_input import prepare_model_input
 
 
@@ -97,3 +97,9 @@ def test_no_markers_preserves_alignment():
     p = prepare_model_input(TextSegment("1", "text").translation_input())
     result = unresolved("text", "Text")
     assert anchor_content_markers(result, p) == result
+
+
+@pytest.mark.parametrize("prefix,tokens", [("", ()), ("DLM", ("OTHERX0Z",))])
+def test_invalid_explicit_registry(prefix, tokens):
+    with pytest.raises(AlignmentError):
+        anchor_registered_markers(unresolved("word", "Wort"), prefix=prefix, tokens=tokens)

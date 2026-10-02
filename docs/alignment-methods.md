@@ -1,5 +1,155 @@
 # Alignment methods and initial comparison
 
+## Broader-run review (2026-10-02)
+
+`awesome-co-holdout-run-01.json` completed all 30 cases without reported errors,
+including the longest paragraph. Its fixture fingerprint matches
+`1ec630ea5feb9606f76920dce187ba76b170fdc121ed8f4269a8d4b3bce7f225`.
+The CO revision, CPU, layer 8 and threshold 0.001 match the planned settings.
+This review consumes the previously unseen suite; it is now evaluation evidence,
+not an untouched holdout for future tuning. Original report data and pending
+verdict fields remain unchanged.
+
+Many paragraph-level correspondences are useful, including the selected scopes
+in the pipeline, recovery, training, backup and pronoun cases. However, the
+backup paragraph leaves `restore` unaligned. In the longest paragraph, only
+`Formatting` links to `Formatierungsinformationen`; `information` is unaligned.
+Successful processing therefore does not establish complete phrase coverage.
+
+Reordered entities remain the clearest failure pattern:
+
+- `reordered-files` mixes the first `file` with `destination` and links that
+  group to `Zieldatei`; `source` is unaligned and the second `file` links to
+  `Quelldatei`.
+- `reordered-servers` groups `primary` and `secondary` against `primären`, while
+  the two server occurrences follow target order instead of entity identity.
+- `reordered-two-models` links `smaller` to `größere` and `larger` to `kleineren`;
+  the model occurrences are also assigned to the wrong entities.
+- Repeated nouns with preserved order, including occurrences across sentences,
+  are correctly distinguished in the two corresponding cases.
+
+Compound terms such as `input file name` and `context window` have useful
+many-to-one links. `processes` correctly links to `verarbeitet`. When the target
+contains both a German term and its English expansion (RAG/API), the source
+expansion links to the copied English words, leaving the German term without
+links. This is a valid lexical correspondence but insufficient to decide which
+rendering should inherit formatting. Both deliberate omissions remain unaligned;
+the added politeness/explanation cases avoid assigning unrelated source words to
+the added material.
+
+All registered markers have exact identity links after correction. Only
+`marker-reordered` changes: a raw group containing all three markers on both
+sides becomes three individual identity links. `before` and `deleting` remain
+unaligned even though their translations are present. Anchoring repairs marker
+identity, not the surrounding prose.
+
+The four formatting-scope cases provide useful lexical anchors, including
+`turned off` to discontinuous `schaltete` / `aus` and a scope across a sentence
+boundary. Target insertions such as `Sie`, `ist` and `der` are not necessarily
+linked. A later projection policy must decide how to include such words and
+handle discontinuous scopes; these results do not demonstrate restored formatting.
+
+No result reports ambiguous ranges despite the incorrect entity links. Keep
+0.001 and exact marker anchoring, but do not treat this adapter as sufficient
+for reliable automatic formatting projection. Review uncertainty and conservative
+fallback behavior before integration. No accuracy percentage is inferred from
+the partial scope annotations, and no model/settings change follows this review.
+
+## Broader fixed-pair evaluation
+
+`tests/fixtures/alignment/en-de-holdout.json` adds 30 manually authored English /
+German pairs, separate from the earlier tuning cases. Keep the CO revision,
+CPU, layer 8 and threshold 0.001 fixed for the first run. The first run is now
+reviewed above; these examples must not be described as an unseen holdout for
+subsequent experiments.
+
+Cases cover multi-sentence paragraphs (including a longer explanatory passage),
+reordered repeated nouns, technical terms and abbreviations, intentional
+omissions/additions, four explicitly registered marker cases, and formatting
+scopes across sentence boundaries or discontinuous target phrases. The pairs
+are authored references, not independently certified translations. Incomplete
+or expanded targets are labeled as deliberate alignment stress cases.
+
+`expected_spans` records selected manual review expectations as half-open Python
+character offsets plus exact text slices in source and target. Multiple target
+ranges can represent a discontinuous phrase; an empty target list denotes an
+intentional omission. These are partial review annotations, not exhaustive gold
+word links. The runner copies them into each report case but does not score them
+automatically or require one statistical link to match an entire phrase.
+Fixture tests check range consistency and marker preservation, not linguistic
+quality. Formatting scopes contain plain text only: actual formatting projection
+and document-adapter behavior are outside this evaluation.
+
+```bash
+python -m scripts.check_milestone
+python -m scripts.evaluate_alignment --backend awesome --suite tests/fixtures/alignment/en-de-holdout.json --model aneuraz/awesome-align-with-co --revision 777756717e1fa9556e304d4d5db173ee386b9c16 --device cpu --anchor-markers --thresholds 0.001 --output local-data/alignment/awesome-co-holdout-run-01.json
+```
+
+Review ordinary word/phrase links separately from deterministic marker repairs.
+Check occurrence identity for repeated nouns, missing versus incorrect links,
+and coverage of the selected formatting scopes. Retain raw results and report
+encoder-budget failures as failures rather than truncating long passages. This
+is an alignment evaluation on fixed translations, not a translation-quality or
+book-throughput benchmark. Existing baseline fixtures and reports stay unchanged.
+
+## Threshold-run review (2026-10-02)
+
+`awesome-co-thresholds-run-01.json` completed all 48 evaluations (16 cases at
+three thresholds) without reported errors. It used the CO revision below, CPU,
+layer 8 and registered-suite fingerprint
+`e7f9c814b9e72cb9a4aa9e3c734cbd9b0d4d8d3b9fe9ebedc8b16b1d3738a3a3`.
+
+Both raw and corrected alignments are identical at 0.001 and 0.01 for every
+case. At 0.0001, only `reordered-repeated` changes: separate ordinal matches
+become a less specific group linking both `first` and `second` to both target
+ordinals. The incorrect identities of the repeated `model` occurrences remain
+at all three thresholds. `polite-keep` also remains incorrect: `Please` links
+to `Lassen`, while `keep` is unaligned.
+
+Exact anchoring changes only `two-markers`, at every threshold, correcting the
+swapped statistical links to X0-to-X0 and X1-to-X1. The marker text remains in
+both alignment inputs; raw results preserve the original errors. This is a
+deterministic identity repair, not an improvement in learned word alignment or
+proof of correct linguistic placement. No result reports ambiguous ranges;
+the remaining ordinary-word errors demonstrate why that is not a confidence
+guarantee.
+
+Keep the default threshold at 0.001. This small suite provides no evidence for
+changing it, and lowering it reduces specificity in one case. Original report
+data and pending verdict fields remain unchanged; this section records the
+manual review. Automatic formatting projection still needs separate validation.
+
+## Threshold comparison with exact marker anchors
+
+The next experiment retains markers in both model inputs. No text is removed or
+replaced before alignment. `--anchor-markers` applies exact identity correction
+after extraction, and reports both `raw_alignment` and corrected `alignment`.
+If correction fails, raw evidence is retained with an error; no corrected result
+is reported. The runner never discovers a trusted registry by guessing from
+model output. The new `en-de-registered.json` suite explicitly registers the
+markers in the two marker cases; its other fields match the 16-case extended
+suite. Old fixture files and their fingerprints remain unchanged.
+
+Compare thresholds 0.0001, 0.001 (baseline), and 0.01 with the same CO snapshot,
+CPU and layer 8. One model is loaded; each setting gets a separate inference.
+The threshold is recorded per result; all manual verdicts remain pending.
+SimAlign does not accept `--thresholds`. Thresholds must be distinct, finite and
+strictly between zero and one. Existing commands retain the 0.001 default.
+
+```bash
+python -m scripts.check_milestone
+python -m scripts.evaluate_alignment --backend awesome --suite tests/fixtures/alignment/en-de-registered.json --model aneuraz/awesome-align-with-co --revision 777756717e1fa9556e304d4d5db173ee386b9c16 --anchor-markers --thresholds 0.0001 0.001 0.01 --output local-data/alignment/awesome-co-thresholds-run-01.json
+```
+
+Review incorrect links separately from missing links. Corrected marker identities
+do not count as a statistical quality improvement. Removing a mixed statistical
+phrase can mark surrounding source text ambiguous; inspect those regions too.
+Pay particular attention to `polite-keep`, entity identity in `reordered-repeated`,
+and the omitted adjective/adverb cases. A higher threshold may remove false links
+but also useful ones. These cases guide tuning; any preferred setting must later
+be checked on additional held-out examples before adopting it. No layer tuning or
+change to the active translation pipeline is part of this experiment.
+
 ## Extended-run review (2026-10-01)
 
 Both extended runs completed all 16 cases without reported errors using fixture

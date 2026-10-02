@@ -17,7 +17,10 @@ removed from previous unaligned/ambiguous regions. Unrelated links remain intact
 No marker content is replaced and no model is called. Identity anchors do not
 prove correct linguistic placement or resolve repeated ordinary words.
 
-This is opt-in and does not change the active translation or evaluation runner.
+This remains opt-in and does not change active translation. The evaluation runner
+can apply correction with `--anchor-markers` using explicit fixture registries.
+`anchor_registered_markers(result, tokens=..., prefix=...)` shares the same
+validation/correction logic without requiring a fabricated source document.
 
 `doc_lingo.translation.TextAligner` defines `align(source, target)` for the exact
 strings of one model call, before marker restoration or text normalization.

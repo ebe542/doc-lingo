@@ -1,0 +1,807 @@
+[
+  {
+    "id": "paragraph-pipeline",
+    "category": "paragraph",
+    "source": "The reader opens the document and extracts its text. The translator processes each paragraph. Finally, the writer saves the translated document.",
+    "target": "Der Reader öffnet das Dokument und extrahiert dessen Text. Der Übersetzer verarbeitet jeden Absatz. Zum Schluss speichert der Writer das übersetzte Dokument.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 78,
+            "end": 92,
+            "text": "each paragraph"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 86,
+            "end": 98,
+            "text": "jeden Absatz"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "paragraph-recovery",
+    "category": "paragraph",
+    "source": "A translation request failed during processing. The application keeps the original passage and records a warning. It then continues with the next paragraph.",
+    "target": "Während der Verarbeitung ist eine Übersetzungsanfrage fehlgeschlagen. Die Anwendung behält die ursprüngliche Passage bei und protokolliert eine Warnung. Anschließend fährt sie mit dem nächsten Absatz fort.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 74,
+            "end": 90,
+            "text": "original passage"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 95,
+            "end": 116,
+            "text": "ursprüngliche Passage"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "paragraph-training",
+    "category": "paragraph",
+    "source": "The team trains a classifier on historical observations. After training, it evaluates the classifier on separate data. These observations were never used during training.",
+    "target": "Das Team trainiert einen Klassifikator mit historischen Beobachtungen. Nach dem Training bewertet es den Klassifikator anhand separater Daten. Diese Beobachtungen wurden beim Training nie verwendet.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 104,
+            "end": 117,
+            "text": "separate data"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 126,
+            "end": 141,
+            "text": "separater Daten"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "paragraph-backup",
+    "category": "paragraph",
+    "source": "Before editing the configuration, create a backup. Store the backup in a different directory. If validation fails, restore the previous configuration.",
+    "target": "Erstellen Sie vor dem Bearbeiten der Konfiguration eine Sicherungskopie. Speichern Sie die Sicherungskopie in einem anderen Verzeichnis. Stellen Sie die vorherige Konfiguration wieder her, falls die Validierung fehlschlägt.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 73,
+            "end": 92,
+            "text": "different directory"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 116,
+            "end": 135,
+            "text": "anderen Verzeichnis"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "paragraph-pronoun",
+    "category": "paragraph",
+    "source": "The server receives a request from the client. It checks the credentials before returning the requested document. The client then displays the result.",
+    "target": "Der Server erhält eine Anfrage vom Client. Er prüft die Zugangsdaten, bevor er das angeforderte Dokument zurückgibt. Der Client zeigt anschließend das Ergebnis an.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 61,
+            "end": 72,
+            "text": "credentials"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 56,
+            "end": 68,
+            "text": "Zugangsdaten"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "paragraph-long",
+    "category": "paragraph",
+    "source": "A document can contain several kinds of text, including headings, short instructions, and long explanatory paragraphs. The application reads these sections in order and sends their visible text to the translator. Formatting information remains separate from the translation input. Once the translated text is available, an alignment method attempts to identify corresponding words and phrases. This correspondence can be uncertain when the translation changes the sentence structure or omits a word. In such cases, the application should record the uncertainty instead of silently assigning formatting to an unrelated passage.",
+    "target": "Ein Dokument kann verschiedene Arten von Text enthalten, darunter Überschriften, kurze Anweisungen und lange erläuternde Absätze. Die Anwendung liest diese Abschnitte der Reihe nach und übergibt ihren sichtbaren Text an den Übersetzer. Formatierungsinformationen bleiben von der Übersetzungseingabe getrennt. Sobald der übersetzte Text vorliegt, versucht ein Alignmentverfahren, einander entsprechende Wörter und Wortgruppen zu identifizieren. Diese Zuordnung kann unsicher sein, wenn die Übersetzung den Satzbau verändert oder ein Wort auslässt. In solchen Fällen sollte die Anwendung die Unsicherheit protokollieren, statt einem unpassenden Abschnitt unbemerkt eine Formatierung zuzuweisen.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 213,
+            "end": 235,
+            "text": "Formatting information"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 236,
+            "end": 262,
+            "text": "Formatierungsinformationen"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "reordered-files",
+    "category": "repetition",
+    "source": "The source file replaces the destination file.",
+    "target": "Die Zieldatei wird durch die Quelldatei ersetzt.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 4,
+            "end": 15,
+            "text": "source file"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 29,
+            "end": 39,
+            "text": "Quelldatei"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "reordered-servers",
+    "category": "repetition",
+    "source": "The primary server monitors the secondary server.",
+    "target": "Der sekundäre Server wird vom primären Server überwacht.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 4,
+            "end": 18,
+            "text": "primary server"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 30,
+            "end": 45,
+            "text": "primären Server"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "reordered-two-models",
+    "category": "repetition",
+    "source": "The smaller model outperforms the larger model on this task.",
+    "target": "Bei dieser Aufgabe wird das größere Modell vom kleineren Modell übertroffen.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 4,
+            "end": 17,
+            "text": "smaller model"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 47,
+            "end": 63,
+            "text": "kleineren Modell"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "repeated-across-sentences",
+    "category": "repetition",
+    "source": "The old model loads quickly. The new model predicts more accurately.",
+    "target": "Das alte Modell wird schnell geladen. Das neue Modell sagt genauer voraus.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 33,
+            "end": 42,
+            "text": "new model"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 42,
+            "end": 53,
+            "text": "neue Modell"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "repeated-identical-nouns",
+    "category": "repetition",
+    "source": "A model compares a model with a model.",
+    "target": "Ein Modell vergleicht ein Modell mit einem Modell.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 2,
+            "end": 7,
+            "text": "model"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 4,
+            "end": 10,
+            "text": "Modell"
+          }
+        ],
+        "relation": "correspondence"
+      },
+      {
+        "source_ranges": [
+          {
+            "start": 19,
+            "end": 24,
+            "text": "model"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 26,
+            "end": 32,
+            "text": "Modell"
+          }
+        ],
+        "relation": "correspondence"
+      },
+      {
+        "source_ranges": [
+          {
+            "start": 32,
+            "end": 37,
+            "text": "model"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 43,
+            "end": 49,
+            "text": "Modell"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "relative-clause",
+    "category": "repetition",
+    "source": "The report that the reviewer requested contains the results that the author verified.",
+    "target": "Der vom Gutachter angeforderte Bericht enthält die vom Autor überprüften Ergebnisse.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 20,
+            "end": 28,
+            "text": "reviewer"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 8,
+            "end": 17,
+            "text": "Gutachter"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "term-rag",
+    "category": "terminology",
+    "source": "Retrieval-Augmented Generation (RAG) combines document retrieval with text generation.",
+    "target": "Abrufgestützte Generierung (RAG, Retrieval-Augmented Generation) verbindet die Suche nach Dokumenten mit der Texterzeugung.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 46,
+            "end": 64,
+            "text": "document retrieval"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 79,
+            "end": 100,
+            "text": "Suche nach Dokumenten"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "term-api",
+    "category": "terminology",
+    "source": "The application programming interface (API) accepts a target language and a document path.",
+    "target": "Die Programmierschnittstelle (API, Application Programming Interface) akzeptiert eine Zielsprache und einen Dokumentpfad.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 54,
+            "end": 69,
+            "text": "target language"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 86,
+            "end": 97,
+            "text": "Zielsprache"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "term-compound",
+    "category": "terminology",
+    "source": "The input file name appears in the error message.",
+    "target": "Der Eingabedateiname erscheint in der Fehlermeldung.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 4,
+            "end": 19,
+            "text": "input file name"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 4,
+            "end": 20,
+            "text": "Eingabedateiname"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "term-classification",
+    "category": "terminology",
+    "source": "The classification model processes new observations and predicts a category.",
+    "target": "Das Klassifikationsmodell verarbeitet neue Beobachtungen und sagt eine Kategorie voraus.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 25,
+            "end": 34,
+            "text": "processes"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 26,
+            "end": 37,
+            "text": "verarbeitet"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "term-context",
+    "category": "terminology",
+    "source": "A larger context window does not guarantee a more accurate translation.",
+    "target": "Ein größeres Kontextfenster garantiert keine genauere Übersetzung.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 9,
+            "end": 23,
+            "text": "context window"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 13,
+            "end": 27,
+            "text": "Kontextfenster"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "split-multi-sentence",
+    "category": "terminology",
+    "source": "Turn the device off before opening the cover. After the inspection, switch it on again.",
+    "target": "Schalten Sie das Gerät aus, bevor Sie die Abdeckung öffnen. Schalten Sie es nach der Prüfung wieder ein.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 56,
+            "end": 66,
+            "text": "inspection"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 85,
+            "end": 92,
+            "text": "Prüfung"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ]
+  },
+  {
+    "id": "omitted-intensifier",
+    "category": "omission",
+    "source": "The result is really useful for the reviewer.",
+    "target": "Das Ergebnis ist für den Gutachter nützlich.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 14,
+            "end": 20,
+            "text": "really"
+          }
+        ],
+        "target_ranges": [],
+        "relation": "unaligned"
+      }
+    ],
+    "review_note": "Deliberately incomplete target for alignment stress testing, not a recommended translation."
+  },
+  {
+    "id": "omitted-time",
+    "category": "omission",
+    "source": "Save the file immediately.",
+    "target": "Speichern Sie die Datei.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 14,
+            "end": 25,
+            "text": "immediately"
+          }
+        ],
+        "target_ranges": [],
+        "relation": "unaligned"
+      }
+    ],
+    "review_note": "Deliberately incomplete target for alignment stress testing, not a recommended translation."
+  },
+  {
+    "id": "added-politeness",
+    "category": "addition",
+    "source": "Close the window after saving the document.",
+    "target": "Bitte schließen Sie das Fenster, nachdem Sie das Dokument gespeichert haben.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 10,
+            "end": 16,
+            "text": "window"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 24,
+            "end": 31,
+            "text": "Fenster"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "review_note": "The target deliberately adds content without a direct source counterpart."
+  },
+  {
+    "id": "added-explanation",
+    "category": "addition",
+    "source": "The cache reduces latency.",
+    "target": "Der Cache, ein Zwischenspeicher, verringert die Latenz.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 4,
+            "end": 9,
+            "text": "cache"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 4,
+            "end": 9,
+            "text": "Cache"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "review_note": "The target deliberately adds content without a direct source counterpart."
+  },
+  {
+    "id": "marker-middle",
+    "category": "marker",
+    "source": "Read DLMD8B763120364A81332B2765008969E9AX0Z before you change the configuration.",
+    "target": "Lesen Sie DLMD8B763120364A81332B2765008969E9AX0Z, bevor Sie die Konfiguration ändern.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 66,
+            "end": 79,
+            "text": "configuration"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 64,
+            "end": 77,
+            "text": "Konfiguration"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "marker_prefix": "DLMD8B763120364A81332B2765008969E9A",
+    "markers": [
+      "DLMD8B763120364A81332B2765008969E9AX0Z"
+    ]
+  },
+  {
+    "id": "marker-reordered",
+    "category": "marker",
+    "source": "Copy DLMD8B763120364A81332B2765008969E9AX0Z to DLMD8B763120364A81332B2765008969E9AX1Z before deleting DLMD8B763120364A81332B2765008969E9AX2Z.",
+    "target": "Bevor Sie DLMD8B763120364A81332B2765008969E9AX2Z löschen, kopieren Sie DLMD8B763120364A81332B2765008969E9AX0Z nach DLMD8B763120364A81332B2765008969E9AX1Z.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 93,
+            "end": 101,
+            "text": "deleting"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 49,
+            "end": 56,
+            "text": "löschen"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "marker_prefix": "DLMD8B763120364A81332B2765008969E9A",
+    "markers": [
+      "DLMD8B763120364A81332B2765008969E9AX0Z",
+      "DLMD8B763120364A81332B2765008969E9AX1Z",
+      "DLMD8B763120364A81332B2765008969E9AX2Z"
+    ]
+  },
+  {
+    "id": "marker-paragraph",
+    "category": "marker",
+    "source": "The command DLMD8B763120364A81332B2765008969E9AX0Z starts the service. If startup fails, inspect DLMD8B763120364A81332B2765008969E9AX1Z. Keep the existing configuration until the problem is resolved.",
+    "target": "Der Befehl DLMD8B763120364A81332B2765008969E9AX0Z startet den Dienst. Prüfen Sie DLMD8B763120364A81332B2765008969E9AX1Z, falls der Start fehlschlägt. Behalten Sie die bestehende Konfiguration bei, bis das Problem behoben ist.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 146,
+            "end": 168,
+            "text": "existing configuration"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 167,
+            "end": 191,
+            "text": "bestehende Konfiguration"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "marker_prefix": "DLMD8B763120364A81332B2765008969E9A",
+    "markers": [
+      "DLMD8B763120364A81332B2765008969E9AX0Z",
+      "DLMD8B763120364A81332B2765008969E9AX1Z"
+    ]
+  },
+  {
+    "id": "marker-adjacent",
+    "category": "marker",
+    "source": "Compare DLMD8B763120364A81332B2765008969E9AX0Z and DLMD8B763120364A81332B2765008969E9AX1Z with the reference result.",
+    "target": "Vergleichen Sie DLMD8B763120364A81332B2765008969E9AX0Z und DLMD8B763120364A81332B2765008969E9AX1Z mit dem Referenzergebnis.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 99,
+            "end": 115,
+            "text": "reference result"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 106,
+            "end": 122,
+            "text": "Referenzergebnis"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "marker_prefix": "DLMD8B763120364A81332B2765008969E9A",
+    "markers": [
+      "DLMD8B763120364A81332B2765008969E9AX0Z",
+      "DLMD8B763120364A81332B2765008969E9AX1Z"
+    ]
+  },
+  {
+    "id": "format-cross-sentence",
+    "category": "formatting",
+    "source": "Read the instructions carefully. Then open the configuration file. Save a backup first.",
+    "target": "Lesen Sie die Anweisungen sorgfältig. Öffnen Sie anschließend die Konfigurationsdatei. Erstellen Sie zuerst eine Sicherungskopie.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 22,
+            "end": 42,
+            "text": "carefully. Then open"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 26,
+            "end": 61,
+            "text": "sorgfältig. Öffnen Sie anschließend"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "review_note": "Selected source ranges represent a formatting scope in plain text. Review possible target coverage; no formatting projection is performed."
+  },
+  {
+    "id": "format-two-sentences",
+    "category": "formatting",
+    "source": "The first attempt failed. The second attempt succeeded. Processing can continue.",
+    "target": "Der erste Versuch ist fehlgeschlagen. Der zweite Versuch war erfolgreich. Die Verarbeitung kann fortgesetzt werden.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 0,
+            "end": 55,
+            "text": "The first attempt failed. The second attempt succeeded."
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 0,
+            "end": 73,
+            "text": "Der erste Versuch ist fehlgeschlagen. Der zweite Versuch war erfolgreich."
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "review_note": "Selected source ranges represent a formatting scope in plain text. Review possible target coverage; no formatting projection is performed."
+  },
+  {
+    "id": "format-reordered-phrase",
+    "category": "formatting",
+    "source": "Only after validation should you publish the final report.",
+    "target": "Veröffentlichen Sie den Abschlussbericht erst nach der Validierung.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": "Only after validation"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 41,
+            "end": 66,
+            "text": "erst nach der Validierung"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "review_note": "Selected source ranges represent a formatting scope in plain text. Review possible target coverage; no formatting projection is performed."
+  },
+  {
+    "id": "format-discontinuous",
+    "category": "formatting",
+    "source": "She turned off the device after the test.",
+    "target": "Sie schaltete das Gerät nach dem Test aus.",
+    "expected_spans": [
+      {
+        "source_ranges": [
+          {
+            "start": 4,
+            "end": 14,
+            "text": "turned off"
+          }
+        ],
+        "target_ranges": [
+          {
+            "start": 4,
+            "end": 13,
+            "text": "schaltete"
+          },
+          {
+            "start": 38,
+            "end": 41,
+            "text": "aus"
+          }
+        ],
+        "relation": "correspondence"
+      }
+    ],
+    "review_note": "Selected source ranges represent a formatting scope in plain text. Review possible target coverage; no formatting projection is performed."
+  }
+]
