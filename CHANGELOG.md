@@ -19,6 +19,10 @@
 
 ### Added
 
+- Opt-in formatting projection: split optical styles, expand discontinuous
+  links, drop unresolved scopes and overlapping links, and return structured
+  diagnostics without changing translated text or the active document pipeline.
+
 - Separate 30-case alignment evaluation suite covering longer paragraphs,
   repeated terms, registered markers and selected formatting scopes, with
   occurrence-specific review ranges and fixture consistency checks.

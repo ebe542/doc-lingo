@@ -53,5 +53,38 @@ implementation must return the unchanged input strings in its result.
 Later orchestration will validate content markers and determine their exact
 identities separately. Marker identity does not prove correct linguistic placement.
 Marker mapping, alignment execution, formatting projection and replacement of
-markers with original contents remain separate future steps. The contract adds
+markers with original contents remain separate orchestration steps. The contract adds
 no model dependency and performs no translation or alignment itself.
+
+## Formatting projection policy
+
+`project_formatting(alignment, scopes)` is an opt-in, format-independent policy.
+Each `FormattingScope` has an adapter-owned unique identity and a `TextRange`
+in the exact alignment source, not original-document coordinates. An optional
+`link_target` distinguishes a link from optical formatting and stays unchanged.
+Callers must map layout coordinates into model-input coordinates before calling
+this API; it does not infer wrapper types or restore marker contents.
+
+- Drop a scope if any source range is unaligned or ambiguous, if a selected
+  many-to-many link crosses its boundary, or if it has no target correspondence.
+- Merge target anchors separated only by whitespace. Split optical formatting
+  at other gaps, including inserted words, and report the split as a risk.
+- Expand a discontinuous link from its first target anchor to its last,
+  including intervening text, and report the expansion.
+- Drop all links whose resulting target ranges overlap, including nested links.
+  Conflict resolution is independent of caller order. Optical styles survive.
+- Sentence boundaries do not split a scope automatically. The same coverage
+  and gap rules apply to scopes spanning one or more sentences.
+
+The immutable result contains projected ranges and structured issues with scope
+identity, action (`dropped`, `split`, `expanded`) and reason. Issues omit document
+text and URLs. Callers must persist these issues with their document/segment
+context when integrating the policy. The pure function itself performs no file
+I/O and never changes translated text. Discarded links have a drop issue rather
+than a successful-expansion issue.
+
+This step does not activate alignment in `translate_document`, render Markdown
+or HTML, or change the CLI diagnostic file. Document writers still need an
+integration that resolves wrapper nesting, maps target coordinates after marker
+restoration, and forwards issues to the existing diagnostic sink. Structural
+coverage cannot detect a linguistically incorrect but complete alignment.
