@@ -14,10 +14,13 @@ from doc_lingo.translation.formatting import (
     ProjectedFormatting,
     project_formatting,
 )
+from doc_lingo.translation.formatting_bridge import RestoredFormatting, restore_aligned_formatting
 from doc_lingo.translation.protocols import TranslationBackend, TranslationError
 from doc_lingo.translation.service import translate_document
 
 __all__ = [
+    "RestoredFormatting",
+    "restore_aligned_formatting",
     "FormattingScope",
     "FormattingIssue",
     "FormattingProjection",

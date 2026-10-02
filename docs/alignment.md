@@ -58,6 +58,32 @@ no model dependency and performs no translation or alignment itself.
 
 ## Formatting projection policy
 
+### Source and restored-target bridge
+
+`restore_aligned_formatting` connects prepared `ModelInput`, a matching alignment,
+and explicitly classified formatting scopes in original segment coordinates.
+It removes syntax from source offsets, accounts for content-marker lengths,
+anchors marker identities, applies the projection policy and restores protected
+content in one pass. Result target ranges address the restored text, while scope
+references retain their original source coordinates. The adapter supplies scope
+identities and link destinations; this layer never guesses formatting types.
+
+Scopes that cut protected content or contain only removed syntax are dropped
+with diagnostics. Missing, duplicate or damaged markers and mismatched model
+inputs raise `AlignmentError` before restoration; fully protected segments must
+bypass alignment. The function accepts one complete prepared segment, not a
+chunk with offsets relative to a different string.
+
+An optional `on_issue` callback receives existing `TranslationIssue` objects with
+segment, paragraph and page context and `formatting_dropped`, `formatting_split`
+or `formatting_expanded` actions. Diagnostics contain the restored translation
+and projection reason. Returned projection issues remain available without a
+callback. Callback failures propagate; no global issue context is changed.
+This bridge is callable by the library but is not yet selected by the active
+service or CLI. Markdown rendering and writer integration remain the next step.
+
+### Projection rules
+
 `project_formatting(alignment, scopes)` is an opt-in, format-independent policy.
 Each `FormattingScope` has an adapter-owned unique identity and a `TextRange`
 in the exact alignment source, not original-document coordinates. An optional

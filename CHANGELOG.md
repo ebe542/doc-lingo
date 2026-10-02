@@ -19,6 +19,9 @@
 
 ### Added
 
+- Bridge original formatting coordinates to model alignment and restored target
+  text, with exact marker validation and existing translation-issue callbacks.
+
 - Opt-in formatting projection: split optical styles, expand discontinuous
   links, drop unresolved scopes and overlapping links, and return structured
   diagnostics without changing translated text or the active document pipeline.
