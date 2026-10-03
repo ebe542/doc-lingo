@@ -1,5 +1,6 @@
 """Opt-in rendering of projected Markdown wrappers in restored target text."""
 
+import re
 from dataclasses import dataclass
 
 from doc_lingo.documents.html.text import HtmlText
@@ -16,6 +17,30 @@ class MarkdownRendering:
     issues: tuple[FormattingIssue, ...]
 
 
+def html_wrapper(opening: str, closing: str) -> str | None:
+    """Recognize complete inline wrappers; attributes stay byte-for-byte source-owned."""
+    match = re.match(r"<([A-Za-z][A-Za-z0-9]*)\b", opening)
+    if match is None or match[1].lower() not in {
+        "strong",
+        "em",
+        "b",
+        "i",
+        "span",
+        "a",
+        "s",
+        "u",
+        "mark",
+        "small",
+        "sub",
+        "sup",
+    }:
+        return None
+    tag = match[1].lower()
+    if not re.fullmatch(r"</" + tag + r"\s*>", closing, re.IGNORECASE):
+        return None
+    return tag
+
+
 def markdown_scopes(layout: SourceLayout) -> tuple[FormattingScope, ...]:
     """Name every layout range by index; preserve link suffixes verbatim.
 
@@ -29,6 +54,12 @@ def markdown_scopes(layout: SourceLayout) -> tuple[FormattingScope, ...]:
             TextRange(item.inner_start, item.inner_end),
             layout.source[item.inner_end : item.outer_end]
             if layout.source[item.outer_start : item.inner_start] == "["
+            else layout.source[item.outer_start : item.inner_start]
+            if html_wrapper(
+                layout.source[item.outer_start : item.inner_start],
+                layout.source[item.inner_end : item.outer_end],
+            )
+            == "a"
             else None,
         )
         for index, item in enumerate(layout.ranges)
@@ -37,7 +68,11 @@ def markdown_scopes(layout: SourceLayout) -> tuple[FormattingScope, ...]:
 
 
 def render_markdown(
-    layout: SourceLayout, restored: RestoredFormatting, *, environment: dict | None = None
+    layout: SourceLayout,
+    restored: RestoredFormatting,
+    *,
+    environment: dict | None = None,
+    raw_html: bool = False,
 ) -> MarkdownRendering:
     """Render nested/disjoint wrappers, dropping crossing or invalid scopes.
 
@@ -57,8 +92,10 @@ def render_markdown(
         source_range = layout.ranges[int(identity)]
         opening = layout.source[source_range.outer_start : source_range.inner_start]
         closing = layout.source[source_range.inner_end : source_range.outer_end]
-        supported = (opening == closing and opening in ("*", "**", "_", "__", "~~")) or (
-            opening == "[" and closing.startswith(("](", "]["))
+        supported = (
+            html_wrapper(opening, closing) is not None
+            or (opening == closing and opening in ("*", "**", "_", "__", "~~"))
+            or (opening == "[" and closing.startswith(("](", "][")))
         )
         if not supported:
             issues.append(FormattingIssue(identity, "dropped", "unsupported_markdown_wrapper"))
@@ -113,7 +150,11 @@ def render_markdown(
         position = offset
     pieces.append(restored.text[position:])
     text = "".join(pieces)
-    actual = inline_source_layout(text, environment or {}, HtmlText(text))
+    actual = (
+        HtmlText(text).source_layout()
+        if raw_html
+        else inline_source_layout(text, environment or {}, HtmlText(text))
+    )
     if not set(expected).issubset(actual.ranges):
         issues.extend(
             FormattingIssue(str(identity), "dropped", "markdown_wrapper_validation")

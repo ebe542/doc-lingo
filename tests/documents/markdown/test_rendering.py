@@ -65,7 +65,7 @@ def test_overlapping_links_are_defensively_rejected():
 
 
 def test_unsupported_html_wrapper_is_reported():
-    layout, result = fixture("<b>one</b>", "eins", [((0, 4),)])
+    layout, result = fixture("<div>one</div>", "eins", [((0, 4),)])
     rendered = render_markdown(layout, result)
     assert rendered.text == "eins"
     assert rendered.issues[0].reason == "unsupported_markdown_wrapper"
@@ -109,3 +109,44 @@ def test_empty_layout_and_empty_inner_scope():
     )
     assert rendered.text == "Text"
     assert not rendered.issues
+
+
+def test_nested_html_and_markdown_wrappers():
+    layout, result = fixture(
+        '<strong title="Original">*word*</strong>', "Wort", [((0, 4),), ((0, 4),)]
+    )
+    rendered = render_markdown(layout, result)
+    assert rendered.text == '<strong title="Original">*Wort*</strong>'
+    assert not rendered.issues
+
+
+def test_html_link_is_classified_and_conflicts_with_markdown_link():
+    layout, result = fixture(
+        '<a href="one">word</a> [other](two)', "eins zwei", [((0, 9),), ((5, 9),)]
+    )
+    assert all(scope.link_target is not None for scope in markdown_scopes(layout))
+    rendered = render_markdown(layout, result)
+    assert rendered.text == "eins zwei"
+    assert len(rendered.issues) == 2
+
+
+def test_raw_html_does_not_interpret_markdown_text():
+    layout = SourceLayout("<em>word</em>", (SourceRange(0, 4, 8, 13),))
+    scope = markdown_scopes(layout)[0]
+    result = RestoredFormatting(
+        "*Wort*", FormattingProjection((ProjectedFormatting(scope, (TextRange(0, 6),)),), ())
+    )
+    assert render_markdown(layout, result, raw_html=True).text == "<em>*Wort*</em>"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "<code>word</code>",
+        '<span translate="no">word</span>',
+        "<span hidden>word</span>",
+        "<pre>word</pre>",
+    ],
+)
+def test_excluded_html_has_no_projectable_scope(text):
+    assert not markdown_scopes(HtmlText(text).source_layout())

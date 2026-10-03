@@ -37,6 +37,46 @@ class Aligner:
         return AlignmentResult(source, target, tuple(links))
 
 
+@pytest.mark.parametrize(
+    "wrapper,closing,action",
+    [
+        ('<strong class="important">', "</strong>", "formatting_split"),
+        ('<em title="Keep English">', "</em>", "formatting_split"),
+        (
+            '<a href="https://example.org/?a=1&amp;b=2" title="Keep English">',
+            "</a>",
+            "formatting_expanded",
+        ),
+    ],
+)
+@pytest.mark.parametrize("block", [False, True])
+def test_html_alignment_preserves_exact_attributes(tmp_path, wrapper, closing, action, block):
+    prefix = '<div class="outer"><p>' if block else ""
+    suffix = "</p></div>" if block else ""
+    original = prefix + wrapper + "Turn off" + closing + " device." + suffix
+    source = tmp_path / "source.md"
+    source.write_text(original, encoding="utf-8", newline="\n")
+    output = tmp_path / "out.md"
+    issues = []
+    translate_document(
+        MarkdownReader(source),
+        MarkdownWriter(source),
+        Backend(),
+        output,
+        source_lang="en",
+        target_lang="de",
+        aligner=Aligner(),
+        on_issue=issues.append,
+    )
+    expected = (
+        wrapper + "Schalte Gerät aus" + closing + "."
+        if action == "formatting_expanded"
+        else wrapper + "Schalte" + closing + " Gerät " + wrapper + "aus" + closing + "."
+    )
+    assert output.read_text(encoding="utf-8") == prefix + expected + suffix
+    assert [issue.action for issue in issues] == [action]
+
+
 @pytest.mark.parametrize("prefix", ["# ", "## ", "- ", "1. ", "> "])
 @pytest.mark.parametrize("ending", ["\n\n", "\r\n\r\n"])
 def test_block_envelope_stays_outside_models(tmp_path, prefix, ending):
@@ -239,7 +279,7 @@ def test_opaque_input_bypasses_models_and_html_uses_legacy_path():
 
     kwargs = dict(source_lang="en", target_lang="de", report=lambda *a, **k: None)
     assert translate_aligned(TextSegment("x", "text"), None, None, **kwargs) is None
-    assert translate_aligned(_MarkdownSegment("x", "<b>text</b>"), None, None, **kwargs) is None
+    assert translate_aligned(_MarkdownSegment("x", "<div>text</div>"), None, None, **kwargs) is None
     source = _MarkdownSegment("x", "`code`", protected_spans=((0, 6),))
     assert translate_aligned(source, None, None, **kwargs).text == source.text
 

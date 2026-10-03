@@ -25,6 +25,9 @@
 
 ### Added
 
+- Alignment-based HTML inline formatting and links inside Markdown, preserving
+  exact tags and attributes and applying shared split/expansion/conflict rules.
+
 - Opt-in Markdown alignment in the service and CLI with a local awesome-align
   model, reproducible writer validation and existing JSONL formatting warnings.
 

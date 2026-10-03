@@ -141,6 +141,17 @@ restoration, and forwards issues to the existing diagnostic sink. Structural
 coverage cannot detect a linguistically incorrect but complete alignment.
 ## Active Markdown orchestration
 
+Supported complete HTML inline wrappers (`strong`, `em`, `b`, `i`, `span`, `a`,
+`s`, `u`, `mark`, `small`, `sub`, `sup`) now participate in alignment, both in
+Markdown inline text and in HTML text regions. Opening/closing tags, attribute
+spelling, quoting and entity escapes are copied verbatim. HTML anchors use the
+same contiguous expansion and overlap rules as Markdown links; optical wrappers
+may split. Raw HTML rendering does not interpret Markdown emphasis syntax.
+Excluded code/preformatted content, hidden/translate=no elements and comments
+remain protected. Block tags stay adapter-owned; unsupported complete wrappers
+retain the legacy path. No standalone HTML file format is added. Earlier notes
+below about all HTML wrappers using the legacy path are superseded by this scope.
+
 Aligned structure validation ignores only parsed `softbreak` tokens. Translations
 may reflow a paragraph or list item without retaining its physical soft wraps.
 Hard breaks, paragraph/list boundaries, table-cell boundaries, HTML and protected

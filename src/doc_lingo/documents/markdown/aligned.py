@@ -3,6 +3,7 @@
 import re
 from dataclasses import dataclass, replace
 
+from doc_lingo.documents.html.text import HtmlSegment
 from doc_lingo.documents.markdown._parser import _MarkdownSegment
 from doc_lingo.documents.markdown.rendering import render_markdown
 from doc_lingo.documents.models import TextSegment
@@ -14,11 +15,15 @@ class AlignedMarkdownSegment(TextSegment):
     restored: RestoredFormatting | None = None
 
 
-def aligned_body(source: _MarkdownSegment) -> tuple[str, _MarkdownSegment, str]:
+def aligned_body(
+    source: _MarkdownSegment | HtmlSegment,
+) -> tuple[str, _MarkdownSegment | HtmlSegment, str]:
     """Keep adapter-owned block prefixes and outer whitespace outside models."""
     prefix = re.match(r"[ \t]*(?:(?:>[ \t]?|(?:[-+*]|\d+[.)])[ \t]+|#{1,6}[ \t]+))*", source.text)
     assert prefix is not None
     start = prefix.end()
+    if isinstance(source, HtmlSegment):
+        start = len(source.text) - len(source.text.lstrip())
     # Only remove syntax the reader has actually marked as protected.
     if start and not any(a == 0 and b >= start for a, b in source.protected_spans):
         start = 0
@@ -37,15 +42,23 @@ def aligned_body(source: _MarkdownSegment) -> tuple[str, _MarkdownSegment, str]:
 
 def aligned_errors(source: TextSegment, translated: AlignedMarkdownSegment) -> tuple[str, ...]:
     """Expose the same structural checks used by the writer for diagnostics."""
-    if not isinstance(source, _MarkdownSegment) or translated.restored is None:
+    if not isinstance(source, (_MarkdownSegment, HtmlSegment)) or translated.restored is None:
         return ("missing_alignment_evidence",)
     leading, body, trailing = aligned_body(source)
     layout = body.source_layout()
     baseline = replace(source, text=leading + layout.extract_text() + trailing, protected_spans=())
-    errors = baseline.validation_errors(
-        leading + translated.restored.text + trailing, allow_softbreaks=True
+    target = leading + translated.restored.text + trailing
+    errors = (
+        baseline.validation_errors(target, allow_softbreaks=True)
+        if isinstance(baseline, _MarkdownSegment)
+        else baseline.validation_errors(target)
     )
-    rendered = render_markdown(layout, translated.restored, environment=source.environment).text
+    rendered = render_markdown(
+        layout,
+        translated.restored,
+        environment=source.environment if isinstance(source, _MarkdownSegment) else {},
+        raw_html=isinstance(source, HtmlSegment),
+    ).text
     if leading + rendered + trailing != translated.text:
         errors += ("rendered_alignment_mismatch",)
     return errors

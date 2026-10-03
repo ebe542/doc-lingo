@@ -1,12 +1,13 @@
 """Opt-in complete-segment Markdown translation and alignment orchestration."""
 
+from doc_lingo.documents.html.text import HtmlSegment
 from doc_lingo.documents.markdown._parser import _MarkdownSegment
 from doc_lingo.documents.markdown.aligned import (
     AlignedMarkdownSegment,
     aligned_body,
     aligned_errors,
 )
-from doc_lingo.documents.markdown.rendering import markdown_scopes, render_markdown
+from doc_lingo.documents.markdown.rendering import html_wrapper, markdown_scopes, render_markdown
 from doc_lingo.translation.alignment import AlignmentError, AlignmentResult, TextRange
 from doc_lingo.translation.formatting_bridge import restore_aligned_formatting
 from doc_lingo.translation.issues import (
@@ -20,10 +21,17 @@ from doc_lingo.translation.model_input import prepare_model_input
 
 def translate_aligned(segment, backend, aligner, *, source_lang, target_lang, report):
     """Return evidence for the writer, or None for unsupported HTML segments."""
-    if not isinstance(segment, _MarkdownSegment):
+    if not isinstance(segment, (_MarkdownSegment, HtmlSegment)):
         return None
     layout = segment.source_layout()
-    if any(layout.source[r.outer_start : r.inner_start].startswith("<") for r in layout.ranges):
+    if any(
+        layout.source[r.outer_start : r.inner_start].startswith("<")
+        and html_wrapper(
+            layout.source[r.outer_start : r.inner_start], layout.source[r.inner_end : r.outer_end]
+        )
+        is None
+        for r in layout.ranges
+    ):
         return None
     leading, body, trailing = aligned_body(segment)
     layout = body.source_layout()
@@ -80,7 +88,12 @@ def translate_aligned(segment, backend, aligner, *, source_lang, target_lang, re
             diagnostics=TranslationDiagnostics(target, "aligned_content", (str(error),)),
         )
         return AlignedMarkdownSegment(segment.id, text, segment.type)
-    rendered = render_markdown(layout, restored, environment=segment.environment)
+    rendered = render_markdown(
+        layout,
+        restored,
+        environment=segment.environment if isinstance(segment, _MarkdownSegment) else {},
+        raw_html=isinstance(segment, HtmlSegment),
+    )
     translated = AlignedMarkdownSegment(
         segment.id, leading + rendered.text + trailing, segment.type, restored=restored
     )
