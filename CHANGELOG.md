@@ -19,6 +19,9 @@
 
 ### Added
 
+- Opt-in Markdown rendering of projected emphasis and links, retaining original
+  wrappers and destinations, with nesting checks and parser-validated fallback.
+
 - Bridge original formatting coordinates to model alignment and restored target
   text, with exact marker validation and existing translation-issue callbacks.
 

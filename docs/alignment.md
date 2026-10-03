@@ -58,6 +58,31 @@ no model dependency and performs no translation or alignment itself.
 
 ## Formatting projection policy
 
+### Markdown rendering
+
+`documents.markdown.rendering.markdown_scopes(layout)` assigns layout-index
+identities to nonempty source scopes. Its opaque link target is the exact closing
+suffix (destination/reference and optional title), not a normalized URL.
+Pass these scopes through `restore_aligned_formatting`, then call
+`render_markdown(layout, restored, environment=...)`. Reference links require
+the original parser environment. The renderer reuses original Markdown wrappers
+for emphasis, strong emphasis, strikethrough and explicit links; HTML wrappers
+are currently dropped with an `unsupported_markdown_wrapper` diagnostic.
+
+Disjoint and nested target ranges are rendered with parents opened first and
+children closed first. Crossing ranges and overlapping links are dropped for
+all participating scopes. Split ranges produce repeated wrappers. Expanded
+links use one wrapper pair and keep their original suffix. The existing parser
+then checks whether each inserted wrapper occupies the intended range. If
+delimiter interactions prevent that validation, all inserted formatting in this
+render call is discarded; the restored translated text remains unchanged.
+
+The returned `MarkdownRendering` contains Markdown text and accumulated
+`FormattingIssue` records. A dropped scope supersedes its split/expansion notice.
+This is an opt-in inline renderer, not automatic escaping of translated prose,
+HTML rendering, or an active writer/CLI path. The eventual service must forward
+new rendering issues to its diagnostic callback and preserve document context.
+
 ### Source and restored-target bridge
 
 `restore_aligned_formatting` connects prepared `ModelInput`, a matching alignment,
