@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 
 from doc_lingo.documents.errors import SegmentMismatchError
 from doc_lingo.documents.markdown._parser import _regions
+from doc_lingo.documents.markdown.aligned import AlignedMarkdownSegment, accepts_aligned
 from doc_lingo.documents.models import TextSegment
 
 
@@ -39,7 +40,16 @@ class MarkdownWriter:
                         and region.segment.repair_translation(segment.unrepaired_text)
                         == segment.text
                     )
-                    if not valid_repair and not region.segment.accepts_translation(segment.text):
+                    valid_alignment = (
+                        isinstance(segment, AlignedMarkdownSegment)
+                        and segment.restored is not None
+                        and accepts_aligned(region.segment, segment)
+                    )
+                    if (
+                        not valid_alignment
+                        and not valid_repair
+                        and not region.segment.accepts_translation(segment.text)
+                    ):
                         raise SegmentMismatchError("Translation changes Markdown structure")
                     output.write(source[cursor : region.start])
                     output.write(segment.text)

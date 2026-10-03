@@ -302,7 +302,7 @@ def test_cli_distinguishes_formatting_repairs(tmp_path, monkeypatch, capsys):
     output = capsys.readouterr()
     assert "formatting warnings" in output.out
     assert "0 original text units retained" in output.err
-    assert "1 segments with formatting repaired" in output.err
+    assert "1 formatting warnings" in output.err
 
 
 def test_writer_rechecks_repair_instead_of_trusting_metadata(tmp_path):

@@ -14,10 +14,19 @@
 
 ### Fixed
 
+- Allow changed Markdown soft wraps in the alignment path without relaxing hard
+  breaks, block structure, table cells or the legacy writer validation.
+
+- Preserve Markdown block prefixes and outer whitespace outside aligned model
+  input, and include attempted output and validation details in recovery reports.
+
 - Allow translated prose to move around preserved Markdown inline elements.
   Keep checking nesting, nonempty inline containers, links and code contents.
 
 ### Added
+
+- Opt-in Markdown alignment in the service and CLI with a local awesome-align
+  model, reproducible writer validation and existing JSONL formatting warnings.
 
 - Opt-in Markdown rendering of projected emphasis and links, retaining original
   wrappers and destinations, with nesting checks and parser-validated fallback.

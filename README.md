@@ -193,3 +193,26 @@ remain available directly from `doc_lingo`.
 ## License
 
 [MIT](LICENSE).
+## Optional Markdown alignment
+
+Use `--aligner awesome --alignment-model PATH` to enable the alignment-based
+Markdown path. `PATH` must be a local awesome-align model directory containing
+the weights and tokenizer files; install the project's awesome-align optional
+dependencies first. The aligner runs on CPU with layer 8 and threshold 0.001.
+The translation backend keeps its normal device settings.
+
+```bash
+doc-lingo example.md --target-lang de --aligner awesome --alignment-model local-data/models/awesome-align --output example.aligned.de.md
+```
+
+Use the evaluated `aneuraz/awesome-align-with-co` checkpoint at revision
+`777756717e1fa9556e304d4d5db173ee386b9c16`. This option does not download an
+alignment model automatically. Without the option, translation behaves as before.
+Only Markdown accepts it; HTML-wrapper segments keep the existing translation
+path. Split styles, expanded links and dropped formatting are written to the
+usual `.issues.jsonl` report and return warning exit code 3. These warnings do
+not mean that the underlying translated text was retained from the source.
+Alignment remains imperfect, especially for reordered repeated terms; review
+the generated document. Encoder-limit failures keep valid translated content
+and omit unresolved formatting. Invalid protected markers or changed document
+structure retain the original segment and are reported separately.

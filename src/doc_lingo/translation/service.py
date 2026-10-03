@@ -5,6 +5,7 @@ from contextlib import closing
 from pathlib import Path
 
 from doc_lingo.documents import DocumentReader, DocumentWriter, TextSegment
+from doc_lingo.translation.alignment import TextAligner
 from doc_lingo.translation.issues import (
     TranslationDiagnostics,
     TranslationIssue,
@@ -26,6 +27,7 @@ def translate_document(
     target_lang: str,
     on_progress: Callable[[int, str], None] | None = None,
     on_issue: Callable[[TranslationIssue], None] | None = None,
+    aligner: TextAligner | None = None,
 ) -> None:
     """Translate ordered segments while keeping the reading session open.
 
@@ -41,6 +43,10 @@ def translate_document(
     failures. Without it, library calls remain strict. The scoped context carries
     diagnostics without adding document-specific parameters to TranslationBackend;
     it is reset before yielding, including on exceptions and nested calls.
+
+    An optional caller-owned aligner enables projected Markdown formatting.
+    Other formats and unsupported HTML wrappers keep their existing path.
+    Formatting warnings reach on_issue without counting as source retention.
     """
     with reader.iter_segments() as segments:
 
@@ -76,11 +82,27 @@ def translate_document(
 
                 token = issue_sink.set(report if on_issue is not None else None)
                 unrepaired_text = None
+                aligned = None
                 try:
-                    text = translate_segment(
-                        segment, backend, source_lang=source_lang, target_lang=target_lang
+                    if aligner is not None:
+                        from doc_lingo.translation.aligned_markdown import translate_aligned
+
+                        aligned = translate_aligned(
+                            segment,
+                            backend,
+                            aligner,
+                            source_lang=source_lang,
+                            target_lang=target_lang,
+                            report=report,
+                        )
+                    text = (
+                        aligned.text
+                        if aligned is not None
+                        else translate_segment(
+                            segment, backend, source_lang=source_lang, target_lang=target_lang
+                        )
                     )
-                    if not segment.accepts_translation(text):
+                    if aligned is None and not segment.accepts_translation(text):
                         diagnostics = TranslationDiagnostics(
                             text, "restored", segment.validation_errors(text)
                         )
@@ -101,11 +123,15 @@ def translate_document(
                             )
                 finally:
                     issue_sink.reset(token)
-                translated = TextSegment(
-                    id=segment.id,
-                    text=text,
-                    type=segment.type,
-                    unrepaired_text=unrepaired_text,
+                translated = (
+                    aligned
+                    if aligned is not None
+                    else TextSegment(
+                        id=segment.id,
+                        text=text,
+                        type=segment.type,
+                        unrepaired_text=unrepaired_text,
+                    )
                 )
                 if on_progress is not None:
                     on_progress(count, segment.type)

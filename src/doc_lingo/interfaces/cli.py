@@ -25,6 +25,8 @@ from doc_lingo import (
     TranslationError,
     translate_document,
 )
+from doc_lingo.translation.alignment import AlignmentError
+from doc_lingo.translation.awesome_adapter import AwesomeAlignAdapter
 from doc_lingo.translation.glossary import Glossary, GlossaryBackend
 from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, validate_language_pair
 
@@ -42,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--output", type=Path, help="New output file (default: NAME.LANG.EXT)")
     parser.add_argument("--glossary", type=Path, help="Optional terminology JSON file")
+    parser.add_argument("--aligner", choices=["awesome"], help="Opt-in Markdown alignment (CPU)")
+    parser.add_argument("--alignment-model", type=Path, help="Local awesome-align model directory")
     parser.add_argument(
         "--backend",
         choices=BACKEND_NAMES,
@@ -60,6 +64,10 @@ def main(argv: list[str] | None = None) -> None:
     except ValueError as error:
         parser.error(str(error))
     extension = args.file.suffix.lower()
+    if bool(args.aligner) != bool(args.alignment_model):
+        parser.error("--aligner and --alignment-model must be supplied together")
+    if args.aligner and extension != ".md":
+        parser.error("--aligner requires a Markdown document")
     if extension not in (".txt", ".md"):
         parser.error("Only .txt and .md source documents are supported")
     destination = args.output or args.file.with_name(
@@ -110,13 +118,16 @@ def main(argv: list[str] | None = None) -> None:
                 report_file.write(json.dumps(asdict(issue), ensure_ascii=False) + "\n")
                 report_file.flush()
                 issue_count += 1
-                repair_count += issue.action == "formatting_repaired"
+                repair_count += issue.action.startswith("formatting_")
 
             backend: TranslationBackend = (
                 MarianBackend() if args.backend == "marian" else HuggingFaceBackend()
             )
             if glossary is not None:
                 backend = GlossaryBackend(backend, glossary)
+            alignment_options = {}
+            if args.aligner:
+                alignment_options["aligner"] = AwesomeAlignAdapter.load(str(args.alignment_model))
             translate_document(
                 MarkdownReader(args.file) if extension == ".md" else PlainTextReader(args.file),
                 MarkdownWriter(args.file) if extension == ".md" else PlainTextWriter(args.file),
@@ -126,6 +137,7 @@ def main(argv: list[str] | None = None) -> None:
                 target_lang=args.target_lang,
                 on_progress=show_progress,
                 on_issue=record_issue,
+                **alignment_options,
             )
     except FileExistsError:
         parser.exit(
@@ -141,7 +153,7 @@ def main(argv: list[str] | None = None) -> None:
         parser.exit(1, "Error: Source or translated text is not valid UTF-8.\n")
     except SegmentMismatchError:
         parser.exit(1, "Error: Translated segments do not match the source document.\n")
-    except TranslationError as error:
+    except (TranslationError, AlignmentError) as error:
         parser.exit(1, f"Error: {error}\n")
     except OSError:
         parser.exit(1, "Error: Document I/O failed; check storage and hard-link support.\n")
@@ -158,7 +170,7 @@ def main(argv: list[str] | None = None) -> None:
         parser.exit(
             3,
             f"Warning: {issue_count - repair_count} original text units retained; "
-            f"{repair_count} segments with formatting repaired. Report: {issues_path}\n",
+            f"{repair_count} formatting warnings. Report: {issues_path}\n",
         )
     print(f"Translation written to {destination}")
 

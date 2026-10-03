@@ -80,7 +80,8 @@ class _MarkdownSegment(TextSegment):
         """Reject added/lost markup, changed links and broken emphasis boundaries."""
         return not self.validation_errors(text)
 
-    def validation_errors(self, text: str) -> tuple[str, ...]:
+    def validation_errors(self, text: str, *, allow_softbreaks: bool = False) -> tuple[str, ...]:
+        """Optionally ignore soft wraps after parsing; retain all block checks."""
         if self.type == "table_cell" and (
             "\n" in text
             or "\r" in text
@@ -93,6 +94,9 @@ class _MarkdownSegment(TextSegment):
         errors = list(translated_html.validation_errors(original_html))
         before = _structure(self.text, self.environment)
         after = _structure(text, self.environment)
+        if allow_softbreaks:
+            before = [item for item in before if item[0] != "softbreak"]
+            after = [item for item in after if item[0] != "softbreak"]
         if len(before) != len(after):
             errors.append(f"markdown_token_count_changed: {len(before)} -> {len(after)}")
         fields = (

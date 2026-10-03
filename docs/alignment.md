@@ -139,3 +139,33 @@ or HTML, or change the CLI diagnostic file. Document writers still need an
 integration that resolves wrapper nesting, maps target coordinates after marker
 restoration, and forwards issues to the existing diagnostic sink. Structural
 coverage cannot detect a linguistically incorrect but complete alignment.
+## Active Markdown orchestration
+
+Aligned structure validation ignores only parsed `softbreak` tokens. Translations
+may reflow a paragraph or list item without retaining its physical soft wraps.
+Hard breaks, paragraph/list boundaries, table-cell boundaries, HTML and protected
+code remain validated. Newlines are not removed before parsing, since that would
+hide newly introduced block structure. The legacy translation path stays strict.
+
+`translate_document(..., aligner=...)` now selects the prepared-input, alignment,
+projection and rendering path for Markdown segments. The service supplies actual
+segment/paragraph context to all issue callbacks. HTML-wrapper segments use the
+legacy path until HTML rendering is implemented. Fully protected input bypasses
+both models. Other document formats retain their existing path.
+
+The writer receives `AlignedMarkdownSegment` evidence and re-renders its target
+ranges. It also checks restored text against the source with known wrappers
+removed; block, table-cell, HTML and protected-code constraints remain enforced.
+No boolean flag bypasses structural validation. Backend recovery and invalid
+markers retain the original segment. Alignment failures instead project an
+unresolved alignment, retaining valid translation and reporting formatting loss.
+The aligner consumes a complete prepared segment; encoder overflow is not
+silently truncated. This does not yet implement per-chunk alignment.
+
+CLI selection requires both `--aligner awesome` and `--alignment-model PATH`.
+Loading happens once, on CPU, and expected loading errors produce normal CLI
+errors. The model directory is caller-owned; no automatic alignment download is
+performed. Formatting issues use the existing JSONL file and warning exit code 3,
+with counts separated from retained-original failures. Older descriptions below
+of components as opt-in standalone steps describe their individual APIs; the
+explicit CLI option now connects those steps.
