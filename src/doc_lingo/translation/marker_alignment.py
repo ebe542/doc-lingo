@@ -56,12 +56,21 @@ def anchor_registered_markers(
     if len(set(tokens)) != len(tokens):
         raise AlignmentError("Duplicate registered marker identity")
     positions = []
-    for text in (result.source, result.target):
+    for side, text in (("source", result.source), ("target", result.target)):
         matches = list(pattern.finditer(text))
-        if Counter(m.group() for m in matches) != Counter(tokens):
-            raise AlignmentError("Missing, duplicate or unexpected content marker")
+        counts = Counter(m.group() for m in matches)
+        if counts != Counter(tokens):
+            missing = [token[len(prefix) :] for token in tokens if not counts[token]]
+            duplicate = [
+                f"{token[len(prefix) :]}:{count}" for token, count in counts.items() if count > 1
+            ]
+            unexpected = [token[len(prefix) :] for token in counts if token not in tokens]
+            raise AlignmentError(
+                "Missing, duplicate or unexpected content marker: "
+                f"side={side}; missing={missing}; duplicate={duplicate}; unexpected={unexpected}"
+            )
         if prefix.casefold() in pattern.sub("", text).casefold():
-            raise AlignmentError("Damaged content marker")
+            raise AlignmentError(f"Damaged content marker: side={side}")
         positions.append({m.group(): TextRange(m.start(), m.end()) for m in matches})
     source_positions, target_positions = positions
     source_cuts = tuple(sorted(source_positions.values()))

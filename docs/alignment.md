@@ -143,6 +143,19 @@ coverage cannot detect a linguistically incorrect but complete alignment.
 
 ### Long segments and paired chunks
 
+Awesome-align additionally implements `ReservedTextAligner.fits_source`: chunk
+planning uses 75 percent of its encoder window, while `fits_input` retains the
+full limit for validation and fixed-pair evaluation. Registered marker-only
+sentence units bypass both models; ordinary runs on either side are still
+budgeted together. The sentence heuristic is shared with backend chunking.
+The CLI prints `AlignmentStatistics`; library callers can pass an accumulator
+through `translate_document(alignment_statistics=...)`. See the partial-formatting
+evaluation guide for measurement boundaries and reproducible console capture.
+
+For the next comparison, see [partial formatting evaluation](partial-formatting-evaluation.md).
+It covers partial scopes, nested emphasis and independent links with unformatted
+surrounding text, without relying on the whole-segment exception.
+
 A formatting scope enclosing the complete non-whitespace source segment can
 cover the entire non-whitespace translated segment without individual word
 links. The complete-segment bridge explicitly enables this rule; isolated

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from doc_lingo.documents import DocumentReader, DocumentWriter, TextSegment
 from doc_lingo.translation.alignment import TextAligner
+from doc_lingo.translation.alignment_statistics import AlignmentStatistics
 from doc_lingo.translation.issues import (
     TranslationDiagnostics,
     TranslationIssue,
@@ -28,6 +29,7 @@ def translate_document(
     on_progress: Callable[[int, str], None] | None = None,
     on_issue: Callable[[TranslationIssue], None] | None = None,
     aligner: TextAligner | None = None,
+    alignment_statistics: AlignmentStatistics | None = None,
 ) -> None:
     """Translate ordered segments while keeping the reading session open.
 
@@ -94,6 +96,7 @@ def translate_document(
                             source_lang=source_lang,
                             target_lang=target_lang,
                             report=report,
+                            statistics=alignment_statistics,
                         )
                     text = (
                         aligned.text

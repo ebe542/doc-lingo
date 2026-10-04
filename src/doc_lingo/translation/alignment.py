@@ -109,3 +109,10 @@ class BudgetedTextAligner(TextAligner, Protocol):
     def fits_input(self, text: str) -> bool:
         """Include tokenization and special tokens; never truncate input."""
         ...
+
+
+@runtime_checkable
+class ReservedTextAligner(BudgetedTextAligner, Protocol):
+    """Optional smaller source budget leaves headroom for target expansion."""
+
+    def fits_source(self, text: str) -> bool: ...

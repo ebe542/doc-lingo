@@ -26,6 +26,7 @@ from doc_lingo import (
     translate_document,
 )
 from doc_lingo.translation.alignment import AlignmentError
+from doc_lingo.translation.alignment_statistics import AlignmentStatistics
 from doc_lingo.translation.awesome_adapter import AwesomeAlignAdapter
 from doc_lingo.translation.glossary import Glossary, GlossaryBackend
 from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, validate_language_pair
@@ -108,6 +109,7 @@ def main(argv: list[str] | None = None) -> None:
     issue_count = 0
     repair_count = 0
     report_created = False
+    alignment_statistics = AlignmentStatistics()
 
     try:
         with issues_path.open("x", encoding="utf-8", newline="\n") as report_file:
@@ -128,6 +130,7 @@ def main(argv: list[str] | None = None) -> None:
             alignment_options = {}
             if args.aligner:
                 alignment_options["aligner"] = AwesomeAlignAdapter.load(str(args.alignment_model))
+                alignment_options["alignment_statistics"] = alignment_statistics
             translate_document(
                 MarkdownReader(args.file) if extension == ".md" else PlainTextReader(args.file),
                 MarkdownWriter(args.file) if extension == ".md" else PlainTextWriter(args.file),
@@ -160,6 +163,11 @@ def main(argv: list[str] | None = None) -> None:
     finally:
         if report_created and issue_count == 0:
             issues_path.unlink()
+    if args.aligner:
+        print(
+            "Alignment path statistics: " + json.dumps(asdict(alignment_statistics)),
+            file=sys.stderr,
+        )
     if issue_count:
         status = (
             "Partially translated document"

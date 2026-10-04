@@ -73,6 +73,14 @@ def test_token_budget():
         adapter._encode(["word"])
 
 
+def test_source_budget_leaves_target_headroom():
+    adapter = make_adapter()
+    adapter.tokenizer.max_len = 8
+    assert adapter.fits_source("one two three four")  # Four words plus two special tokens.
+    assert not adapter.fits_source("one two three four five")
+    assert adapter.fits_input("one two three four five six")
+
+
 def test_budget_capability_counts_subwords_punctuation_and_special_tokens():
     adapter = make_adapter()
     adapter.tokenizer.max_len = 6

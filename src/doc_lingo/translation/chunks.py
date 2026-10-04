@@ -55,6 +55,17 @@ def split_text(text: str, fits: Callable[[str], bool]) -> Iterator[tuple[str, st
         pending.append((part[: boundary.start()], boundary.group()))
 
 
+def sentence_parts(text: str) -> Iterator[tuple[str, str]]:
+    """Yield heuristic sentence units and their exact following whitespace."""
+    start = 0
+    for boundary in _BOUNDARY.finditer(text):
+        if _SENTENCE_END.search(text, start, boundary.start()):
+            yield text[start : boundary.start()], boundary.group()
+            start = boundary.end()
+    if start < len(text):
+        yield text[start:], ""
+
+
 def translate_chunks(
     text: str, fits: Callable[[str], bool], translate: Callable[[str], str]
 ) -> str:
@@ -62,15 +73,6 @@ def translate_chunks(
 
     # Use individual sentences even when a whole paragraph fits the context.
     # Context capacity is not evidence that a model preserves long inputs.
-    def sentences() -> Iterator[tuple[str, str]]:
-        start = 0
-        for boundary in _BOUNDARY.finditer(text):
-            if _SENTENCE_END.search(text, start, boundary.start()):
-                yield text[start : boundary.start()], boundary.group()
-                start = boundary.end()
-        if start < len(text):
-            yield text[start:], ""
-
     def generate(part: str) -> str:
         if not part:
             return ""
@@ -82,5 +84,5 @@ def translate_chunks(
     return "".join(
         "".join(generate(part) + separator for part, separator in split_text(sentence, fits))
         + following
-        for sentence, following in sentences()
+        for sentence, following in sentence_parts(text)
     )

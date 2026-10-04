@@ -14,6 +14,9 @@
 
 ### Fixed
 
+- Leave target-expansion headroom when planning awesome-align source chunks and
+  bypass both models for standalone registered protection-marker units.
+
 - Preserve scopes enclosing complete translated segments despite missing word
   links; include affected alignment-source positions in partial-scope diagnostics.
 
@@ -27,6 +30,12 @@
   Keep checking nesting, nonempty inline containers, links and code contents.
 
 ### Added
+
+- Separate aligned-path timing/call counters in CLI output, with source/target
+  budget diagnostics and explicit missing/duplicate/unexpected marker identities.
+
+- Long Markdown partial-formatting evaluation cases and deterministic coverage
+  for nested scopes, independent links and localized missing correspondences.
 
 - Budgeted source chunking for aligned translation, merging per-chunk character
   mappings before projecting Markdown/HTML formatting across chunk boundaries.

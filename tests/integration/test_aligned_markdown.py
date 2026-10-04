@@ -312,3 +312,39 @@ def test_missing_protected_marker_retains_original(tmp_path):
     )
     assert output.read_text(encoding="utf-8") == "Use `code` now."
     assert issues[-1].action == "retained_original"
+
+
+def test_excluded_trailing_sentence_does_not_reach_backend(tmp_path):
+    from doc_lingo.translation.alignment_statistics import AlignmentStatistics
+
+    class PlainBackend:
+        def translate(self, text, **kwargs):
+            assert "DLM" not in text
+            return "Schalte Gerät aus."
+
+    source = tmp_path / "source.md"
+    source.write_text(
+        'Turn off device. <span translate="no">Keep this sentence.</span>',
+        encoding="utf-8",
+        newline="\n",
+    )
+    output = tmp_path / "output.md"
+    stats = AlignmentStatistics()
+    issues = []
+    translate_document(
+        MarkdownReader(source),
+        MarkdownWriter(source),
+        PlainBackend(),
+        output,
+        source_lang="en",
+        target_lang="de",
+        aligner=Aligner(),
+        alignment_statistics=stats,
+        on_issue=issues.append,
+    )
+    assert (
+        output.read_text(encoding="utf-8")
+        == 'Schalte Gerät aus. <span translate="no">Keep this sentence.</span>'
+    )
+    assert not issues
+    assert stats.protected_units == 1

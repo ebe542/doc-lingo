@@ -40,12 +40,21 @@ class AwesomeAlignAdapter:
 
     def fits_input(self, text: str) -> bool:
         """Measure the same word/subword representation used by alignment."""
+        return self._fits(text, 1.0)
+
+    def fits_source(self, text: str) -> bool:
+        """Reserve 25 percent of encoder capacity for target expansion."""
+        return self._fits(text, 0.75)
+
+    def _fits(self, text: str, fraction: float) -> bool:
         words = [match.group() for match in _WORDS.finditer(text)]
         pieces = [self.tokenizer.tokenize(word) for word in words]
         if any(not piece for piece in pieces):
             raise AlignmentError("Alignment tokenizer dropped an input token")
         limit = min(self.tokenizer.max_len, self.model.config.max_position_embeddings)
-        return sum(map(len, pieces)) + self.tokenizer.num_added_tokens(pair=False) <= limit
+        return sum(map(len, pieces)) + self.tokenizer.num_added_tokens(pair=False) <= int(
+            limit * fraction
+        )
 
     def _encode(self, words: list[str]):
         pieces = [self.tokenizer.tokenize(word) for word in words]

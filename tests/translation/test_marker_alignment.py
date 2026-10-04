@@ -103,3 +103,14 @@ def test_no_markers_preserves_alignment():
 def test_invalid_explicit_registry(prefix, tokens):
     with pytest.raises(AlignmentError):
         anchor_registered_markers(unresolved("word", "Wort"), prefix=prefix, tokens=tokens)
+
+
+def test_marker_failure_identifies_missing_slot_without_protected_content():
+    from doc_lingo.translation.marker_alignment import anchor_registered_markers
+
+    source = "DLMX0Z DLMX1Z"
+    result = AlignmentResult(source, "DLMX0Z", unaligned=(TextRange(0, len(source)),))
+    with pytest.raises(AlignmentError) as error:
+        anchor_registered_markers(result, tokens=("DLMX0Z", "DLMX1Z"), prefix="DLM")
+    assert "side=target" in str(error.value)
+    assert "missing=['X1Z']" in str(error.value)

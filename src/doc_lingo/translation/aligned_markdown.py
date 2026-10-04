@@ -20,7 +20,9 @@ from doc_lingo.translation.issues import (
 from doc_lingo.translation.model_input import prepare_model_input
 
 
-def translate_aligned(segment, backend, aligner, *, source_lang, target_lang, report):
+def translate_aligned(
+    segment, backend, aligner, *, source_lang, target_lang, report, statistics=None
+):
     """Return evidence for the writer, or None for unsupported HTML segments."""
     if not isinstance(segment, (_MarkdownSegment, HtmlSegment)):
         return None
@@ -49,10 +51,13 @@ def translate_aligned(segment, backend, aligner, *, source_lang, target_lang, re
                 aligner,
                 source_lang=source_lang,
                 target_lang=target_lang,
-                on_alignment_failure=lambda: report(
+                protected_tokens=tuple(marker.token for marker in prepared.markers),
+                statistics=statistics,
+                on_alignment_failure=lambda details: report(
                     segment.text,
                     "Chunk alignment failed; affected formatting omitted",
                     action="formatting_dropped",
+                    diagnostics=TranslationDiagnostics(None, "chunk_alignment", details),
                 ),
             )
             target = alignment.target
