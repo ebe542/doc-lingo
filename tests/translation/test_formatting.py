@@ -119,3 +119,39 @@ def test_invalid_coordinates_and_duplicate_identity():
     scope = FormattingScope("x", TextRange(0, 6))
     with pytest.raises(ValueError, match="unique"):
         project_formatting(sample(), (scope, scope))
+
+
+@pytest.mark.parametrize("destination", [None, "https://example.org"])
+@pytest.mark.parametrize("status", ["unaligned", "ambiguous"])
+def test_complete_segment_scope_does_not_need_word_links(destination, status):
+    alignment = AlignmentResult(" word ", " Ein Wort ", **{status: (TextRange(1, 5),)})
+    scope = FormattingScope("x", TextRange(1, 5), destination)
+    result = project_formatting(alignment, (scope,), complete_segment=True)
+    assert result.formatting[0].target_ranges == (TextRange(1, 9),)
+    assert not result.issues
+
+
+def test_partial_scope_remains_strict_and_reports_coordinates():
+    alignment = AlignmentResult("word other", "Wort anderes", unaligned=(TextRange(0, 10),))
+    scope = FormattingScope("x", TextRange(0, 4))
+    result = project_formatting(alignment, (scope,), complete_segment=True)
+    assert not result.formatting
+    assert result.issues[0].source_ranges == (TextRange(0, 4),)
+    assert "alignment_source_ranges=[0,4)" in result.issues[0].diagnostic()
+
+
+def test_complete_segment_does_not_format_empty_target():
+    alignment = AlignmentResult("word", " ", unaligned=(TextRange(0, 4),))
+    assert not project_formatting(
+        alignment, (FormattingScope("x", TextRange(0, 4)),), complete_segment=True
+    ).formatting
+
+
+def test_complete_link_still_conflicts_with_nested_link():
+    scopes = (
+        FormattingScope("outer", TextRange(0, 17), "a"),
+        FormattingScope("inner", TextRange(11, 17), "b"),
+    )
+    result = project_formatting(sample(), scopes, complete_segment=True)
+    assert not result.formatting
+    assert all(issue.reason == "overlapping_links" for issue in result.issues)

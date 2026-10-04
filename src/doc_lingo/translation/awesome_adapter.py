@@ -38,6 +38,15 @@ class AwesomeAlignAdapter:
             ) from None
         return cls(model, tokenizer, device=device)
 
+    def fits_input(self, text: str) -> bool:
+        """Measure the same word/subword representation used by alignment."""
+        words = [match.group() for match in _WORDS.finditer(text)]
+        pieces = [self.tokenizer.tokenize(word) for word in words]
+        if any(not piece for piece in pieces):
+            raise AlignmentError("Alignment tokenizer dropped an input token")
+        limit = min(self.tokenizer.max_len, self.model.config.max_position_embeddings)
+        return sum(map(len, pieces)) + self.tokenizer.num_added_tokens(pair=False) <= limit
+
     def _encode(self, words: list[str]):
         pieces = [self.tokenizer.tokenize(word) for word in words]
         if any(not piece for piece in pieces):

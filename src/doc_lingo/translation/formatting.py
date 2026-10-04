@@ -33,6 +33,14 @@ class FormattingIssue:
     identity: str
     action: Literal["dropped", "split", "expanded"]
     reason: str
+    source_ranges: tuple[TextRange, ...] = ()
+
+    def diagnostic(self) -> str:
+        """Positions refer to prepared alignment input, not original Markdown."""
+        positions = ", ".join(f"[{r.start},{r.end})" for r in self.source_ranges)
+        return f"{self.identity}: {self.reason}" + (
+            f"; alignment_source_ranges={positions}" if positions else ""
+        )
 
 
 @dataclass(frozen=True)
@@ -46,7 +54,10 @@ def _overlaps(left: TextRange, right: TextRange) -> bool:
 
 
 def project_formatting(
-    alignment: AlignmentResult, scopes: tuple[FormattingScope, ...]
+    alignment: AlignmentResult,
+    scopes: tuple[FormattingScope, ...],
+    *,
+    complete_segment: bool = False,
 ) -> FormattingProjection:
     """Drop uncertain scopes, split styles and expand links over their gaps.
 
@@ -65,6 +76,17 @@ def project_formatting(
         source = scope.source
         if source.end > len(alignment.source):
             raise ValueError("Formatting scope exceeds alignment source")
+        if (
+            complete_segment
+            and alignment.source[source.start : source.end].strip()
+            and not alignment.source[: source.start].strip()
+            and not alignment.source[source.end :].strip()
+            and alignment.target.strip()
+        ):
+            start = len(alignment.target) - len(alignment.target.lstrip())
+            end = len(alignment.target.rstrip())
+            projected.append(ProjectedFormatting(scope, (TextRange(start, end),)))
+            continue
         links = [
             link
             for link in alignment.links
@@ -86,7 +108,22 @@ def project_formatting(
                 if crossing
                 else "no_target"
             )
-            issues.append(FormattingIssue(scope.identity, "dropped", reason))
+            affected = (
+                tuple(
+                    sorted(
+                        {
+                            TextRange(max(source.start, span.start), min(source.end, span.end))
+                            for span in (*alignment.unaligned, *alignment.ambiguous)
+                            if _overlaps(source, span)
+                        }
+                    )
+                )
+                if uncertain
+                else tuple(sorted({span for link in links for span in link.source_ranges}))
+                if crossing
+                else (source,)
+            )
+            issues.append(FormattingIssue(scope.identity, "dropped", reason, affected))
             continue
         ranges: list[TextRange] = []
         for span in sorted(span for link in links for span in link.target_ranges):

@@ -8,7 +8,8 @@ from doc_lingo.documents.markdown.aligned import (
     aligned_errors,
 )
 from doc_lingo.documents.markdown.rendering import html_wrapper, markdown_scopes, render_markdown
-from doc_lingo.translation.alignment import AlignmentError, AlignmentResult, TextRange
+from doc_lingo.translation.aligned_chunks import translate_aligned_chunks
+from doc_lingo.translation.alignment import AlignmentError
 from doc_lingo.translation.formatting_bridge import restore_aligned_formatting
 from doc_lingo.translation.issues import (
     RecoverableTranslationError,
@@ -42,10 +43,20 @@ def translate_aligned(segment, backend, aligner, *, source_lang, target_lang, re
     token = issue_sink.set(lambda original, reason: failures.append(reason))
     try:
         try:
-            target = backend.translate(
-                prepared.text, source_lang=source_lang, target_lang=target_lang
+            alignment = translate_aligned_chunks(
+                prepared.text,
+                backend,
+                aligner,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                on_alignment_failure=lambda: report(
+                    segment.text,
+                    "Chunk alignment failed; affected formatting omitted",
+                    action="formatting_dropped",
+                ),
             )
-        except RecoverableTranslationError as exc:
+            target = alignment.target
+        except (RecoverableTranslationError, AlignmentError) as exc:
             failures.append(str(exc))
             target = ""
     finally:
@@ -60,19 +71,6 @@ def translate_aligned(segment, backend, aligner, *, source_lang, target_lang, re
     try:
         if not target.strip():
             raise AlignmentError("Empty aligned translation")
-        try:
-            alignment = aligner.align(prepared.text, target)
-            if alignment.source != prepared.text or alignment.target != target:
-                raise AlignmentError("Aligner returned mismatched text")
-        except AlignmentError:
-            # Encoder limits or unavailable correspondences must not discard a
-            # valid translation. Marker validation still runs in the bridge.
-            alignment = AlignmentResult(
-                prepared.text, target, unaligned=(TextRange(0, len(prepared.text)),)
-            )
-            report(
-                segment.text, "Alignment failed; formatting omitted", action="formatting_dropped"
-            )
         restored = restore_aligned_formatting(
             prepared,
             alignment,
@@ -111,7 +109,7 @@ def translate_aligned(segment, backend, aligner, *, source_lang, target_lang, re
             "Formatting projection: " + issue.reason,
             action="formatting_" + issue.action,
             diagnostics=TranslationDiagnostics(
-                rendered.text, "formatting_projection", (f"{issue.identity}: {issue.reason}",)
+                rendered.text, "formatting_projection", (issue.diagnostic(),)
             ),
         )
     return translated

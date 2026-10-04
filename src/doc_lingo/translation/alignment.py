@@ -1,7 +1,7 @@
 """Format-independent alignment contracts; no alignment algorithm is selected."""
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 
 @dataclass(frozen=True, order=True)
@@ -99,4 +99,13 @@ class TextAligner(Protocol):
 
     def align(self, source: str, target: str) -> AlignmentResult:
         """Return a result bound to these unchanged source and target strings."""
+        ...
+
+
+@runtime_checkable
+class BudgetedTextAligner(TextAligner, Protocol):
+    """Optional encoder-budget capability, measured without model inference."""
+
+    def fits_input(self, text: str) -> bool:
+        """Include tokenization and special tokens; never truncate input."""
         ...

@@ -141,6 +141,43 @@ restoration, and forwards issues to the existing diagnostic sink. Structural
 coverage cannot detect a linguistically incorrect but complete alignment.
 ## Active Markdown orchestration
 
+### Long segments and paired chunks
+
+A formatting scope enclosing the complete non-whitespace source segment can
+cover the entire non-whitespace translated segment without individual word
+links. The complete-segment bridge explicitly enables this rule; isolated
+projection calls remain strict unless `complete_segment=True` is supplied.
+Marker and document-structure validation still apply, and overlapping links
+still conflict. Partial scopes retain the conservative coverage policy.
+Dropped partial-scope issues include affected half-open `alignment_source_ranges`
+in prepared model-input coordinates, not original Markdown coordinates. These
+positions are included in JSONL validation diagnostics without additional text.
+
+Aligners may implement `BudgetedTextAligner.fits_input(text)`. Awesome-align
+measures its actual word/subword representation, special tokens and encoder
+limit without inference. Oversized source segments are split before translation,
+preferring sentence boundaries and then whitespace. Markers and indivisible
+words are never cut. Each translated chunk is aligned against precisely the
+source chunk that produced it; target sentences are not paired heuristically.
+
+Local links and unresolved ranges are shifted into full source/target segment
+coordinates. Source separators are preserved between chunks. Projection and
+marker restoration then run once, permitting formatting scopes and links across
+chunk boundaries. Memory use remains proportional to one segment. Aligners
+without the optional budget capability retain the single-call behavior.
+
+A longer-than-expected target or another local alignment error leaves only that
+chunk unresolved and emits a warning; other chunk links remain usable. A scope
+touching unresolved text still drops as a whole under the existing policy.
+Indivisible oversized words reach the translation backend's existing recovery
+policy. Backend recovery and invalid markers retain the original segment as
+before. This does not guarantee translation quality or solve every target-side
+encoder overflow; no automatic retranslations or silent truncation are added.
+
+Use `docs/examples/markdown-long.en.md` for a real-model run with the same CLI
+alignment options and a fresh output path. Inspect both the long bold scope and
+the long link, HTML emphasis, protected inline code, and any warning report.
+
 Supported complete HTML inline wrappers (`strong`, `em`, `b`, `i`, `span`, `a`,
 `s`, `u`, `mark`, `small`, `sub`, `sup`) now participate in alignment, both in
 Markdown inline text and in HTML text regions. Opening/closing tags, attribute

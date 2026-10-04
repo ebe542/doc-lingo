@@ -83,7 +83,7 @@ def restore_aligned_formatting(
             issues.append(FormattingIssue(scope.identity, "dropped", "no_visible_content"))
             continue
         mapped.append(replace(scope, source=TextRange(start, end)))
-    projection = project_formatting(anchored, tuple(mapped))
+    projection = project_formatting(anchored, tuple(mapped), complete_segment=True)
     issues.extend(projection.issues)
 
     # Single-pass substitution avoids interpreting marker-like original content.
@@ -135,7 +135,7 @@ def restore_aligned_formatting(
                     diagnostics=TranslationDiagnostics(
                         text,
                         "formatting_projection",
-                        (f"{issue.identity}: {issue.reason}",),
+                        (issue.diagnostic(),),
                     ),
                 )
             )

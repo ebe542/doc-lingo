@@ -14,6 +14,9 @@
 
 ### Fixed
 
+- Preserve scopes enclosing complete translated segments despite missing word
+  links; include affected alignment-source positions in partial-scope diagnostics.
+
 - Allow changed Markdown soft wraps in the alignment path without relaxing hard
   breaks, block structure, table cells or the legacy writer validation.
 
@@ -24,6 +27,9 @@
   Keep checking nesting, nonempty inline containers, links and code contents.
 
 ### Added
+
+- Budgeted source chunking for aligned translation, merging per-chunk character
+  mappings before projecting Markdown/HTML formatting across chunk boundaries.
 
 - Alignment-based HTML inline formatting and links inside Markdown, preserving
   exact tags and attributes and applying shared split/expansion/conflict rules.

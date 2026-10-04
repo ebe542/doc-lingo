@@ -73,6 +73,19 @@ def test_token_budget():
         adapter._encode(["word"])
 
 
+def test_budget_capability_counts_subwords_punctuation_and_special_tokens():
+    adapter = make_adapter()
+    adapter.tokenizer.max_len = 6
+    adapter.tokenizer.tokenize = lambda word: [word, word]
+    assert adapter.fits_input("word!")
+    assert not adapter.fits_input("word! other")
+    adapter.model.config.max_position_embeddings = 5
+    assert not adapter.fits_input("word!")
+    adapter.tokenizer.tokenize = lambda word: []
+    with pytest.raises(AlignmentError, match="dropped"):
+        adapter.fits_input("word")
+
+
 def test_dropped_word():
     adapter = make_adapter()
     adapter.tokenizer.tokenize = lambda word: []
