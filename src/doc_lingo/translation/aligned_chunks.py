@@ -30,7 +30,8 @@ def translate_aligned_chunks(
 ) -> AlignmentResult:
     """Keep markers indivisible and retain local uncertainty when alignment fails.
 
-    The source budget determines paired translation calls; target sentences are
+    Heuristic source sentences determine paired translation calls, subdivided
+    further when the source budget requires it. Target sentences are
     never split independently or matched by index. Oversized indivisible words
     still reach the translator, whose own recovery policy applies. Target-side
     overflow loses only that chunk's alignment, without retranslating content.
@@ -55,25 +56,18 @@ def translate_aligned_chunks(
 
     def units() -> Iterator[tuple[str, str, bool]]:
         # Only trusted registry entries qualify. Never guess markers from prose.
-        cursor = 0
-        pending_start = 0
         for sentence, following in sentence_parts(source):
             words = sentence.split()
             if words and all(word in registered for word in words):
-                pending = source[pending_start:cursor]
-                core = pending.rstrip()
-                consumed = 0
-                for text, separator in split_text(core, fits):
-                    consumed += len(text) + len(separator)
-                    if consumed == len(core):
-                        separator += pending[len(core) :]
-                    if text or separator:
-                        yield text, separator, False
                 yield sentence, following, True
-                pending_start = cursor + len(sentence) + len(following)
-            cursor += len(sentence) + len(following)
-        if pending_start < len(source):
-            for text, separator in split_text(source[pending_start:], fits):
+                continue
+            # A backend call establishes the exact source/target pair. Never
+            # split the returned target into independently guessed sentences.
+            consumed = 0
+            for text, separator in split_text(sentence, fits):
+                consumed += len(text) + len(separator)
+                if consumed == len(sentence):
+                    separator += following
                 yield text, separator, False
 
     source_offset = target_offset = 0

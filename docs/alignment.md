@@ -146,8 +146,9 @@ coverage cannot detect a linguistically incorrect but complete alignment.
 Awesome-align additionally implements `ReservedTextAligner.fits_source`: chunk
 planning uses 75 percent of its encoder window, while `fits_input` retains the
 full limit for validation and fixed-pair evaluation. Registered marker-only
-sentence units bypass both models; ordinary runs on either side are still
-budgeted together. The sentence heuristic is shared with backend chunking.
+sentence units bypass both models; ordinary source sentences are translated and
+aligned separately, with budget subdivision as needed. The sentence heuristic
+is shared with backend chunking; it is not linguistic sentence parsing.
 The CLI prints `AlignmentStatistics`; library callers can pass an accumulator
 through `translate_document(alignment_statistics=...)`. See the partial-formatting
 evaluation guide for measurement boundaries and reproducible console capture.
@@ -168,8 +169,8 @@ positions are included in JSONL validation diagnostics without additional text.
 
 Aligners may implement `BudgetedTextAligner.fits_input(text)`. Awesome-align
 measures its actual word/subword representation, special tokens and encoder
-limit without inference. Oversized source segments are split before translation,
-preferring sentence boundaries and then whitespace. Markers and indivisible
+limit without inference. Source sentences exceeding that budget are split before
+translation at whitespace boundaries. Markers and indivisible
 words are never cut. Each translated chunk is aligned against precisely the
 source chunk that produced it; target sentences are not paired heuristically.
 
@@ -177,7 +178,9 @@ Local links and unresolved ranges are shifted into full source/target segment
 coordinates. Source separators are preserved between chunks. Projection and
 marker restoration then run once, permitting formatting scopes and links across
 chunk boundaries. Memory use remains proportional to one segment. Aligners
-without the optional budget capability retain the single-call behavior.
+without the optional budget capability receive one call per heuristic source
+sentence. A returned target is never split independently, even if the backend
+produces multiple sentences. Backend-internal subdivisions remain opaque.
 
 A longer-than-expected target or another local alignment error leaves only that
 chunk unresolved and emits a warning; other chunk links remain usable. A scope

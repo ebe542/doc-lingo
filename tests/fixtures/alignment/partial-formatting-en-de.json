@@ -1,0 +1,54 @@
+[
+  {
+    "id": "run03-checks-sentence",
+    "source": "The editorial team receives a technical handbook that describes how a small research group collects observations, checks their quality, and publishes reproducible results.",
+    "target": "Die Redaktion erhält ein technisches Handbuch, das beschreibt, wie eine kleine Forschungsgruppe Beobachtungen sammelt, deren Qualität überprüft und reproduzierbare Ergebnisse veröffentlicht.",
+    "expected": [
+      [
+        "checks",
+        "überprüft"
+      ]
+    ]
+  },
+  {
+    "id": "run03-checks-context",
+    "source": "This opening sentence is outside every tested formatting scope. The editorial team receives a technical handbook that describes how a small research group collects observations, checks their quality, and publishes reproducible results. Before any translation begins, the reviewer identifies the intended audience and records which technical terms should remain in English to avoid confusing experienced readers.",
+    "target": "Dieser Eröffnungssatz liegt außerhalb jedes getesteten Formatierungsbereichs. Die Redaktion erhält ein technisches Handbuch, das beschreibt, wie eine kleine Forschungsgruppe Beobachtungen sammelt, deren Qualität überprüft und reproduzierbare Ergebnisse veröffentlicht. Bevor eine Übersetzung beginnt, identifiziert der Gutachter das beabsichtigte Publikum und zeichnet auf, welche Fachbegriffe in Englisch bleiben sollten, um verwirrende erfahrene Leser zu vermeiden.",
+    "expected": [
+      [
+        "checks",
+        "überprüft"
+      ]
+    ]
+  },
+  {
+    "id": "run03-translator-sentence",
+    "source": "The translator may move a verb to the end of a sentence or combine several English words into a single German expression with a different length.",
+    "target": "Der Übersetzer kann ein Verb zum Ende eines Satzes verschieben oder mehrere englische Wörter zu einem einzigen deutschen Ausdruck mit einer anderen Länge kombinieren.",
+    "expected": [
+      [
+        "translator",
+        "Übersetzer"
+      ],
+      [
+        "verb",
+        "Verb"
+      ]
+    ]
+  },
+  {
+    "id": "run03-translator-context",
+    "source": "Every translated section remains associated with the precise source section that produced it, so later processing does not need to guess which sentences belong together. The translator may move a verb to the end of a sentence or combine several English words into a single German expression with a different length. These changes are normal, but they mean that source character positions cannot simply be copied into the translated document to determine the new formatting boundaries.",
+    "target": "Jeder übersetzte Abschnitt bleibt mit dem präzisen Quellabschnitt verbunden, der ihn erzeugt hat, so dass spätere Verarbeitung nicht zu erraten braucht, welche Sätze zusammen gehören. Der Übersetzer kann ein Verb zum Ende eines Satzes verschieben oder mehrere englische Wörter zu einem einzigen deutschen Ausdruck mit einer anderen Länge kombinieren. Diese Änderungen sind normal, aber sie bedeuten, dass Quellzeichenpositionen nicht einfach in das übersetzte Dokument kopiert werden können, um die neuen Formatierungsgrenzen zu bestimmen.",
+    "expected": [
+      [
+        "translator",
+        "Übersetzer"
+      ],
+      [
+        "verb",
+        "Verb"
+      ]
+    ]
+  }
+]

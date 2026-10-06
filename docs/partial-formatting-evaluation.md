@@ -1,5 +1,131 @@
 # Partial formatting across chunk boundaries
 
+## Fourth model-run review (2026-10-05)
+
+Reviewed the run-04 Markdown, JSONL report and console log after the user reported
+passing milestone checks. No alignment executions failed and no original text
+units were retained. D preserves its HTML attributes, code and excluded English
+sentence. A-C still lose all five tested formatting scopes under the unchanged
+strict policy, although the reported unresolved ranges decrease substantially:
+
+| Scope | Run 03 ranges | Run 04 ranges |
+| --- | ---: | ---: |
+| A bold | 82 | 23 |
+| B bold | 82 | 23 |
+| B italic | 20 | 7 |
+| C first link | 51 | 11 |
+| C second link | 23 | 7 |
+
+Counts overlap across nested scopes and are not an alignment accuracy score.
+Decoded remaining ranges mostly contain punctuation and function words such as
+`the`, `of` and `to`, but also `need` and `intended`. Removing all unresolved
+function words or punctuation would therefore neither establish correctness nor
+solve every scope. The output still contains linguistic issues such as
+`Rechtssache C` and function calling rendered as `anrufen`.
+
+Translation orchestration calls and alignment calls both increased from 15 to
+83. Measured translation time was 36.208 seconds (previously 36.369), alignment
+2.007 seconds (previously 1.673), and planning 0.043 seconds (previously 0.089).
+The protected-unit count remains one. These single-run figures show no large
+observed runtime increase, but are not a controlled performance benchmark.
+
+Sentence pairing improves reported correspondence coverage in this example;
+it has not yet improved the rendered partial formatting. A separate next design
+step could preserve known complete translation-unit boundaries as structural
+evidence for scopes enclosing entire units, using word alignment only for
+partially covered boundary units. Such a policy requires explicit unit metadata
+and tests; it must not infer boundaries from target punctuation or manufacture
+missing word links. No such policy change is included in this run.
+
+## Missing-correspondence investigation (2026-10-05)
+
+### Fixed-pair results
+
+Reviewed `local-data/alignment/partial-formatting-run-01.json`: all four cases
+completed without execution errors, using the pinned CO checkpoint and threshold
+0.001. The expected correspondences were inspected in the actual links:
+
+| Pair | Sentence alone | With neighboring sentences |
+| --- | --- | --- |
+| `checks` / `überprüft` | Linked | Source word unaligned |
+| `translator` / `Übersetzer` | Linked | Linked |
+| `verb` / `Verb` | Linked | Linked |
+
+The isolated checks sentence leaves one comma unaligned; its contextual variant
+instead joins two source commas to one target comma. The isolated translator
+sentence leaves `the` and `of` unaligned; the contextual variant additionally
+leaves `does` unaligned in the preceding sentence. These differences show why
+coverage counts alone are not a correctness measure. In particular, grammatical
+material may be absorbed into German contractions or inflection.
+
+This small comparison supports investigating smaller, exact translation pairs;
+it does not establish a universal sentence-level advantage. Unlike the original
+long-chunk run, both translator variants recover the two inspected content words.
+The next implementation should capture source/target pairs at translation time
+and align those known units before merging offsets. Do not reconstruct pairs by
+independently splitting finished target text. Retain the strict formatting policy:
+the remaining unresolved punctuation and function words mean that smaller units
+alone will not guarantee preservation of every partial scope.
+
+### Setup and evidence
+
+Decoded run-03 diagnostic offsets against the exact prepared source, using the
+Markdown reader, `aligned_body` and `prepare_model_input`. Do not apply these
+offsets directly to the original Markdown. A's bold scope has 82 unresolved
+ranges; B has the same 82 for bold and 20 for italic; C's links have 51 and 23.
+These are per-scope counts, not independent failures: nested scopes overlap.
+
+The missing ranges include punctuation and function words, but also `checks`,
+`prediction`, `translator` and `verb`. The attempted translation contains
+`überprüft`, `Vorhersage`, `Übersetzer` and `Verb`. Thus punctuation handling alone
+cannot solve this case. The JSONL ranges combine unaligned and ambiguous statuses
+and do not preserve raw links, so they cannot establish the exact extraction
+failure or prove that a lower threshold would help.
+
+`tests/fixtures/alignment/partial-formatting-en-de.json` freezes two manually
+reviewed sentence pairs from A, each alone and with its immediate neighbors.
+The translations are copied from run 03 without corrections or new generation.
+Expected pairs are review hints, not exhaustive annotations or automated scores.
+The contextual variants are controlled windows, not the original runtime chunks.
+
+Run the existing evaluator with the same checkpoint and threshold:
+
+```bash
+python -m scripts.evaluate_alignment \
+  --suite tests/fixtures/alignment/partial-formatting-en-de.json \
+  --backend awesome --model aneuraz/awesome-align-with-co \
+  --revision 777756717e1fa9556e304d4d5db173ee386b9c16 \
+  --thresholds 0.001 \
+  --output local-data/alignment/partial-formatting-run-01.json
+```
+
+Review the actual links for the expected words, missing links and incorrect
+additional links in both variants. Better sentence-level results would support
+an experiment aligning exact source/translation units captured during generation.
+They would not justify independently splitting target text and pairing sentences
+by index. Translation can merge or split sentences. No production chunking,
+threshold or formatting policy changes are made by this investigation.
+
+## Sentence-pair implementation follow-up
+
+The aligned path now makes a separate backend call for each heuristic source
+sentence, subdividing further only when required by the alignment source budget.
+Each returned translation is aligned with exactly that call's input, even if the
+backend produces multiple target sentences. Backend-internal subdivisions are
+not exposed by this interface. Links are merged into complete-segment coordinates
+before formatting projection. Original separators, marker-only bypass, target
+budget checks and conservative partial-scope validation remain in place.
+
+Sentence detection uses the existing punctuation heuristic, not linguistic
+parsing; abbreviations can produce imperfect boundaries. Unbudgeted aligners now
+also receive sentence pairs. No additional translation pass is performed, although
+the number of orchestration and alignment calls can increase.
+
+After the milestone check, repeat the document command above with output suffix
+`run-04` (including the console log name). Compare formatting warnings, protected
+content, translation wording and timings with run 03. The fixed-pair experiment
+does not guarantee that this document run will preserve all partial formatting.
+
 ## Third model-run review (2026-10-04)
 
 Reviewed `markdown-partial-long-run-03.de.md` and its JSONL report. The report

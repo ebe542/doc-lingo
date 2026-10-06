@@ -134,6 +134,42 @@ def test_empty_translation_is_rejected():
         translate("one two", Empty())
 
 
+@pytest.mark.parametrize("budgeted", [False, True])
+def test_sentence_calls_keep_exact_pairs_when_target_splits_sentence(budgeted):
+    class SplitTarget(Backend):
+        def translate(self, text, **kwargs):
+            self.calls.append(text)
+            return {"First sentence.": "Erster Teil. Noch ein Teil.", "Next.": "Weiter."}[text]
+
+    class RecordingAligner:
+        def __init__(self):
+            self.pairs = []
+
+        def align(self, source, target):
+            self.pairs.append((source, target))
+            return AlignmentResult(
+                source,
+                target,
+                (AlignmentLink((TextRange(0, len(source)),), (TextRange(0, len(target)),)),),
+            )
+
+    class Budgeted(RecordingAligner):
+        def fits_input(self, text):
+            return True
+
+    backend = SplitTarget()
+    aligner = Budgeted() if budgeted else RecordingAligner()
+    result = translate("First sentence.\r\n  Next.", backend, aligner)
+    assert backend.calls == ["First sentence.", "Next."]
+    assert aligner.pairs == [
+        ("First sentence.", "Erster Teil. Noch ein Teil."),
+        ("Next.", "Weiter."),
+    ]
+    assert result.target == "Erster Teil. Noch ein Teil.\r\n  Weiter."
+    assert result.links[1].source_ranges == (TextRange(19, 24),)
+    assert result.links[1].target_ranges == (TextRange(31, 38),)
+
+
 def test_registered_standalone_marker_bypasses_models_and_keeps_spacing():
     from doc_lingo.translation.alignment_statistics import AlignmentStatistics
 

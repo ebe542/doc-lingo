@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Align exact source-sentence translation calls separately before merging segment
+  offsets; retain budget subdivision and conservative formatting validation.
+
 - Organize tests by document format, translation, interfaces, scripts and
   integration responsibilities, retaining shared fixtures under `tests/fixtures`.
 
