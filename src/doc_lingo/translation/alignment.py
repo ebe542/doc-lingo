@@ -46,13 +46,23 @@ class AlignmentLink:
 
 
 @dataclass(frozen=True)
+class TranslationUnit:
+    """Exact source/target call boundaries, independent of word correspondences."""
+
+    source: TextRange
+    target: TextRange
+
+
+@dataclass(frozen=True)
 class AlignmentResult:
     """Alignment tied to the exact input/output strings of one model call.
 
     Every non-whitespace source character must be linked, unaligned, or
     ambiguous. Whitespace may be omitted. Unaligned means no counterpart was
     found; ambiguous means no unique assignment was selected. Neither permits
-    automatic formatting transfer. Unlinked target text is allowed (insertions).
+    automatic word-based formatting transfer. Separate translation-unit metadata
+    can establish complete call boundaries without resolving individual words.
+    Unlinked target text is allowed (insertions).
     Validation ensures structural consistency, not linguistic correctness.
     """
 
@@ -61,8 +71,11 @@ class AlignmentResult:
     links: tuple[AlignmentLink, ...] = ()
     unaligned: tuple[TextRange, ...] = ()
     ambiguous: tuple[TextRange, ...] = ()
+    units: tuple[TranslationUnit, ...] = ()
 
     def __post_init__(self) -> None:
+        _validate_ranges(tuple(unit.source for unit in self.units), len(self.source))
+        _validate_ranges(tuple(unit.target for unit in self.units), len(self.target))
         _validate_ranges(self.unaligned, len(self.source))
         _validate_ranges(self.ambiguous, len(self.source))
         source_ranges = tuple(

@@ -143,6 +143,21 @@ coverage cannot detect a linguistically incorrect but complete alignment.
 
 ### Long segments and paired chunks
 
+`AlignmentResult.units` records ordered, non-overlapping `TranslationUnit`
+source/target ranges from actual translation calls, excluding inter-unit
+separators. Word links and uncertainty remain unchanged. Marker anchoring carries
+these ranges forward; invalid markers still reject restoration first.
+
+A formatting scope enclosing a complete unit can use its full target range,
+including punctuation and inserted words, without complete word coverage.
+Partially enclosed units still require reliable word links. A link crossing
+either side of a unit boundary prevents using that unit as structural evidence.
+Projection combines complete-unit ranges with valid boundary word ranges; existing
+style splitting, contiguous link expansion and overlap checks still apply.
+These boundaries establish call provenance, not linguistic correctness. Even an
+alignment execution failure leaves the exact translation pair known; its warning
+remains logged, while fully enclosed units can retain their formatting.
+
 Awesome-align additionally implements `ReservedTextAligner.fits_source`: chunk
 planning uses 75 percent of its encoder window, while `fits_input` retains the
 full limit for validation and fixed-pair evaluation. Registered marker-only

@@ -1,5 +1,45 @@
 # Partial formatting across chunk boundaries
 
+## Fifth model-run review (2026-10-06)
+
+Reviewed `markdown-partial-long-run-05.de.md` and its console log after the
+reported successful milestone check. The run finishes without warnings; no
+issues JSONL file remains. Inspection of the actual Markdown confirms:
+
+- A: the long bold passage is restored; opening and closing sentences remain
+  outside the emphasis.
+- B: outer bold and inner italic passages are restored with the intended sentence
+  boundaries and valid nesting.
+- C: both independent links are restored with their exact original URLs and
+  titles. The intervening prose and surrounding sentences remain outside links.
+- D: the span title, inline code, code element and excluded English sentence
+  remain unchanged while surrounding prose is translated. No markers are visible.
+
+All five scopes dropped in run 04 are now present at the inspected boundaries.
+This demonstrates complete-unit projection for this fixture, not general
+word-alignment accuracy or reliability of arbitrary within-sentence formatting.
+The linguistic issues `Rechtssache C` and function calling rendered as `anrufen`
+remain outside the scope of this formatting change.
+
+There are still 83 translation calls, 83 alignment calls, zero alignment failures
+and one bypassed protected unit. Translation time is 32.739 seconds (run 04:
+36.208), alignment 2.067 seconds (2.007), and planning 0.043 seconds (0.043).
+Single-run timing differences do not establish a performance improvement.
+
+## Complete-unit projection follow-up (2026-10-06)
+
+The implementation now records exact translation-call boundaries separately from
+word links and uses fully enclosed units for structural formatting projection.
+Partially enclosed units retain strict word-coverage checks. Marker validation,
+cross-boundary correspondence checks, link conflicts and writer validation remain
+active. Historical run-04 conclusions below describe the prior policy.
+
+After the milestone check, run the document comparison with fresh output and
+console-log suffixes `run-05`. Inspect all A-C scopes and their precise boundaries,
+nested emphasis, both link destinations/titles, and protected content in D.
+Fewer warnings alone do not demonstrate correct restoration. The user-run
+model results are reviewed above; no inference was run during implementation.
+
 ## Fourth model-run review (2026-10-05)
 
 Reviewed the run-04 Markdown, JSONL report and console log after the user reported

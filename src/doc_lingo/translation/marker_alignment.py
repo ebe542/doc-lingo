@@ -102,4 +102,5 @@ def anchor_registered_markers(
         tuple(sorted(links, key=lambda link: link.source_ranges[0].start)),
         tuple(piece for span in result.unaligned for piece in _subtract(span, source_cuts)),
         tuple(sorted(ambiguous)),
+        result.units,
     )

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from doc_lingo.translation.alignment import AlignmentResult, TextRange
+from doc_lingo.translation.alignment import AlignmentLink, AlignmentResult, TextRange
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,62 @@ def _overlaps(left: TextRange, right: TextRange) -> bool:
     return left.start < right.end and right.start < left.end
 
 
+def _scope_evidence(alignment: AlignmentResult, scope: TextRange):
+    """Use complete call boundaries locally; never modify raw word evidence."""
+    units = []
+    for unit in alignment.units:
+        if not (scope.start <= unit.source.start and unit.source.end <= scope.end):
+            continue
+        # A marker or word link crossing a call boundary contradicts treating
+        # that call as an isolated structural unit. Keep the strict word policy.
+        touching = [
+            link
+            for link in alignment.links
+            if any(_overlaps(span, unit.source) for span in link.source_ranges)
+            or any(_overlaps(span, unit.target) for span in link.target_ranges)
+        ]
+        if any(
+            span.start < boundary.start or span.end > boundary.end
+            for link in touching
+            for ranges, boundary in (
+                (link.source_ranges, unit.source),
+                (link.target_ranges, unit.target),
+            )
+            for span in ranges
+        ):
+            continue
+        units.append(unit)
+    links = [
+        link
+        for link in alignment.links
+        if not any(_overlaps(span, unit.source) for span in link.source_ranges for unit in units)
+    ]
+    links.extend(AlignmentLink((unit.source,), (unit.target,)) for unit in units)
+    unresolved = []
+    for span in (*alignment.unaligned, *alignment.ambiguous):
+        cursor = span.start
+        for unit in units:
+            cut = unit.source
+            if cut.end <= cursor or cut.start >= span.end:
+                continue
+            if cursor < cut.start:
+                unresolved.append(TextRange(cursor, cut.start))
+            cursor = min(span.end, cut.end)
+        if cursor < span.end:
+            unresolved.append(TextRange(cursor, span.end))
+    # Subtracting complete units can leave separators inside a broad unresolved
+    # range. Whitespace requires no word correspondence; retain every actual
+    # character (including punctuation) and its original coordinate.
+    content_ranges = []
+    for span in unresolved:
+        text = alignment.source[span.start : span.end]
+        if text.strip():
+            start = span.start + len(text) - len(text.lstrip())
+            end = span.start + len(text.rstrip())
+            content_ranges.append(TextRange(start, end))
+    return links, content_ranges
+
+
 def project_formatting(
     alignment: AlignmentResult,
     scopes: tuple[FormattingScope, ...],
@@ -87,14 +143,11 @@ def project_formatting(
             end = len(alignment.target.rstrip())
             projected.append(ProjectedFormatting(scope, (TextRange(start, end),)))
             continue
+        evidence, unresolved = _scope_evidence(alignment, source)
         links = [
-            link
-            for link in alignment.links
-            if any(_overlaps(source, span) for span in link.source_ranges)
+            link for link in evidence if any(_overlaps(source, span) for span in link.source_ranges)
         ]
-        uncertain = any(
-            _overlaps(source, span) for span in (*alignment.unaligned, *alignment.ambiguous)
-        )
+        uncertain = any(_overlaps(source, span) for span in unresolved)
         crossing = any(
             span.start < source.start or span.end > source.end
             for link in links
@@ -113,7 +166,7 @@ def project_formatting(
                     sorted(
                         {
                             TextRange(max(source.start, span.start), min(source.end, span.end))
-                            for span in (*alignment.unaligned, *alignment.ambiguous)
+                            for span in unresolved
                             if _overlaps(source, span)
                         }
                     )

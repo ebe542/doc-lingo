@@ -343,7 +343,7 @@ def test_unresolved_partial_scope_does_not_drop_separate_link(tmp_path):
 
     source = tmp_path / "source.md"
     source.write_text(
-        "start **one two. three four.** middle [five six.](url) end", encoding="utf-8", newline="\n"
+        "start **one two. three** four. middle [five six.](url) end", encoding="utf-8", newline="\n"
     )
     output = tmp_path / "output.md"
     issues = []
@@ -365,6 +365,36 @@ def test_unresolved_partial_scope_does_not_drop_separate_link(tmp_path):
     assert issues[0].action == "formatting_dropped"
     # Positions are in the complete prepared input, not in the local chunk.
     assert "alignment_source_ranges=[15,20)" in issues[0].diagnostics.validation_errors[0]
+
+
+@pytest.mark.parametrize("opening,closing", [("**", "**"), ("[", "](url)")])
+def test_complete_sentences_in_partial_segment_survive_missing_links(tmp_path, opening, closing):
+    class NoWords:
+        def align(self, source, target):
+            return AlignmentResult(source, target, unaligned=(TextRange(0, len(source)),))
+
+    source = tmp_path / "source.md"
+    source.write_text(
+        "Intro. " + opening + "One two. Three four." + closing + " End.",
+        encoding="utf-8",
+        newline="\n",
+    )
+    output = tmp_path / "out.md"
+    issues = []
+    translate_document(
+        MarkdownReader(source),
+        MarkdownWriter(source),
+        Backend(),
+        output,
+        source_lang="en",
+        target_lang="de",
+        aligner=NoWords(),
+        on_issue=issues.append,
+    )
+    assert output.read_text(encoding="utf-8") == (
+        "INTRO. " + opening + "ONE TWO. THREE FOUR." + closing + " END."
+    )
+    assert not issues
 
 
 @pytest.mark.parametrize("opening,closing", [("**", "**"), ("[", "](url)")])

@@ -55,7 +55,7 @@ def translate_aligned(
                 statistics=statistics,
                 on_alignment_failure=lambda details: report(
                     segment.text,
-                    "Chunk alignment failed; affected formatting omitted",
+                    "Chunk alignment failed; word correspondence unavailable",
                     action="formatting_dropped",
                     diagnostics=TranslationDiagnostics(None, "chunk_alignment", details),
                 ),

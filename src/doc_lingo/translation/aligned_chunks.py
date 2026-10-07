@@ -11,6 +11,7 @@ from doc_lingo.translation.alignment import (
     ReservedTextAligner,
     TextAligner,
     TextRange,
+    TranslationUnit,
 )
 from doc_lingo.translation.alignment_statistics import AlignmentStatistics
 from doc_lingo.translation.chunks import sentence_parts, split_text
@@ -75,6 +76,7 @@ def translate_aligned_chunks(
     links = []
     unaligned = []
     ambiguous = []
+    units_evidence = []
 
     def shift(ranges: tuple[TextRange, ...], offset: int) -> tuple[TextRange, ...]:
         return tuple(TextRange(span.start + offset, span.end + offset) for span in ranges)
@@ -107,6 +109,13 @@ def translate_aligned_chunks(
                 target = ""
             if text.strip() and not target.strip():
                 raise AlignmentError("Empty aligned translation")
+            if text.strip() and target.strip():
+                units_evidence.append(
+                    TranslationUnit(
+                        TextRange(source_offset, source_offset + len(text)),
+                        TextRange(target_offset, target_offset + len(target)),
+                    )
+                )
             started = perf_counter()
             try:
                 if not protected and isinstance(aligner, BudgetedTextAligner):
@@ -155,5 +164,10 @@ def translate_aligned_chunks(
     finally:
         chunks.close()
     return AlignmentResult(
-        source, "".join(targets), tuple(links), tuple(unaligned), tuple(ambiguous)
+        source,
+        "".join(targets),
+        tuple(links),
+        tuple(unaligned),
+        tuple(ambiguous),
+        tuple(units_evidence),
     )

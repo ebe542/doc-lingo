@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Preserve formatting enclosing complete translation units using exact call
+  boundaries; retain word-alignment checks for partially enclosed units.
+
 - Align exact source-sentence translation calls separately before merging segment
   offsets; retain budget subdivision and conservative formatting validation.
 
