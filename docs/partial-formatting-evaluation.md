@@ -1,5 +1,9 @@
 # Partial formatting across chunk boundaries
 
+For the next comparison, see [within-sentence formatting evaluation](inline-formatting-evaluation.md).
+It exercises boundaries that still require word correspondences after the
+complete-unit improvement.
+
 ## Fifth model-run review (2026-10-06)
 
 Reviewed `markdown-partial-long-run-05.de.md` and its console log after the
