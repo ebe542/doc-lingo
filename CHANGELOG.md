@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- Optional fixed-pair local alignment review with conservative anchor windows,
+  independent proposals and explicit rejection diagnostics; production document
+  translation remains unchanged.
+
 ### Changed
 
 - Preserve formatting enclosing complete translation units using exact call

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "repeated-guide-labels",
+    "source": "Read the user guide before copying the user guide.",
+    "target": "Lesen Sie die Bedienungsanleitung, bevor Sie die Bedienungsanleitung kopieren.",
+    "expected": [["first user guide", "first Bedienungsanleitung"], ["second user guide", "second Bedienungsanleitung"]],
+    "scopes": [
+      {"id": "first", "source": [9, 19], "link_target": "https://example.org/first"},
+      {"id": "second", "source": [39, 49], "link_target": "https://example.org/second"}
+    ]
+  },
+  {
+    "id": "reordered-clause-anchors",
+    "source": "Read the user guide before opening the settings panel.",
+    "target": "Bevor Sie das Einstellungsfeld öffnen, lesen Sie die Bedienungsanleitung.",
+    "expected": [["user guide", "Bedienungsanleitung; surrounding anchors may be reordered, requiring a skip"], ["settings panel", "Einstellungsfeld"]],
+    "scopes": [
+      {"id": "guide", "source": [9, 19], "link_target": "https://example.org/guide"},
+      {"id": "settings", "source": [39, 53], "link_target": "https://example.org/settings"}
+    ]
+  },
+  {
+    "id": "neighboring-compounds",
+    "source": "Read the user guide and the installation guide before continuing.",
+    "target": "Lesen Sie die Bedienungsanleitung und die Installationsanleitung, bevor Sie fortfahren.",
+    "expected": [["user guide", "Bedienungsanleitung"], ["installation guide", "Installationsanleitung; proposals must remain independent"]],
+    "scopes": [
+      {"id": "user", "source": [9, 19], "link_target": "https://example.org/user"},
+      {"id": "installation", "source": [28, 46], "link_target": "https://example.org/installation"}
+    ]
+  },
+  {
+    "id": "repeated-guide-with-omission",
+    "source": "Read the outdated user guide before copying the current user guide.",
+    "target": "Lesen Sie die Bedienungsanleitung, bevor Sie die aktuelle Bedienungsanleitung kopieren.",
+    "expected": [["outdated", "omitted; no fabricated counterpart"], ["current user guide", "aktuelle Bedienungsanleitung; preserve second occurrence identity"]],
+    "scopes": [
+      {"id": "omitted", "source": [9, 28], "link_target": "https://example.org/old"},
+      {"id": "current", "source": [48, 66], "link_target": "https://example.org/current"}
+    ]
+  }
+]

@@ -40,6 +40,121 @@ linguistic alignment quality.
 
 ## Compound alignment comparison
 
+### Experimental local review
+
+#### Boundary comparison suite
+
+`tests/fixtures/alignment/local-review-boundaries-en-de.json` adds four manually
+written fixed translation pairs with eight explicitly indexed link scopes:
+repeated labels, reordered clauses, neighboring compounds and an omitted modifier
+next to a repeated phrase. These are diagnostic inputs, not newly generated
+model translations. None is required to produce a candidate; an already resolved
+scope or unsafe window should be skipped.
+
+```bash
+python -m scripts.evaluate_alignment \
+  --suite tests/fixtures/alignment/local-review-boundaries-en-de.json \
+  --backend awesome --model aneuraz/awesome-align-with-co \
+  --revision 777756717e1fa9556e304d4d5db173ee386b9c16 \
+  --thresholds 0.001 --local-review \
+  --output local-data/alignment/local-review-boundaries-run-01.json
+```
+
+Review raw links and proposed target offsets by occurrence, not word spelling
+alone. Repeated labels must retain separate destinations. Reordered or grouped
+anchors must not supply an arbitrary window. Neighboring proposals are evaluated
+independently against the same baseline; even two successful proposals do not
+establish that their combined application would be safe. The omitted adjective
+must not be attached to a nearby occurrence or to `aktuelle`. If no case exercises
+a particular retry path, record that limitation instead of claiming it passed.
+Production behavior and acceptance rules remain unchanged.
+
+##### Boundary run 01 findings (2026-10-08)
+
+Reviewed `local-review-boundaries-run-01.json`: four baseline evaluations, eight
+scopes, zero execution errors. Seven scopes were skipped and one proposal was
+rejected; only one extra alignment call occurred and no candidate was produced.
+
+- Repeated guide labels: the baseline already links each source occurrence to
+  its corresponding target occurrence (starts 14 and 49). Both scopes skip retry.
+- Reordered clauses: both words in `user guide` are unaligned, but its target
+  anchors appear in reverse order. Review skips with `empty_or_reordered_window`.
+  The settings compound is already resolved and requires no retry.
+- Neighboring compounds: both scopes are resolved in the baseline and skipped.
+  This case therefore does not exercise two neighboring repair attempts or prove
+  safe combined application of proposals.
+- Repeated guide with omission: `outdated` remains unaligned after the sole local
+  call and the proposal is rejected. The current guide stays linked to the second
+  occurrence (the compound starts at 58); no repair is attempted for that scope.
+
+The observed selection and rejection behavior is conservative. Repeated-occurrence
+identity is correct in these baseline links, but successful local repair amid
+repeated or neighboring failures remains untested by these model results. Together
+with the earlier E candidate, the evidence supports the evaluator experiment,
+not enabling automatic production repairs. A further step should test independent
+and combined proposal conflicts deterministically before any integration.
+
+#### Local run 01 findings (2026-10-08)
+
+Reviewed `compound-local-run-01.json`. All six baseline evaluations completed
+without errors. Seven scopes produced one candidate, one rejection and five
+skips, with only two additional alignment calls.
+
+- E: the exact local source `user guide` is compared with
+  `Bedienungsanleitung,`. Both source words link to `Bedienungsanleitung`.
+  The proposed link covers target `[14,33)`, excluding the comma in the window
+  `[14,34)`. The independent settings link remains unchanged at `[49,65)`.
+  Manual inspection supports this candidate for this fixed pair.
+- The omitted-adjective control remains rejected: `outdated` is still unaligned.
+- F is skipped because its drop is a crossing-boundary case rather than an
+  unresolved-source case. No new subword boundary is guessed.
+- D is skipped because the source gap before the right anchor contains a comma,
+  not whitespace alone. This is a window-selection rejection, not proof that
+  a local aligner can recognize the ellipsis.
+- The already resolved shorter cases and E's independent link require no retry.
+
+This demonstrates a useful conservative proposal for E without falsely repairing
+the included negative controls. It does not establish general fallback accuracy;
+production translation remains unchanged. Before integration, broaden the fixed
+evaluation to repeated target phrases, ambiguous/reordered anchors and multiple
+nearby failed scopes, and keep proposal acceptance separate from linguistic
+review.
+
+The evaluator accepts `--local-review` and fixture `scopes` with IDs, half-open
+source character ranges and optional link destinations. Each fixture pair is the
+fixed evaluation boundary; this prototype does not infer sentence pairings.
+Only `unresolved_source` drops qualify. Immediate surrounding anchors must each
+have one source and target range, appear in target order and be separated from
+the source scope by whitespace only. The target window is the unchanged text
+between those anchors, trimmed only at its outer whitespace. Existing links may
+not cross either window boundary. Marker-bearing cases are skipped.
+
+Each eligible scope gets at most one extra alignment call at the configured
+threshold. All proposals are independent against the original baseline. They
+must resolve every non-whitespace source character, preserve existing local
+correspondences and pass formatting projection without losing or changing any
+previously valid scope. Reports retain the original alignment, local windows,
+raw local results, candidate alignment/projection when available, call count and
+explicit skip/rejection/error reasons. `candidate` means structural checks passed
+and manual review is required, not linguistic correctness or an applied repair.
+Expected local execution errors set the evaluator's exit code to 1; a conservative
+skip or rejection is an evaluation result rather than an execution failure.
+
+After running the milestone check:
+
+```bash
+python -m scripts.evaluate_alignment \
+  --suite tests/fixtures/alignment/compound-en-de.json \
+  --backend awesome --model aneuraz/awesome-align-with-co \
+  --revision 777756717e1fa9556e304d4d5db173ee386b9c16 \
+  --thresholds 0.001 --local-review \
+  --output local-data/alignment/compound-local-run-01.json
+```
+
+Inspect E for a useful candidate and D/F plus the omitted-adjective case for
+unsafe proposals. Refusing a window is an acceptable conservative outcome. No
+production translation, projection or threshold is changed by this experiment.
+
 ### Run 01 findings (2026-10-07)
 
 Reviewed `local-data/alignment/compound-run-01.json`: all 18 evaluations completed

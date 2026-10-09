@@ -3,36 +3,145 @@
     "id": "inline-e-original",
     "source": "Read the user guide before opening the settings panel.",
     "target": "Lesen Sie die Bedienungsanleitung, bevor Sie das Einstellungsfeld öffnen.",
-    "expected": [["user guide", "Bedienungsanleitung"], ["settings panel", "Einstellungsfeld"]]
+    "expected": [
+      [
+        "user guide",
+        "Bedienungsanleitung"
+      ],
+      [
+        "settings panel",
+        "Einstellungsfeld"
+      ]
+    ],
+    "scopes": [
+      {
+        "id": "focus",
+        "source": [
+          9,
+          19
+        ],
+        "link_target": "https://example.org/guide"
+      },
+      {
+        "id": "independent",
+        "source": [
+          39,
+          53
+        ],
+        "link_target": "https://example.org/settings"
+      }
+    ]
   },
   {
     "id": "guide-short-compound",
     "source": "Read the user guide.",
     "target": "Lesen Sie die Bedienungsanleitung.",
-    "expected": [["user guide", "Bedienungsanleitung"]]
+    "expected": [
+      [
+        "user guide",
+        "Bedienungsanleitung"
+      ]
+    ],
+    "scopes": [
+      {
+        "id": "focus",
+        "source": [
+          9,
+          19
+        ]
+      }
+    ]
   },
   {
     "id": "guide-short-explicit",
     "source": "Read the user guide.",
     "target": "Lesen Sie die Anleitung für Benutzer.",
-    "expected": [["guide", "Anleitung"], ["user", "Benutzer"]]
+    "expected": [
+      [
+        "guide",
+        "Anleitung"
+      ],
+      [
+        "user",
+        "Benutzer"
+      ]
+    ],
+    "scopes": [
+      {
+        "id": "focus",
+        "source": [
+          9,
+          19
+        ]
+      }
+    ]
   },
   {
     "id": "guide-omitted-modifier",
     "source": "Read the outdated user guide.",
     "target": "Lesen Sie die Bedienungsanleitung.",
-    "expected": [["outdated", "unaligned"], ["user guide", "Bedienungsanleitung"]]
+    "expected": [
+      [
+        "outdated",
+        "unaligned"
+      ],
+      [
+        "user guide",
+        "Bedienungsanleitung"
+      ]
+    ],
+    "scopes": [
+      {
+        "id": "focus",
+        "source": [
+          9,
+          28
+        ]
+      }
+    ]
   },
   {
     "id": "inline-f-boundary-control",
     "source": "The new classification model processes observations quickly.",
     "target": "Das neue Klassifikationsmodell verarbeitet Beobachtungen schnell.",
-    "expected": [["classification model", "Klassifikationsmodell; inner classification-only formatting has no established subword boundary"]]
+    "expected": [
+      [
+        "classification model",
+        "Klassifikationsmodell; inner classification-only formatting has no established subword boundary"
+      ]
+    ],
+    "scopes": [
+      {
+        "id": "focus",
+        "source": [
+          8,
+          22
+        ]
+      }
+    ]
   },
   {
     "id": "inline-d-ellipsis-control",
     "source": "The first model checks the second model, and the second model checks the first model.",
     "target": "Das erste Modell überprüft das zweite und das zweite Modell das erste Modell.",
-    "expected": [["model in first mention of second model", "elided; do not transfer to later model"], ["second occurrence of checks", "elided; do not force a separate counterpart"]]
+    "expected": [
+      [
+        "model in first mention of second model",
+        "elided; do not transfer to later model"
+      ],
+      [
+        "second occurrence of checks",
+        "elided; do not force a separate counterpart"
+      ]
+    ],
+    "scopes": [
+      {
+        "id": "focus",
+        "source": [
+          27,
+          39
+        ]
+      }
+    ]
   }
 ]
