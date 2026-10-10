@@ -167,4 +167,31 @@ def evaluate_local(adapter, result, case):
             for scope in scopes
         ]
     # Independent proposals against the same baseline, never cascading repairs.
-    return [review_scope(adapter, result, scopes, scope) for scope in scopes]
+    reviews = [review_scope(adapter, result, scopes, scope) for scope in scopes]
+    reject_conflicting_proposals(reviews)
+    return reviews
+
+
+def reject_conflicting_proposals(reviews: list[dict]) -> None:
+    """Reject all overlapping candidate windows, independent of review order.
+
+    Disjoint proposals remain independent; this does not apply or merge them.
+    Even overlapping optical scopes are deferred until joint validation exists.
+    """
+    candidates = [row for row in reviews if row["status"] == "candidate"]
+    conflicts: dict[str, set[str]] = {}
+    for index, left in enumerate(candidates):
+        for right in candidates[index + 1 :]:
+            if any(
+                overlaps(TextRange(**left["window"][side]), TextRange(**right["window"][side]))
+                for side in ("source", "target")
+            ):
+                conflicts.setdefault(left["scope"], set()).add(right["scope"])
+                conflicts.setdefault(right["scope"], set()).add(left["scope"])
+    for row in candidates:
+        if row["scope"] in conflicts:
+            row.update(
+                status="rejected",
+                reason="conflicting_proposals",
+                conflicts_with=sorted(conflicts[row["scope"]]),
+            )

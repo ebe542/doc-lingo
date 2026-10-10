@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Reject overlapping local alignment proposals independently of evaluation order;
+  retain evidence and identify conflicting scopes in experimental reports.
+
 ### Added
 
 - Optional fixed-pair local alignment review with conservative anchor windows,

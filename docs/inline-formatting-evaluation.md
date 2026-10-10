@@ -42,6 +42,23 @@ linguistic alignment quality.
 
 ### Experimental local review
 
+#### Controlled conflict checks (2026-10-09)
+
+Deterministic tests now exercise two neighboring unresolved scopes and confirm
+that their proposals use the original baseline independently. A final report
+check rejects every candidate whose source or target window overlaps another
+candidate window, regardless of review order. Rejected rows retain their evidence
+and list `conflicts_with`; disjoint candidates remain proposals, never applied
+repairs. Adjacent half-open windows do not overlap. Overlapping optical scopes
+are conservatively deferred too, until joint validation exists.
+
+An explicit negative-evidence test also supplies consistently swapped anchors for
+two identical occurrences. Structural checks still produce a candidate for the
+wrong occurrence: there is no independent linguistic evidence to contradict the
+anchors. This documents a limitation, not an approved automatic correction.
+The experiment must remain subject to manual review; passing these tests does
+not establish safety for automatic production integration.
+
 #### Boundary comparison suite
 
 `tests/fixtures/alignment/local-review-boundaries-en-de.json` adds four manually
