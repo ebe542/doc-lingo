@@ -5,17 +5,15 @@ and formatting.
 
 ## Status
 
-Version 0.1.0 is the first release of this productive learning project.
-TXT translation, reusable terminology glossaries, quality checks, and release
-tooling are available. Translations require human review; see the
-[release limitations](CHANGELOG.md#010---2026-09-18).
-The development version also supports Markdown, including table cells and
-embedded HTML text with protected tags and attributes; see the
+Version 0.2.0 is the prepared Markdown release of this productive learning project.
+TXT and Markdown translation, reusable terminology glossaries, quality checks,
+and release tooling are available. See the [release notes and limitations](CHANGELOG.md#020---2026-10-10).
+Markdown includes table cells and supported embedded HTML text; see the
 [Markdown scope and limitations](docs/markdown.md).
-The CLI translates English UTF-8 TXT and Markdown documents using the local CUDA backend.
-The library provides a document translation service with an injectable backend.
-A lazy CUDA Hugging Face backend is available through the `local` extra. See
-[local model setup](docs/local-model.md) for CUDA 13.2 installation and smoke checks.
+The CLI translates English UTF-8 TXT and Markdown documents using local CUDA models.
+The library provides a translation service with an injectable backend. Marian is
+selected by default; optional model dependencies are installed through `local`.
+See [local model setup](docs/local-model.md) for the project's CUDA configuration.
 The library provides a shared reader protocol and incremental UTF-8 paragraph
 extraction, plus a writer that inserts ordered translations into the original TXT
 structure and protects existing output files. See the
@@ -73,7 +71,7 @@ doc-lingo document.txt --target-lang de --backend qwen --output translated-qwen.
 The default output is `document.de.txt` alongside the source. Existing output
 files are never overwritten. Source language is English; target codes are `de`
 and `en` (`en` requires `--backend qwen` and retains the text). Marian accepts
-only `de`; incompatible requests fail before model loading or file creation. Markdown and ODP are not yet supported.
+only `de`; incompatible requests fail before model loading or file creation. TXT and Markdown are supported; ODP remains planned.
 The first real translation may download the model. Translation quality still
 requires review. Segments are translated internally in sentence-sized units; oversized sentences
 are split at word boundaries using the selected tokenizer. An indivisible oversized word or incomplete generated unit is retained in its
@@ -81,14 +79,35 @@ original language and recorded in a local `.issues.jsonl` report. See [segment s
 
 Exit codes: `0` for success, `1` for expected file or translation failures, and
 `2` for invalid command arguments, and `3` for a published document containing
-original-text fallbacks. Error messages go to stderr. File logging is
-planned separately.
+retained source text or formatting warnings. Error messages go to stderr; local
+`.issues.jsonl` reports record recovery and formatting diagnostics.
 
 During translation, stderr shows the translated segment count, segment type, and
 elapsed seconds. Types are `paragraph`, `heading`, `bullet_item`, and `numbered_item`.
 The initial message explains that the first segment may require model
 loading. No percentage is shown because paragraphs are read incrementally without
 a counting pass. The final success message appears only after output publication.
+
+## Optional Markdown alignment
+
+After the local translation setup, install the alignment extra:
+
+```bash
+python -m pip install -e ".[awesome]"
+doc-lingo document.md --target-lang de \
+  --aligner awesome --alignment-model /path/to/local/awesome-align-checkpoint \
+  --output document-aligned.de.md
+```
+
+Replace the checkpoint path with an existing local model directory; the CLI does
+not download alignment weights automatically. See [alignment setup and evaluation](docs/alignment.md)
+for the pinned checkpoint. Alignment runs on CPU while the translator uses CUDA.
+It is opt-in; ordinary Markdown translation remains available without the extra.
+
+Complete translation units can retain their formatting using exact call boundaries.
+Within a unit, uncertain word correspondences can still cause formatting loss.
+Review the output and warnings. Local re-alignment proposals are available only
+in evaluation scripts and are never automatically applied by the document CLI.
 
 ## Simple TXT lists
 

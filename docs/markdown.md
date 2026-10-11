@@ -49,6 +49,11 @@ also change renderer-generated anchors; fragment links are not rewritten.
 
 ## Preservation and recovery
 
+The following describes the default protection path unless stated otherwise.
+Optional alignment reconstructs supported inline wrappers from projected ranges;
+soft line wrapping may change. Complete translation units provide structural
+evidence, while partially enclosed units still require reliable word links.
+
 `markdown-it-py` identifies document structure. The adapters retain original
 source slices instead of rendering Markdown again. Syntax ranges use Python
 string offsets in `TextSegment.protected_spans`; the translation service masks
@@ -66,9 +71,12 @@ across repeated calls and process restarts. This removes marker randomness;
 model/runtime reproducibility and translation quality still need validation.
 The initial v1 trials were byte-identical but retained six original segments in
 each run: the model shortened or lengthened the zero-padded marker prefixes.
-V2 removes those long zero runs; its model behavior requires a new comparison.
+V2 removes those long zero runs. Subsequent real-model comparisons are recorded
+in [the formatting evaluation](partial-formatting-evaluation.md).
 
-Markers must return exactly once and in their original order. Markdown segments
+In the default protection path, markers must return exactly once and in their
+original order. The optional [alignment path](alignment.md) validates marker
+identity and projects formatting from source/target correspondences instead. Markdown segments
 also validate the parsed structure, link attributes and code after translation.
 Lost markers, nested backend recovery or changed structure retain the original
 segment with an issue in CLI mode (exit status 3); strict library calls raise

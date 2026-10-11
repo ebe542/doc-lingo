@@ -118,6 +118,32 @@ def main() -> None:
         run([str(python), "-m", "doc_lingo.interfaces.cli", "--help"])
         executable = python.parent / ("doc-lingo.exe" if os.name == "nt" else "doc-lingo")
         run([str(executable), "--help"])
+        run(
+            [
+                str(python),
+                "-c",
+                "from pathlib import Path\n"
+                "from tempfile import TemporaryDirectory\n"
+                "from doc_lingo import (PlainTextReader, PlainTextWriter, "
+                "MarkdownReader, MarkdownWriter, translate_document)\n"
+                "class Echo:\n"
+                "    def translate(self, text, *, source_lang, target_lang):\n"
+                "        return text\n"
+                "with TemporaryDirectory(prefix='doc-lingo-smoke-') as directory:\n"
+                "    root = Path(directory)\n"
+                "    for suffix, reader, writer, text in (\n"
+                "        ('txt', PlainTextReader, PlainTextWriter, 'Hello world.\\n'),\n"
+                "        ('md', MarkdownReader, MarkdownWriter, "
+                "'# Heading\\n\\nRead **this** [guide](https://example.org).\\n'),\n"
+                "    ):\n"
+                "        source = root / ('source.' + suffix)\n"
+                "        target = root / ('target.' + suffix)\n"
+                "        source.write_text(text, encoding='utf-8', newline='\\n')\n"
+                "        translate_document(reader(source), writer(source), Echo(), target, "
+                "source_lang='en', target_lang='de')\n"
+                "        assert target.read_bytes() == source.read_bytes(), suffix\n",
+            ]
+        )
 
     print("\nRelease package checks passed.")
 

@@ -228,8 +228,8 @@ hide newly introduced block structure. The legacy translation path stays strict.
 
 `translate_document(..., aligner=...)` now selects the prepared-input, alignment,
 projection and rendering path for Markdown segments. The service supplies actual
-segment/paragraph context to all issue callbacks. HTML-wrapper segments use the
-legacy path until HTML rendering is implemented. Fully protected input bypasses
+segment/paragraph context to all issue callbacks. Supported HTML inline wrappers participate in projection; unsupported wrappers
+retain the legacy path. Fully protected input bypasses
 both models. Other document formats retain their existing path.
 
 The writer receives `AlignedMarkdownSegment` evidence and re-renders its target
@@ -238,8 +238,8 @@ removed; block, table-cell, HTML and protected-code constraints remain enforced.
 No boolean flag bypasses structural validation. Backend recovery and invalid
 markers retain the original segment. Alignment failures instead project an
 unresolved alignment, retaining valid translation and reporting formatting loss.
-The aligner consumes a complete prepared segment; encoder overflow is not
-silently truncated. This does not yet implement per-chunk alignment.
+The aligner consumes exact translation-call pairs; local coordinates are merged
+before complete-segment projection. Encoder overflow is never silently truncated.
 
 CLI selection requires both `--aligner awesome` and `--alignment-model PATH`.
 Loading happens once, on CPU, and expected loading errors produce normal CLI
