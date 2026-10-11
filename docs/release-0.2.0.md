@@ -1,7 +1,7 @@
 # Release preparation: 0.2.0
 
 Status: prepared, not published. Intended scope is TXT and Markdown translation
-with opt-in awesome-align formatting. ODP is deferred. Local alignment review
+with opt-in awesome-align formatting. ODT is deferred. Local alignment review
 remains an experimental source-distribution tool and is not integrated into the
 document CLI. See the dated changelog for user-facing notes.
 

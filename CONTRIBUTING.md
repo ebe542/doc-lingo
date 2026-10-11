@@ -9,7 +9,7 @@ Use English for code, comments, documentation, and CLI messages.
 Develop in small, explained steps. Keep document handling separate from the
 translation backend so additional formats can reuse translation logic.
 Implement document support in order: plain text (`.txt`), Markdown (`.md`), then
-OpenDocument presentations (`.odp`). See the developer guide for the format roadmap.
+OpenDocument text documents (`.odt`). See the developer guide for the format roadmap.
 
 ## Local workflow
 

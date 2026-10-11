@@ -321,8 +321,10 @@ versioned prompt identities, installation commands, and manual GPU validation.
 
 ## Format implementation roadmap
 
-Implement support in the order **TXT, Markdown, then ODP**. Each stage builds on
+Implement support in the order **TXT, Markdown, then ODT**. Each stage builds on
 the same public library API and translation backend and is exposed through the CLI.
+The initial ODT scope and inspected sample structure are documented in
+[ODT adapter design](odt.md); implementation is still pending.
 The roadmap describes the target behavior. TXT orchestration currently requires
 a backend, such as `MarianBackend` or `HuggingFaceBackend`. The CLI selects it
 explicitly and validates the language pair before loading the runtime. Shared
@@ -335,12 +337,14 @@ to inject a backend directly.
 2. **Markdown (`.md`):** translate prose while preserving headings, lists, emphasis,
    code blocks, and link destinations. The initial adapter is available; its
    supported subset and limitations are documented in [markdown.md](markdown.md).
-3. **OpenDocument presentations (`.odp`):** preserve document structure, styles,
-   images, and non-text content while changing translatable text. Longer translations
-   may overflow existing text boxes; validate layout fit separately from formatting.
+3. **OpenDocument text documents (`.odt`):** preserve document structure, styles,
+   headings, paragraphs, lists, images, and non-text content while changing
+   translatable text. Longer translations can change wrapping and pagination;
+   validate layout separately from formatting. Page numbers are layout-dependent
+   and cannot generally be inferred from paragraph order.
 
 Split each stage into small, runnable commits using the working agreement above.
-A usable TXT implementation can be a release milestone before Markdown or ODP
+A usable TXT implementation can be a release milestone before Markdown or ODT
 support exists; discuss release readiness and limitations with the maintainer.
 
 ## Commit and validation sequence

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Documentation
+
+- Correct the intended OpenDocument roadmap to ODT text documents, not ODP
+  presentations. ODT remains planned; no new adapter is included in this correction.
+
 ## [0.2.0] - 2026-10-10
 
 Markdown translation and optional alignment-based formatting, building on the
@@ -44,7 +49,7 @@ experiment and is not enabled in document translation.
 
 - Markdown is a documented subset, not full GitHub Flavored Markdown. Images and
   implicit reference labels remain untranslated; relative links and heading-fragment
-  destinations are not rewritten. ODP and standalone HTML files are not supported.
+  destinations are not rewritten. ODT and standalone HTML files are not supported.
 - Markdown parsing retains the source document in memory. Sentence recognition is
   heuristic; there is no resume support or guaranteed text-layout equivalence.
 - Partial formatting can be dropped when words are omitted, repeated ambiguously
@@ -90,7 +95,7 @@ English-to-German translation of UTF-8 plain text.
 
 ### Known limitations
 
-- Markdown and ODP are not supported yet. The local backends require CUDA;
+- Markdown and ODT are not supported yet. The local backends require CUDA;
   automatic CPU fallback is not included. Marian supports only English to German.
 - Translation still needs human review: terminology, grammar, and semantic
   omissions cannot be detected reliably by successful generation alone.

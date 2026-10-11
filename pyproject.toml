@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = "MIT"
 authors = [{ name = "ebe542" }]
-keywords = ["cli", "documents", "odp", "opendocument", "translation"]
+keywords = ["cli", "documents", "odt", "opendocument", "translation"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: MIT License",

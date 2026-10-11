@@ -38,12 +38,13 @@ Implement formats in this order, reusing the translation core:
    reading text to writing a separate translated file.
 2. **Markdown (`.md`):** translate prose while preserving Markdown structure,
    code blocks, and link destinations.
-3. **OpenDocument presentations (`.odp`):** translate presentation text while
-   preserving styles, images, and slide structure. Longer translations may
-   overflow text boxes; layout fit requires separate validation.
+3. **OpenDocument text documents (`.odt`):** translate document text while
+   preserving headings, paragraphs, lists, styles, images, and document structure.
+   Longer translations can change line wrapping and pagination; layout requires
+   separate review rather than a guarantee of identical page counts.
 
 TXT and Markdown reading, writing, and orchestration are available for a
-caller-supplied translation backend. ODP adapters are planned.
+caller-supplied translation backend. ODT adapters are planned.
 
 ## Development setup
 
@@ -71,7 +72,7 @@ doc-lingo document.txt --target-lang de --backend qwen --output translated-qwen.
 The default output is `document.de.txt` alongside the source. Existing output
 files are never overwritten. Source language is English; target codes are `de`
 and `en` (`en` requires `--backend qwen` and retains the text). Marian accepts
-only `de`; incompatible requests fail before model loading or file creation. TXT and Markdown are supported; ODP remains planned.
+only `de`; incompatible requests fail before model loading or file creation. TXT and Markdown are supported; ODT remains planned.
 The first real translation may download the model. Translation quality still
 requires review. Segments are translated internally in sentence-sized units; oversized sentences
 are split at word boundaries using the selected tokenizer. An indivisible oversized word or incomplete generated unit is retained in its
