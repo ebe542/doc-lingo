@@ -1,9 +1,63 @@
 # ODT adapter design and sample inspection
 
-Status: read-only package inspection is implemented. No ODT reader, writer or
-CLI translation support is implemented yet.
+Status: package inspection and a limited reader/writer are implemented. ODT CLI
+translation and inline formatting support are not yet available.
 The intended roadmap is TXT, Markdown, then OpenDocument text documents (ODT).
 The earlier references to ODP presentations were a naming misunderstanding.
+
+## Initial reader/writer subset
+
+Import `OdtReader` and `OdtWriter` from `doc_lingo.documents.odt`. These implement
+the existing protocols but are not yet exported at the library root or selected
+by the CLI. UTF-8 `content.xml` is required for this editing subset.
+
+Only nonempty plain-text `text:p` and `text:h` elements in the direct main flow
+or list containers are yielded. Nested lists retain their XML structure; a list
+item's paragraphs have type `list_item` without guessing its numbering style.
+IDs follow all paragraph/heading occurrences, so skipped blocks leave gaps.
+Each new reading session produces an independent iterator and closes it on exit.
+The complete XML and block index are in memory; this is not streaming XML editing.
+
+`reader.skipped_blocks` records empty blocks, unsupported containers, and blocks
+with inline children, comments, processing instructions or CDATA. They remain
+unchanged. This inventory covers `content.xml` only; header/footer text in
+`styles.xml` remains untouched and is not inventoried here. Inventory entries are
+not yet service-level issue callbacks. Consequently this subset must not be
+advertised as a complete translation of the local sample.
+
+The writer requires exactly the supported IDs and types in source order. An
+unchanged text uses its original XML bytes, including entity spelling. Changed
+text is XML-escaped and patches only the inner byte range, preserving surrounding
+markup, namespaces and attributes. Byte offsets are private document coordinates,
+not shared model-character coordinates. The parser uses Python's documented
+[Expat byte positions](https://docs.python.org/3/library/pyexpat.html#xmlparser.CurrentByteIndex)
+and rejects DTDs rather than resolving entities from external sources.
+
+Empty/invalid XML text and changed text containing tabs, newlines or repeated
+spaces are rejected until explicit ODT whitespace elements are supported.
+The writer copies other member payloads without XML reserialization, retaining
+archive ordering and comment; compressed bytes of the entire ZIP may differ.
+The existing source must remain unchanged throughout reader/writer use. Metadata
+statistics and thumbnail bytes are preserved, not recalculated, and may be stale
+after edits. Output package inspection precedes no-overwrite hard-link publication;
+temporary output is cleaned on failure. The caller owns the translation iterator.
+
+Model-free round trip from the project virtual environment:
+
+```python
+from pathlib import Path
+from doc_lingo.documents.odt import OdtReader, OdtWriter
+
+source = Path("local-data/Introduction-to-Machine-Learning.odt")
+reader = OdtReader(source)
+with reader.iter_segments() as segments:
+    OdtWriter(source).write(Path("local-data/odt-round-trip.odt"), segments)
+print([(block.segment.id, block.reason) for block in reader.skipped_blocks])
+```
+
+Choose a fresh destination. This copies untranslated content and checks the
+adapter mechanics; it is not a real-model or visual-layout validation. Automated
+tests use generated documents instead of the local sample.
 
 ## Implemented package inspection
 

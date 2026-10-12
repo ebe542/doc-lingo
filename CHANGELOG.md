@@ -4,6 +4,10 @@
 
 ### Added
 
+- Limited ODT reader/writer for plain-text main-body headings, paragraphs and
+  nested list paragraphs. Patch text bytes without reserializing document XML;
+  retain unsupported blocks with an inspection inventory. CLI support is pending.
+
 - Read-only ODT package inspection with explicit unsupported-input errors and
   generated ZIP/XML test fixtures. ODT translation and CLI selection remain pending.
 
