@@ -1,8 +1,40 @@
 # ODT adapter design and sample inspection
 
-Status: design only. No ODT reader, writer or CLI support is implemented yet.
+Status: read-only package inspection is implemented. No ODT reader, writer or
+CLI translation support is implemented yet.
 The intended roadmap is TXT, Markdown, then OpenDocument text documents (ODT).
 The earlier references to ODP presentations were a naming misunderstanding.
+
+## Implemented package inspection
+
+`doc_lingo.documents.odt.inspect_package(path)` returns an immutable
+`OdtPackageInfo` containing member names and the original content/styles XML
+bytes. It validates required members, duplicate/path checks, stored/deflated
+compression, the ODT MIME entry and its first uncompressed local header without
+extra fields, manifest document type and referenced files, XML roots and one text
+body. Styles are optional, but when present must be declared and well formed.
+Filesystem errors propagate; invalid/unsupported packages raise `OdtPackageError`.
+
+Encrypted and signed packages and XML document type declarations are rejected.
+Inspection limits are 16 MiB per parsed XML part and 256 MiB declared total
+uncompressed package size. The parser is used only for inspection; original XML
+bytes are retained, not serialized. Images and other opaque members are not read
+or CRC-validated in this step. This is not full schema validation, a general ZIP
+security audit, or a guarantee that an editor can render every member.
+
+The implementation uses standard-library `zipfile` and `ElementTree`, without a
+new dependency. Package checks are based on
+[ODF 1.3 Part 2, sections 2–4](https://docs.oasis-open.org/office/OpenDocument/v1.3/os/part2-packages/OpenDocument-v1.3-os-part2-packages.html).
+The XML policy also considers Python's
+[XML processing security notes](https://docs.python.org/3/library/xml.html).
+The supported subset intentionally rejects inputs beyond this first stage.
+
+Synthetic ZIP packages are generated in pytest temporary storage by
+`tests/documents/odt/conftest.py`; the local sample is not used by automated tests.
+Fixtures exercise basic XML structure rather than claiming full ODF schema
+conformance or editor round-trip validation. They contain headings, inline spans,
+explicit whitespace, nested lists, cell paragraphs, a bookmark, a field and an
+image reference. Reader semantics and style reconstruction remain future work.
 
 ## Sample inspected on 2026-10-11
 

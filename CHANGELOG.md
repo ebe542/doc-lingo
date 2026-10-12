@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Read-only ODT package inspection with explicit unsupported-input errors and
+  generated ZIP/XML test fixtures. ODT translation and CLI selection remain pending.
+
 ### Documentation
 
 - Correct the intended OpenDocument roadmap to ODT text documents, not ODP
