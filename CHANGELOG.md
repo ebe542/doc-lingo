@@ -4,6 +4,11 @@
 
 ### Added
 
+- Conservative ODT inline protection for nested styles, link labels, explicit
+  whitespace, fields, bookmarks and drawing frames. Translate supported paragraph
+  prose together; retain original paragraphs with diagnostics if marker recovery
+  fails. Alignment-based ODT formatting and CLI support remain pending.
+
 - Limited ODT reader/writer for plain-text main-body headings, paragraphs and
   nested list paragraphs. Patch text bytes without reserializing document XML;
   retain unsupported blocks with an inspection inventory. CLI support is pending.

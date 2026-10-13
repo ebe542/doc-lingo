@@ -1,7 +1,8 @@
 # ODT adapter design and sample inspection
 
 Status: package inspection and a limited reader/writer are implemented. ODT CLI
-translation and inline formatting support are not yet available.
+translation is not yet available. Inline support uses conservative protection;
+alignment-based ODT formatting projection is not yet implemented.
 The intended roadmap is TXT, Markdown, then OpenDocument text documents (ODT).
 The earlier references to ODP presentations were a naming misunderstanding.
 
@@ -11,7 +12,7 @@ Import `OdtReader` and `OdtWriter` from `doc_lingo.documents.odt`. These impleme
 the existing protocols but are not yet exported at the library root or selected
 by the CLI. UTF-8 `content.xml` is required for this editing subset.
 
-Only nonempty plain-text `text:p` and `text:h` elements in the direct main flow
+Nonempty supported `text:p` and `text:h` elements in the direct main flow
 or list containers are yielded. Nested lists retain their XML structure; a list
 item's paragraphs have type `list_item` without guessing its numbering style.
 IDs follow all paragraph/heading occurrences, so skipped blocks leave gaps.
@@ -19,7 +20,8 @@ Each new reading session produces an independent iterator and closes it on exit.
 The complete XML and block index are in memory; this is not streaming XML editing.
 
 `reader.skipped_blocks` records empty blocks, unsupported containers, and blocks
-with inline children, comments, processing instructions or CDATA. They remain
+with unsupported inline children, comments, processing instructions or CDATA.
+Fully protected blocks are skipped as well. These blocks remain
 unchanged. This inventory covers `content.xml` only; header/footer text in
 `styles.xml` remains untouched and is not inventoried here. Inventory entries are
 not yet service-level issue callbacks. Consequently this subset must not be
@@ -33,8 +35,9 @@ not shared model-character coordinates. The parser uses Python's documented
 [Expat byte positions](https://docs.python.org/3/library/pyexpat.html#xmlparser.CurrentByteIndex)
 and rejects DTDs rather than resolving entities from external sources.
 
-Empty/invalid XML text and changed text containing tabs, newlines or repeated
-spaces are rejected until explicit ODT whitespace elements are supported.
+Empty/invalid XML text is rejected. Changed plain-text blocks containing tabs,
+newlines or repeated spaces are still rejected; inline blocks retain their
+existing explicit whitespace elements as protected XML fragments.
 The writer copies other member payloads without XML reserialization, retaining
 archive ordering and comment; compressed bytes of the entire ZIP may differ.
 The existing source must remain unchanged throughout reader/writer use. Metadata
@@ -58,6 +61,30 @@ print([(block.segment.id, block.reason) for block in reader.skipped_blocks])
 Choose a fresh destination. This copies untranslated content and checks the
 adapter mechanics; it is not a real-model or visual-layout validation. Automated
 tests use generated documents instead of the local sample.
+
+## Conservative inline protection
+
+Supported paragraphs can contain nested `text:span` elements and `text:a` links.
+Decoded prose remains one segment across style boundaries. Exact opening/closing
+tags are protected through the existing marker translation path; attributes,
+style references and link destinations are not sent to the translation backend.
+This is an intermediate preservation path, not invisible formatting projection:
+markers may still affect translation quality. An aligner supplied to the service
+does not currently enable ODT word alignment.
+
+Explicit spaces, tabs, line breaks, bookmarks, page fields, sequence fields,
+soft page breaks and drawing frames are retained as opaque source fragments.
+Text inside a protected frame is not translated through its enclosing paragraph.
+Unknown inline elements conservatively retain the entire paragraph. Tables and
+text boxes remain unsupported containers; headers/footers remain untouched.
+
+The writer requires protected fragments in their original order and escapes only
+translated prose. Missing, duplicated or reordered markers cause the existing
+service recovery to retain the original paragraph and report an issue through
+`on_issue`; later paragraphs can continue. Direct writer calls with damaged
+fragments fail before publication. Structural validation cannot establish that a
+retained style or link still covers the linguistically correct words. Real-model
+and visual review are therefore still required before CLI activation.
 
 ## Implemented package inspection
 
@@ -88,7 +115,7 @@ Synthetic ZIP packages are generated in pytest temporary storage by
 Fixtures exercise basic XML structure rather than claiming full ODF schema
 conformance or editor round-trip validation. They contain headings, inline spans,
 explicit whitespace, nested lists, cell paragraphs, a bookmark, a field and an
-image reference. Reader semantics and style reconstruction remain future work.
+image reference. Alignment-based style reconstruction remains future work.
 
 ## Sample inspected on 2026-10-11
 

@@ -1,4 +1,4 @@
-"""Patch simple text nodes while preserving every other member's payload."""
+"""Patch supported text blocks while preserving every other member's payload."""
 
 import os
 from collections.abc import Iterable
@@ -12,6 +12,7 @@ from zipfile import ZipFile
 from doc_lingo.documents.errors import SegmentMismatchError
 from doc_lingo.documents.models import TextSegment
 from doc_lingo.documents.odt.blocks import text_blocks
+from doc_lingo.documents.odt.inline import OdtInlineSegment
 from doc_lingo.documents.odt.package import OdtPackageError, inspect_package
 
 
@@ -35,7 +36,9 @@ class OdtWriter:
             if value is None or value.id != block.segment.id or value.type != block.segment.type:
                 raise SegmentMismatchError("ODT translations must match source IDs and types")
             replacement = package.content_xml[block.start : block.end]
-            if value.text != block.segment.text:
+            if value.text != block.segment.text and isinstance(block.segment, OdtInlineSegment):
+                replacement = block.segment.render(value.text)
+            elif value.text != block.segment.text:
                 if not value.text.strip() or any(
                     not (
                         c in "\t\n\r"

@@ -18,16 +18,18 @@ def segments(path):
 def test_reader_subset_and_skipped_inventory(odt_factory):
     reader = OdtReader(odt_factory())
     with reader.iter_segments() as values:
-        assert [(s.id, s.text, s.type) for s in values] == [
+        result = list(values)
+        assert result[1].id == "2"
+        assert result[1].protected_spans
+        assert [(s.id, s.text, s.type) for s in result if s.id != "2"] == [
             ("1", "Example", "heading"),
             ("3", "First", "list_item"),
             ("4", "Nested", "list_item"),
         ]
     assert [(b.segment.id, b.reason) for b in reader.skipped_blocks] == [
-        ("2", "inline_content"),
         ("5", "unsupported_container"),
         ("6", "unsupported_container"),
-        ("7", "inline_content"),
+        ("7", "protected_only"),
     ]
     with reader.iter_segments() as values:
         assert next(values).id == "1"
@@ -106,14 +108,18 @@ def test_existing_destination_untouched(odt_factory, tmp_path):
 def test_service_can_process_subset_without_models(odt_factory, tmp_path):
     class Upper:
         def translate(self, text, **kwargs):
-            return text.upper()
+            for word in ("Example", "First", "Nested", "formatted"):
+                text = text.replace(word, word.upper())
+            return text
 
     path = odt_factory()
     output = tmp_path / "out.odt"
     translate_document(
         OdtReader(path), OdtWriter(path), Upper(), output, source_lang="en", target_lang="de"
     )
-    assert [s.text for s in segments(output)] == ["EXAMPLE", "FIRST", "NESTED"]
+    result = segments(output)
+    assert "FORMATTED" in result[1].text
+    assert [s.text for s in result if s.id != "2"] == ["EXAMPLE", "FIRST", "NESTED"]
 
 
 def test_xml_offsets_handle_prefix_aliases_entities_and_quotes():
