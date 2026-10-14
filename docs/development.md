@@ -325,7 +325,8 @@ Implement support in the order **TXT, Markdown, then ODT**. Each stage builds on
 the same public library API and translation backend and is exposed through the CLI.
 The initial ODT scope and inspected sample structure are documented in
 [ODT adapter design](odt.md). Package inspection and a limited reader/writer with
-conservative inline protection are implemented; CLI support is still pending.
+conservative inline protection and optional aligned formatting are implemented;
+CLI support is still pending.
 The roadmap describes the target behavior. TXT orchestration currently requires
 a backend, such as `MarianBackend` or `HuggingFaceBackend`. The CLI selects it
 explicitly and validates the language pair before loading the runtime. Shared

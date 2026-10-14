@@ -4,6 +4,12 @@
 
 ### Added
 
+- Optional ODT formatting projection through the library translation service.
+  Hide style/link wrappers from model input, split styles, expand links, and
+  diagnose dropped formatting using shared alignment policies. Protect opaque
+  XML content and revalidate rendered evidence before writing. CLI support remains
+  pending; namespace-owning and uniquely identified wrappers retain protection.
+
 - Conservative ODT inline protection for nested styles, link labels, explicit
   whitespace, fields, bookmarks and drawing frames. Translate supported paragraph
   prose together; retain original paragraphs with diagnostics if marker recovery

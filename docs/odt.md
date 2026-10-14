@@ -1,8 +1,8 @@
 # ODT adapter design and sample inspection
 
 Status: package inspection and a limited reader/writer are implemented. ODT CLI
-translation is not yet available. Inline support uses conservative protection;
-alignment-based ODT formatting projection is not yet implemented.
+translation is not yet available. Inline support uses conservative protection
+by default, with opt-in alignment-based formatting through the library service.
 The intended roadmap is TXT, Markdown, then OpenDocument text documents (ODT).
 The earlier references to ODP presentations were a naming misunderstanding.
 
@@ -69,8 +69,8 @@ Decoded prose remains one segment across style boundaries. Exact opening/closing
 tags are protected through the existing marker translation path; attributes,
 style references and link destinations are not sent to the translation backend.
 This is an intermediate preservation path, not invisible formatting projection:
-markers may still affect translation quality. An aligner supplied to the service
-does not currently enable ODT word alignment.
+markers may still affect translation quality. Supplying an aligner instead enables
+the projection path described below for supported inline segments.
 
 Explicit spaces, tabs, line breaks, bookmarks, page fields, sequence fields,
 soft page breaks and drawing frames are retained as opaque source fragments.
@@ -85,6 +85,39 @@ service recovery to retain the original paragraph and report an issue through
 fragments fail before publication. Structural validation cannot establish that a
 retained style or link still covers the linguistically correct words. Real-model
 and visual review are therefore still required before CLI activation.
+
+## Optional aligned formatting
+
+Pass a caller-owned `aligner` to `translate_document` with `OdtReader` and
+`OdtWriter`. Source layouts remove `text:span` and `text:a` wrappers from model
+input; only opaque contents receive markers. XML attributes and link destinations
+remain source-owned. Without an aligner the existing protected path is unchanged.
+
+The shared pipeline translates sentence-sized units, with further subdivision
+when required by the token budget, and aligns the exact source/target call pairs.
+It never pairs independently split target sentences by ordinal position. A style
+covering complete translation units can use their boundaries, including across
+sentences; partial scopes require word correspondence.
+
+Unresolved formatting is dropped and reported while translated text is retained.
+Disjoint style mappings may split a style; links expand to a continuous range.
+Crossing XML scopes and overlapping links are dropped with diagnostics. Markers
+must restore the exact opaque contents in their original order, and projected
+boundaries cannot split an opaque element. Content validation or recoverable
+backend failures retain the original paragraph when `on_issue` is supplied.
+Without that callback, content recovery remains strict.
+
+The ODT renderer escapes translated prose and inserts original wrapper fragments.
+The writer reproduces rendering from projection evidence before accepting it,
+then applies the existing package validation and no-overwrite publication rules.
+Wrappers with local namespace declarations or `xml:id` use the protected path:
+moving namespace bindings or duplicating unique identities is unsupported.
+Namespace bindings on surrounding unchanged document elements remain intact.
+
+Formatting diagnostics use the existing callback and segment IDs; they do not
+provide linguistic confidence scores. Model-free tests cover preservation and
+failure handling. Real-model translation and visual layout still require review;
+this step does not activate ODT CLI selection or add table/text-box support.
 
 ## Implemented package inspection
 
@@ -115,7 +148,8 @@ Synthetic ZIP packages are generated in pytest temporary storage by
 Fixtures exercise basic XML structure rather than claiming full ODF schema
 conformance or editor round-trip validation. They contain headings, inline spans,
 explicit whitespace, nested lists, cell paragraphs, a bookmark, a field and an
-image reference. Alignment-based style reconstruction remains future work.
+image reference. Additional model-free fixtures exercise aligned style and link
+reconstruction, opaque contents, sentence boundaries and conservative fallback.
 
 ## Sample inspected on 2026-10-11
 

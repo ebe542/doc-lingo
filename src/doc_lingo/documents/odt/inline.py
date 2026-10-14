@@ -1,16 +1,22 @@
 """Conservative inline XML protection using exact source fragments."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from html import unescape
 from xml.sax.saxutils import escape
 
 from doc_lingo.documents.models import TextSegment
 from doc_lingo.documents.odt.package import OdtPackageError
+from doc_lingo.documents.source_layout import SourceLayout, SourceRange
 
 
 @dataclass(frozen=True)
 class OdtInlineSegment(TextSegment):
-    """Decoded prose interleaved with protected source XML; no word projection yet."""
+    """Decoded prose and protected XML with source-local style boundaries."""
+
+    ranges: tuple[SourceRange, ...] = field(default=(), kw_only=True)
+
+    def source_layout(self) -> SourceLayout:
+        return SourceLayout(self.text, self.ranges)
 
     def render(self, text: str) -> bytes:
         fragments = [self.text[a:b] for a, b in self.protected_spans]
@@ -61,6 +67,7 @@ def inline_segment(
     start: int,
     end: int,
     tokens: list[tuple[int, int]],
+    ranges: list[tuple[int, int, int, int]],
 ) -> OdtInlineSegment:
     """Decode XML prose while keeping opaque source byte ranges intact."""
 
@@ -71,13 +78,22 @@ def inline_segment(
     spans = []
     cursor = start
     offset = 0
+    positions = {}
     for left, right in tokens:
         prose = decode(content[cursor:left])
         fragment = content[left:right].decode("utf-8")
         pieces.extend((prose, fragment))
         offset += len(prose)
+        positions[left] = offset
         spans.append((offset, offset + len(fragment)))
         offset += len(fragment)
+        positions[right] = offset
         cursor = right
     pieces.append(decode(content[cursor:end]))
-    return OdtInlineSegment(identity, "".join(pieces), kind, tuple(spans))
+    return OdtInlineSegment(
+        identity,
+        "".join(pieces),
+        kind,
+        tuple(spans),
+        ranges=tuple(SourceRange(*(positions[p] for p in item)) for item in sorted(ranges)),
+    )

@@ -88,7 +88,7 @@ def text_blocks(content: bytes) -> tuple[OdtBlock, ...]:
             if name in _WRAPPERS:
                 parent["tokens"].append((left, right))
                 if not empty:
-                    parent["wrappers"].add(len(stack))
+                    parent["wrappers"][len(stack)] = (left, right)
             elif name in _OPAQUE:
                 if empty:
                     parent["tokens"].append((left, right))
@@ -105,7 +105,8 @@ def text_blocks(content: bytes) -> tuple[OdtBlock, ...]:
                     "start": right,
                     "empty": empty,
                     "tokens": [],
-                    "wrappers": set(),
+                    "wrappers": {},
+                    "ranges": [],
                     "opaque": None,
                     "parts": [],
                     "complex": False,
@@ -132,7 +133,10 @@ def text_blocks(content: bytes) -> tuple[OdtBlock, ...]:
                 parent["opaque"] = None
             elif opaque is None and len(stack) in parent["wrappers"]:
                 parent["tokens"].append((parser.CurrentByteIndex, tag_end(parser.CurrentByteIndex)))
-                parent["wrappers"].remove(len(stack))
+                opening = parent["wrappers"].pop(len(stack))
+                parent["ranges"].append(
+                    (*opening, parser.CurrentByteIndex, tag_end(parser.CurrentByteIndex))
+                )
         if active and active[-1]["depth"] == len(stack):
             block = active.pop()
             text = "".join(block["parts"])
@@ -149,7 +153,13 @@ def text_blocks(content: bytes) -> tuple[OdtBlock, ...]:
             segment = TextSegment(block["id"], text, block["type"])
             if reason is None and block["tokens"]:
                 segment = inline_segment(
-                    block["id"], block["type"], content, block["start"], end_offset, block["tokens"]
+                    block["id"],
+                    block["type"],
+                    content,
+                    block["start"],
+                    end_offset,
+                    block["tokens"],
+                    block["ranges"],
                 )
                 if not segment.accepts_translation(segment.text):
                     reason = "protected_only"

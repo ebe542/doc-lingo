@@ -11,6 +11,7 @@ from zipfile import ZipFile
 
 from doc_lingo.documents.errors import SegmentMismatchError
 from doc_lingo.documents.models import TextSegment
+from doc_lingo.documents.odt.aligned import AlignedOdtSegment, render_aligned
 from doc_lingo.documents.odt.blocks import text_blocks
 from doc_lingo.documents.odt.inline import OdtInlineSegment
 from doc_lingo.documents.odt.package import OdtPackageError, inspect_package
@@ -36,7 +37,14 @@ class OdtWriter:
             if value is None or value.id != block.segment.id or value.type != block.segment.type:
                 raise SegmentMismatchError("ODT translations must match source IDs and types")
             replacement = package.content_xml[block.start : block.end]
-            if value.text != block.segment.text and isinstance(block.segment, OdtInlineSegment):
+            if isinstance(value, AlignedOdtSegment) and value.restored is not None:
+                if not isinstance(block.segment, OdtInlineSegment):
+                    raise OdtPackageError("ODT alignment requires an inline source")
+                rendered, _ = render_aligned(block.segment, value.restored)
+                if value.text != rendered:
+                    raise OdtPackageError("ODT rendered alignment mismatch")
+                replacement = rendered.encode("utf-8")
+            elif value.text != block.segment.text and isinstance(block.segment, OdtInlineSegment):
                 replacement = block.segment.render(value.text)
             elif value.text != block.segment.text:
                 if not value.text.strip() or any(

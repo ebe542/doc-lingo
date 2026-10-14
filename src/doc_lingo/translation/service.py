@@ -46,7 +46,7 @@ def translate_document(
     diagnostics without adding document-specific parameters to TranslationBackend;
     it is reset before yielding, including on exceptions and nested calls.
 
-    An optional caller-owned aligner enables projected Markdown formatting.
+    An optional caller-owned aligner enables projected Markdown and ODT formatting.
     Other formats and unsupported HTML wrappers keep their existing path.
     Formatting warnings reach on_issue without counting as source retention.
     """
@@ -88,6 +88,7 @@ def translate_document(
                 try:
                     if aligner is not None:
                         from doc_lingo.translation.aligned_markdown import translate_aligned
+                        from doc_lingo.translation.aligned_odt import translate_aligned_odt
 
                         aligned = translate_aligned(
                             segment,
@@ -98,6 +99,16 @@ def translate_document(
                             report=report,
                             statistics=alignment_statistics,
                         )
+                        if aligned is None:
+                            aligned = translate_aligned_odt(
+                                segment,
+                                backend,
+                                aligner,
+                                source_lang=source_lang,
+                                target_lang=target_lang,
+                                report=report,
+                                statistics=alignment_statistics,
+                            )
                     text = (
                         aligned.text
                         if aligned is not None
