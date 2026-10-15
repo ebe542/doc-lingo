@@ -14,6 +14,8 @@ class OdtInlineSegment(TextSegment):
     """Decoded prose and protected XML with source-local style boundaries."""
 
     ranges: tuple[SourceRange, ...] = field(default=(), kw_only=True)
+    language_ranges: frozenset[int] = field(default=frozenset(), kw_only=True)
+    frame_spans: tuple[tuple[int, int], ...] = field(default=(), kw_only=True)
 
     def source_layout(self) -> SourceLayout:
         return SourceLayout(self.text, self.ranges)
@@ -68,6 +70,8 @@ def inline_segment(
     end: int,
     tokens: list[tuple[int, int]],
     ranges: list[tuple[int, int, int, int]],
+    neutral_starts: set[int],
+    frame_starts: set[int],
 ) -> OdtInlineSegment:
     """Decode XML prose while keeping opaque source byte ranges intact."""
 
@@ -96,4 +100,8 @@ def inline_segment(
         kind,
         tuple(spans),
         ranges=tuple(SourceRange(*(positions[p] for p in item)) for item in sorted(ranges)),
+        language_ranges=frozenset(
+            i for i, item in enumerate(sorted(ranges)) if item[0] in neutral_starts
+        ),
+        frame_spans=tuple((positions[a], positions[b]) for a, b in tokens if a in frame_starts),
     )

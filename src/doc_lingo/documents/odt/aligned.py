@@ -1,13 +1,14 @@
 """Render projected ODT wrappers with source-owned XML and opaque contents."""
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from xml.parsers import expat
 from xml.sax.saxutils import escape
 
 from doc_lingo.documents.models import TextSegment
 from doc_lingo.documents.odt.inline import OdtInlineSegment
 from doc_lingo.documents.odt.package import OdtPackageError
+from doc_lingo.documents.source_layout import SourceRange
 from doc_lingo.translation.alignment import TextRange
 from doc_lingo.translation.formatting import FormattingIssue, FormattingScope
 from doc_lingo.translation.formatting_bridge import RestoredFormatting
@@ -18,6 +19,40 @@ class AlignedOdtSegment(TextSegment):
     """Rendered inner XML plus reproducible projection evidence for the writer."""
 
     restored: RestoredFormatting | None = None
+
+
+def aligned_body(source: OdtInlineSegment) -> tuple[str, OdtInlineSegment]:
+    """Keep only unwrapped leading frames at their original paragraph boundary.
+
+    Interior frames, bookmarks, fields and explicit whitespace retain markers.
+    A frame enclosed by a style/link is not independent of that scope.
+    """
+    end = 0
+    for left, right in source.frame_spans:
+        if source.text[end:left].strip() or any(r.outer_start < right for r in source.ranges):
+            break
+        end = right
+    if not end:
+        return "", source
+    return source.text[:end], replace(
+        source,
+        text=source.text[end:],
+        protected_spans=tuple((a - end, b - end) for a, b in source.protected_spans if a >= end),
+        ranges=tuple(
+            SourceRange(
+                r.outer_start - end, r.inner_start - end, r.inner_end - end, r.outer_end - end
+            )
+            for r in source.ranges
+        ),
+        frame_spans=tuple((a - end, b - end) for a, b in source.frame_spans if a >= end),
+    )
+
+
+def render_segment(source: OdtInlineSegment, restored: RestoredFormatting):
+    """Reconstruct the same source-owned prefix in the service and writer."""
+    prefix, body = aligned_body(source)
+    rendered, issues = render_aligned(body, restored)
+    return prefix + rendered, issues
 
 
 def supports_projection(source: OdtInlineSegment) -> bool:
@@ -40,7 +75,7 @@ def odt_scopes(source: OdtInlineSegment) -> tuple[FormattingScope, ...]:
             else None,
         )
         for index, r in enumerate(source.ranges)
-        if r.inner_start < r.inner_end
+        if r.inner_start < r.inner_end and index not in source.language_ranges
     )
 
 
@@ -113,7 +148,7 @@ def render_aligned(
     issues.extend(
         FormattingIssue(str(i), "dropped", "no_visible_content")
         for i, r in enumerate(source.ranges)
-        if r.inner_start == r.inner_end
+        if r.inner_start == r.inner_end and i not in source.language_ranges
     )
     events = {}
     for span, identity in entries:

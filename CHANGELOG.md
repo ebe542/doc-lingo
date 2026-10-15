@@ -2,7 +2,18 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Exclude verified language-only ODT style scopes from optical word projection.
+  Preserve unwrapped leading drawing frames outside model input, avoiding source
+  retention when an image marker is lost. Keep interior anchors protected and
+  validate source-owned prefix reconstruction in the writer.
+
 ### Added
+
+- Separate ODT review script with progress/completion output, JSONL diagnostics,
+  explicit skipped-text inventory, model/code fingerprints and package-member
+  preservation checks. Linguistic and visual review remain manual.
 
 - Optional ODT formatting projection through the library translation service.
   Hide style/link wrappers from model input, split styles, expand links, and

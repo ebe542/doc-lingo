@@ -99,6 +99,23 @@ It never pairs independently split target sentences by ordinal position. A style
 covering complete translation units can use their boundaries, including across
 sentences; partial scopes require word correspondence.
 
+Styles containing only explicit language/country/script metadata are not optical
+scopes. Their wrappers are removed from aligned output instead of splitting or
+dropping them through word alignment. Classification uses the validated style
+definitions from both XML parts and requires an unambiguous, non-inherited text
+style with no other properties. Spans with additional attributes, unknown styles,
+parent styles or visible properties keep the conservative projection policy.
+Original style definitions remain unchanged. This does not set the document's
+default language to German; inherited language and mixed-language metadata need
+separate handling. The protected path and unchanged round trips retain the source.
+
+Unwrapped drawing frames before the first paragraph text are restored at that
+same leading boundary without sending a marker to the translator. Their XML is
+kept exactly, and the writer independently reconstructs this prefix from the
+source. Frames inside text or formatting scopes, fields and bookmarks continue
+to use content markers. This avoids losing a heading translation because the
+model omitted its leading icon marker without guessing interior anchor positions.
+
 Unresolved formatting is dropped and reported while translated text is retained.
 Disjoint style mappings may split a style; links expand to a continuous range.
 Crossing XML scopes and overlapping links are dropped with diagnostics. Markers
@@ -120,6 +137,10 @@ failure handling. Real-model translation and visual layout still require review;
 this step does not activate ODT CLI selection or add table/text-box support.
 
 ## Implemented package inspection
+
+For a reproducible real-model review, see [ODT review runs](odt-review.md).
+The script is separate from the production CLI and records unsupported text
+explicitly; a completed run is not a linguistic or visual quality pass.
 
 `doc_lingo.documents.odt.inspect_package(path)` returns an immutable
 `OdtPackageInfo` containing member names and the original content/styles XML

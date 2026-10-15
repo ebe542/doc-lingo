@@ -40,7 +40,9 @@ class OdtBlock:
     reason: str | None = None
 
 
-def text_blocks(content: bytes) -> tuple[OdtBlock, ...]:
+def text_blocks(
+    content: bytes, *, language_styles: frozenset[str] = frozenset()
+) -> tuple[OdtBlock, ...]:
     """Index p/h nodes; unsupported contexts and inline constructs are retained."""
     try:
         content.decode("utf-8-sig")
@@ -86,10 +88,18 @@ def text_blocks(content: bytes) -> tuple[OdtBlock, ...]:
             if parent["opaque"] is not None:
                 continue
             if name in _WRAPPERS:
+                if (
+                    name == f"{TEXT}|span"
+                    and set(attributes) == {f"{TEXT}|style-name"}
+                    and attributes[f"{TEXT}|style-name"] in language_styles
+                ):
+                    parent["neutral"].add(left)
                 parent["tokens"].append((left, right))
                 if not empty:
                     parent["wrappers"][len(stack)] = (left, right)
             elif name in _OPAQUE:
+                if name == f"{DRAW}|frame":
+                    parent["frames"].add(left)
                 if empty:
                     parent["tokens"].append((left, right))
                 else:
@@ -107,6 +117,8 @@ def text_blocks(content: bytes) -> tuple[OdtBlock, ...]:
                     "tokens": [],
                     "wrappers": {},
                     "ranges": [],
+                    "neutral": set(),
+                    "frames": set(),
                     "opaque": None,
                     "parts": [],
                     "complex": False,
@@ -160,6 +172,8 @@ def text_blocks(content: bytes) -> tuple[OdtBlock, ...]:
                     end_offset,
                     block["tokens"],
                     block["ranges"],
+                    block["neutral"],
+                    block["frames"],
                 )
                 if not segment.accepts_translation(segment.text):
                     reason = "protected_only"

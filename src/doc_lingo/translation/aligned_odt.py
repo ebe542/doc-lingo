@@ -2,8 +2,9 @@
 
 from doc_lingo.documents.odt.aligned import (
     AlignedOdtSegment,
+    aligned_body,
     odt_scopes,
-    render_aligned,
+    render_segment,
     supports_projection,
 )
 from doc_lingo.documents.odt.inline import OdtInlineSegment
@@ -26,7 +27,8 @@ def translate_aligned_odt(
     """Return None for the existing protected path when projection is unsupported."""
     if not isinstance(segment, OdtInlineSegment) or not supports_projection(segment):
         return None
-    prepared = prepare_model_input(segment.translation_input())
+    _, body = aligned_body(segment)
+    prepared = prepare_model_input(body.translation_input())
     if prepared.text is None:
         return AlignedOdtSegment(segment.id, segment.text, segment.type)
     failures = []
@@ -67,12 +69,12 @@ def translate_aligned_odt(
         restored = restore_aligned_formatting(
             prepared,
             alignment,
-            odt_scopes(segment),
+            odt_scopes(body),
             segment_id=segment.id,
             segment_type=segment.type,
             segment_number=0,
         )
-        rendered, issues = render_aligned(segment, restored)
+        rendered, issues = render_segment(segment, restored)
     except (AlignmentError, OdtPackageError) as error:
         text = retain_original(
             segment.text,
