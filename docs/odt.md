@@ -1,16 +1,16 @@
 # ODT adapter design and sample inspection
 
-Status: package inspection and a limited reader/writer are implemented. ODT CLI
-translation is not yet available. Inline support uses conservative protection
-by default, with opt-in alignment-based formatting through the library service.
+Status: package inspection, a limited reader/writer and CLI selection are implemented.
+Inline support uses conservative protection by default, with opt-in alignment-based
+formatting through the library service or `--aligner awesome` in the CLI.
 The intended roadmap is TXT, Markdown, then OpenDocument text documents (ODT).
 The earlier references to ODP presentations were a naming misunderstanding.
 
 ## Initial reader/writer subset
 
 Import `OdtReader` and `OdtWriter` from `doc_lingo.documents.odt`. These implement
-the existing protocols but are not yet exported at the library root or selected
-by the CLI. UTF-8 `content.xml` is required for this editing subset.
+the existing protocols and are selected by the CLI for `.odt` input. They are not
+exported at the library root. UTF-8 `content.xml` is required for this editing subset.
 
 Nonempty supported `text:p` and `text:h` elements in the direct main flow
 or list containers are yielded. Nested lists retain their XML structure; a list
@@ -24,7 +24,12 @@ with unsupported inline children, comments, processing instructions or CDATA.
 Fully protected blocks are skipped as well. These blocks remain
 unchanged. This inventory covers `content.xml` only; header/footer text in
 `styles.xml` remains untouched and is not inventoried here. Inventory entries are
-not yet service-level issue callbacks. Consequently this subset must not be
+not service-level issue callbacks. The CLI performs a separate preflight inventory
+and writes `skipped_content` issues for nonempty unsupported text, including
+paragraphs in `styles.xml`. IDs there are qualified as `styles.xml:N`; source block
+occurrence numbers are distinct from translated progress counts. Page coordinates
+remain unknown. Empty/protected-only content blocks are not translation failures.
+Skipped text causes warning exit code 3. Consequently this subset must not be
 advertised as a complete translation of the local sample.
 
 The writer requires exactly the supported IDs and types in source order. An
@@ -84,7 +89,7 @@ service recovery to retain the original paragraph and report an issue through
 `on_issue`; later paragraphs can continue. Direct writer calls with damaged
 fragments fail before publication. Structural validation cannot establish that a
 retained style or link still covers the linguistically correct words. Real-model
-and visual review are therefore still required before CLI activation.
+and visual review remain necessary when assessing translated documents.
 
 ## Optional aligned formatting
 
@@ -134,7 +139,7 @@ Namespace bindings on surrounding unchanged document elements remain intact.
 Formatting diagnostics use the existing callback and segment IDs; they do not
 provide linguistic confidence scores. Model-free tests cover preservation and
 failure handling. Real-model translation and visual layout still require review;
-this step does not activate ODT CLI selection or add table/text-box support.
+table/text-box support is not included in the CLI or library subset.
 
 ## Implemented package inspection
 

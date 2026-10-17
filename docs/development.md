@@ -326,7 +326,8 @@ the same public library API and translation backend and is exposed through the C
 The initial ODT scope and inspected sample structure are documented in
 [ODT adapter design](odt.md). Package inspection and a limited reader/writer with
 conservative inline protection and optional aligned formatting are implemented;
-CLI support is still pending.
+The CLI selects this limited subset for `.odt` and reports unsupported text
+separately with warning exit code 3.
 The roadmap describes the target behavior. TXT orchestration currently requires
 a backend, such as `MarianBackend` or `HuggingFaceBackend`. The CLI selects it
 explicitly and validates the language pair before loading the runtime. Shared

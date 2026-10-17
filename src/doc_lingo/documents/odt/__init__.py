@@ -1,4 +1,4 @@
-"""ODT inspection and a limited plain-text reader/writer; no CLI integration."""
+"""ODT package inspection and adapters for the supported text subset."""
 
 from doc_lingo.documents.odt.package import OdtPackageError, OdtPackageInfo, inspect_package
 from doc_lingo.documents.odt.reader import OdtReader

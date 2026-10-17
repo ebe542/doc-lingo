@@ -44,7 +44,8 @@ Implement formats in this order, reusing the translation core:
    separate review rather than a guarantee of identical page counts.
 
 TXT and Markdown reading, writing, and orchestration are available for a
-caller-supplied translation backend. ODT adapters are planned.
+caller-supplied translation backend. ODT adapters support main-flow headings,
+paragraphs and list paragraphs; tables and peripheral text remain unsupported.
 
 ## Development setup
 
@@ -72,7 +73,8 @@ doc-lingo document.txt --target-lang de --backend qwen --output translated-qwen.
 The default output is `document.de.txt` alongside the source. Existing output
 files are never overwritten. Source language is English; target codes are `de`
 and `en` (`en` requires `--backend qwen` and retains the text). Marian accepts
-only `de`; incompatible requests fail before model loading or file creation. TXT and Markdown are supported; ODT remains planned.
+only `de`; incompatible requests fail before model loading or file creation.
+TXT, Markdown and the limited ODT subset are supported.
 The first real translation may download the model. Translation quality still
 requires review. Segments are translated internally in sentence-sized units; oversized sentences
 are split at word boundaries using the selected tokenizer. An indivisible oversized word or incomplete generated unit is retained in its
@@ -89,7 +91,7 @@ The initial message explains that the first segment may require model
 loading. No percentage is shown because paragraphs are read incrementally without
 a counting pass. The final success message appears only after output publication.
 
-## Optional Markdown alignment
+## Optional Markdown and ODT alignment
 
 After the local translation setup, install the alignment extra:
 
@@ -213,10 +215,10 @@ remain available directly from `doc_lingo`.
 ## License
 
 [MIT](LICENSE).
-## Optional Markdown alignment
+## Optional Markdown and ODT alignment
 
 Use `--aligner awesome --alignment-model PATH` to enable the alignment-based
-Markdown path. `PATH` must be a local awesome-align model directory containing
+Markdown or ODT path. `PATH` must be a local awesome-align model directory containing
 the weights and tokenizer files; install the project's awesome-align optional
 dependencies first. The aligner runs on CPU with layer 8 and threshold 0.001.
 The translation backend keeps its normal device settings.
@@ -228,7 +230,7 @@ doc-lingo example.md --target-lang de --aligner awesome --alignment-model local-
 Use the evaluated `aneuraz/awesome-align-with-co` checkpoint at revision
 `777756717e1fa9556e304d4d5db173ee386b9c16`. This option does not download an
 alignment model automatically. Without the option, translation behaves as before.
-Only Markdown accepts it; HTML-wrapper segments keep the existing translation
+Markdown and ODT accept it; unsupported HTML-wrapper segments keep the existing translation
 path. Split styles, expanded links and dropped formatting are written to the
 usual `.issues.jsonl` report and return warning exit code 3. These warnings do
 not mean that the underlying translated text was retained from the source.
@@ -236,3 +238,30 @@ Alignment remains imperfect, especially for reordered repeated terms; review
 the generated document. Encoder-limit failures keep valid translated content
 and omit unresolved formatting. Invalid protected markers or changed document
 structure retain the original segment and are reported separately.
+
+## OpenDocument text (ODT)
+
+```bash
+doc-lingo document.odt --target-lang de --output document.de.odt
+
+doc-lingo document.odt --target-lang de \
+  --aligner awesome --alignment-model local-data/models/awesome-align \
+  --output document.aligned.de.odt
+```
+
+ODT support currently covers main-flow headings, paragraphs and list paragraphs.
+Images and non-content package members are preserved. Optional alignment removes
+style/link syntax from model input; without it, inline XML uses conservative
+marker protection. Translated text can change wrapping and pagination.
+
+Tables, text boxes, headers/footers and unsupported inline text remain unchanged.
+The CLI reports these as `skipped_content` in `OUTPUT.odt.issues.jsonl`, separately
+from translation recoveries and formatting warnings. Such outputs return exit
+code **3**, even when all supported paragraphs were processed. Empty paragraphs
+and purely protected blocks do not themselves trigger a warning. Source text can
+appear in the diagnostic file; it is a local review artifact.
+
+Exit code 0 means no issues were reported, 1 means a fatal processing failure,
+and 2 means invalid arguments. Output and report paths must be new. See
+[ODT support and limitations](docs/odt.md) and the separate
+[reproducible review script](docs/odt-review.md).

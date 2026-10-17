@@ -11,6 +11,10 @@
 
 ### Added
 
+- ODT CLI selection with optional awesome-align, progress and existing JSONL
+  diagnostics. Explicitly report unsupported text in content/styles XML as
+  skipped content and return warning exit code 3 for partial translations.
+
 - Separate ODT review script with progress/completion output, JSONL diagnostics,
   explicit skipped-text inventory, model/code fingerprints and package-member
   preservation checks. Linguistic and visual review remain manual.

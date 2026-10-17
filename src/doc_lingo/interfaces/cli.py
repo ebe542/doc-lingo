@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from contextlib import suppress
 from dataclasses import asdict
@@ -25,6 +26,8 @@ from doc_lingo import (
     TranslationError,
     translate_document,
 )
+from doc_lingo.documents.odt import OdtPackageError, OdtReader, OdtWriter
+from doc_lingo.documents.odt.diagnostics import skipped_text_issues
 from doc_lingo.translation.alignment import AlignmentError
 from doc_lingo.translation.alignment_statistics import AlignmentStatistics
 from doc_lingo.translation.awesome_adapter import AwesomeAlignAdapter
@@ -36,16 +39,18 @@ def build_parser() -> argparse.ArgumentParser:
     """Describe the local document translation interface."""
     parser = argparse.ArgumentParser(
         prog="doc-lingo",
-        description="Translate UTF-8 TXT and Markdown documents locally on CUDA.",
+        description="Translate TXT, Markdown and supported ODT text locally on CUDA.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {version('doc-lingo')}")
-    parser.add_argument("file", type=Path, help="English UTF-8 source document (.txt or .md)")
+    parser.add_argument("file", type=Path, help="English source (.txt/.md UTF-8 or .odt)")
     parser.add_argument(
         "--target-lang", required=True, choices=["en", "de"], help="Target language"
     )
     parser.add_argument("--output", type=Path, help="New output file (default: NAME.LANG.EXT)")
     parser.add_argument("--glossary", type=Path, help="Optional terminology JSON file")
-    parser.add_argument("--aligner", choices=["awesome"], help="Opt-in Markdown alignment (CPU)")
+    parser.add_argument(
+        "--aligner", choices=["awesome"], help="Opt-in Markdown/ODT alignment (CPU)"
+    )
     parser.add_argument("--alignment-model", type=Path, help="Local awesome-align model directory")
     parser.add_argument(
         "--backend",
@@ -67,10 +72,10 @@ def main(argv: list[str] | None = None) -> None:
     extension = args.file.suffix.lower()
     if bool(args.aligner) != bool(args.alignment_model):
         parser.error("--aligner and --alignment-model must be supplied together")
-    if args.aligner and extension != ".md":
-        parser.error("--aligner requires a Markdown document")
-    if extension not in (".txt", ".md"):
-        parser.error("Only .txt and .md source documents are supported")
+    if args.aligner and extension not in (".md", ".odt"):
+        parser.error("--aligner requires a Markdown or ODT document")
+    if extension not in (".txt", ".md", ".odt"):
+        parser.error("Only .txt, .md and .odt source documents are supported")
     destination = args.output or args.file.with_name(
         f"{args.file.stem}.{args.target_lang}{extension}"
     )
@@ -108,19 +113,41 @@ def main(argv: list[str] | None = None) -> None:
     issues_path = destination.with_name(destination.name + ".issues.jsonl")
     issue_count = 0
     repair_count = 0
+    skipped_count = 0
     report_created = False
     alignment_statistics = AlignmentStatistics()
 
     try:
+        skipped = ()
+        if extension == ".odt":
+            if os.path.lexists(destination):
+                raise FileExistsError(destination)
+            skipped = skipped_text_issues(args.file)
+        reader_class, writer_class = {
+            ".txt": (PlainTextReader, PlainTextWriter),
+            ".md": (MarkdownReader, MarkdownWriter),
+            ".odt": (OdtReader, OdtWriter),
+        }[extension]
         with issues_path.open("x", encoding="utf-8", newline="\n") as report_file:
             report_created = True
 
             def record_issue(issue):
-                nonlocal issue_count, repair_count
+                nonlocal issue_count, repair_count, skipped_count
                 report_file.write(json.dumps(asdict(issue), ensure_ascii=False) + "\n")
                 report_file.flush()
                 issue_count += 1
                 repair_count += issue.action.startswith("formatting_")
+                skipped_count += issue.action == "skipped_content"
+
+            for issue in skipped:
+                record_issue(issue)
+            if skipped_count:
+                print(
+                    f"ODT: {skipped_count} unsupported text blocks will remain unchanged; "
+                    f"see {issues_path}",
+                    file=sys.stderr,
+                    flush=True,
+                )
 
             backend: TranslationBackend = (
                 MarianBackend() if args.backend == "marian" else HuggingFaceBackend()
@@ -132,8 +159,8 @@ def main(argv: list[str] | None = None) -> None:
                 alignment_options["aligner"] = AwesomeAlignAdapter.load(str(args.alignment_model))
                 alignment_options["alignment_statistics"] = alignment_statistics
             translate_document(
-                MarkdownReader(args.file) if extension == ".md" else PlainTextReader(args.file),
-                MarkdownWriter(args.file) if extension == ".md" else PlainTextWriter(args.file),
+                reader_class(args.file),
+                writer_class(args.file),
                 backend,
                 destination,
                 source_lang="en",
@@ -156,6 +183,8 @@ def main(argv: list[str] | None = None) -> None:
         parser.exit(1, "Error: Source or translated text is not valid UTF-8.\n")
     except SegmentMismatchError:
         parser.exit(1, "Error: Translated segments do not match the source document.\n")
+    except OdtPackageError:
+        parser.exit(1, "Error: Invalid or unsupported ODT package or document structure.\n")
     except (TranslationError, AlignmentError) as error:
         parser.exit(1, f"Error: {error}\n")
     except OSError:
@@ -177,8 +206,10 @@ def main(argv: list[str] | None = None) -> None:
         print(f"{status} written to {destination}")
         parser.exit(
             3,
-            f"Warning: {issue_count - repair_count} original text units retained; "
-            f"{repair_count} formatting warnings. Report: {issues_path}\n",
+            f"Warning: {issue_count - repair_count - skipped_count} original text units retained; "
+            f"{repair_count} formatting warnings. "
+            + (f"{skipped_count} unsupported text blocks skipped. " if skipped_count else "")
+            + f"Report: {issues_path}\n",
         )
     print(f"Translation written to {destination}")
 

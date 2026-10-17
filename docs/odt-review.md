@@ -3,8 +3,9 @@
 Run from the repository root in Git Bash with the project virtual environment
 active. Use the existing CUDA-enabled local dependencies and awesome-align setup.
 This script uses the pinned Marian English-to-German backend on CUDA and the
-caller-selected local awesome-align checkpoint on CPU. It does not enable ODT
-in the production CLI. The private sample is not an automated test fixture.
+caller-selected local awesome-align checkpoint on CPU. The regular CLI also
+supports the same ODT subset; this script adds hashes, inventories and review
+statistics. The private sample is not an automated test fixture.
 
 ```bash
 python -m scripts.evaluate_odt \
