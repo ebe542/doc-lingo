@@ -25,10 +25,10 @@ def test_reader_subset_and_skipped_inventory(odt_factory):
             ("1", "Example", "heading"),
             ("3", "First", "list_item"),
             ("4", "Nested", "list_item"),
+            ("5", "Cell one", "paragraph"),
+            ("6", "Cell two", "paragraph"),
         ]
     assert [(b.segment.id, b.reason) for b in reader.skipped_blocks] == [
-        ("5", "unsupported_container"),
-        ("6", "unsupported_container"),
         ("7", "protected_only"),
     ]
     with reader.iter_segments() as values:
@@ -119,7 +119,13 @@ def test_service_can_process_subset_without_models(odt_factory, tmp_path):
     )
     result = segments(output)
     assert "FORMATTED" in result[1].text
-    assert [s.text for s in result if s.id != "2"] == ["EXAMPLE", "FIRST", "NESTED"]
+    assert [s.text for s in result if s.id != "2"] == [
+        "EXAMPLE",
+        "FIRST",
+        "NESTED",
+        "Cell one",
+        "Cell two",
+    ]
 
 
 def test_xml_offsets_handle_prefix_aliases_entities_and_quotes():

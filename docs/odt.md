@@ -13,7 +13,7 @@ the existing protocols and are selected by the CLI for `.odt` input. They are no
 exported at the library root. UTF-8 `content.xml` is required for this editing subset.
 
 Nonempty supported `text:p` and `text:h` elements in the direct main flow
-or list containers are yielded. Nested lists retain their XML structure; a list
+or supported list/table containers are yielded. Nested lists retain their XML structure; a list
 item's paragraphs have type `list_item` without guessing its numbering style.
 IDs follow all paragraph/heading occurrences, so skipped blocks leave gaps.
 Each new reading session produces an independent iterator and closes it on exit.
@@ -80,8 +80,8 @@ the projection path described below for supported inline segments.
 Explicit spaces, tabs, line breaks, bookmarks, page fields, sequence fields,
 soft page breaks and drawing frames are retained as opaque source fragments.
 Text inside a protected frame is not translated through its enclosing paragraph.
-Unknown inline elements conservatively retain the entire paragraph. Tables and
-text boxes remain unsupported containers; headers/footers remain untouched.
+Unknown inline elements conservatively retain the entire paragraph. Text boxes
+remain unsupported containers; headers/footers remain untouched.
 
 The writer requires protected fragments in their original order and escapes only
 translated prose. Missing, duplicated or reordered markers cause the existing
@@ -139,7 +139,7 @@ Namespace bindings on surrounding unchanged document elements remain intact.
 Formatting diagnostics use the existing callback and segment IDs; they do not
 provide linguistic confidence scores. Model-free tests cover preservation and
 failure handling. Real-model translation and visual layout still require review;
-table/text-box support is not included in the CLI or library subset.
+text-box support is not included in the CLI or library subset.
 
 ## Implemented package inspection
 
@@ -225,9 +225,29 @@ An item with multiple paragraphs yields multiple ordered segments while retainin
 its list container. Nested lists require synthetic tests even though this sample
 contains only one level.
 
-Tables are the next increment: process paragraphs within cells while preserving
-cell and row structure. The sample contains multiple paragraphs in some cells;
-one cell must not automatically become one flat string.
+Textual table cells are supported: each paragraph/heading is a separate segment,
+including nested tables and lists within cells. Header rows, row groups and row
+containers retain their XML structure. Merged cells, repetition counts, styles,
+row/column metadata and covered cells are not rewritten. Repeated stored cells
+are translated once; they are not expanded into separate copies.
+
+Cells with formulas, non-string value types or explicit stored value attributes
+(including `office:string-value`) remain unchanged with `unsupported_cell_value`
+diagnostics for nonempty text. This prevents translated display text from
+disagreeing with a stored value. Covered-cell contents remain unsupported.
+Tables inside unsupported containers, such as text boxes or sections, remain
+unsupported as well. This is not a general ODF table schema validator.
+
+Paragraphs using `Preformatted_20_Text` (or the display name `Preformatted Text`)
+and styles derived from it are protected in the main flow and table cells.
+Parent chains are resolved across `content.xml` and `styles.xml`; cycles terminate
+safely. Duplicate definitions conservatively inherit protection if any definition
+derives from a protected style. Entire paragraphs, including code comments,
+spacing elements and inline XML, remain unchanged and bypass translation/alignment.
+Reader and review inventories use reason `protected_preformatted`. This intentional
+protection does not produce a CLI warning. The known style names are an adapter
+convention, not a universal ODF code designation: arbitrary code styles or code
+without a recognized style are not detected by font or syntax guessing.
 
 Text boxes, captions/sequence fields, headers and footers need separate handling.
 Until supported, preserve them and report skipped visible text. Do not advertise

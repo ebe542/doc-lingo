@@ -40,8 +40,9 @@ extracted text. Counts describe XML blocks, not distinct visible text occurrence
 The script validates the output package, verifies all non-`content.xml` member
 payloads and checks the source file hash remained unchanged. ZIP compression size
 may differ. It does not validate that images kept their visible placement or that
-pagination stayed the same. Tables, text boxes and peripheral text remain in the
-original language. Existing metadata/thumbnail content can be stale.
+pagination stayed the same. Textual table paragraphs are processed; cells with
+formulas/stored values, text boxes and peripheral text remain in the original
+language. Existing metadata/thumbnail content can be stale.
 
 The report is refreshed as segments are processed, before final publication.
 Processing failures retain a report with `status: failed`, exception type and
@@ -63,7 +64,7 @@ Open source and translated ODT side by side in an ODT-capable editor. Review:
 2. Heading levels, list structure, nested styles and link labels/destinations.
 3. Split or expanded formatting and every dropped-formatting diagnostic.
 4. Images, anchors, fields, explicit whitespace and changed page wrapping.
-5. Retained source paragraphs and the explicitly skipped table/text-box/peripheral
+5. Retained source paragraphs and the explicitly skipped value-cell/text-box/peripheral
    text, so untranslated regions are not mistaken for a successful translation.
 
 Record observations separately alongside the run artifacts. Hashes and settings
@@ -83,3 +84,22 @@ paragraph, image preservation and the remaining link/style diagnostics. A lower
 warning count is not a quality pass: real optical styles remain subject to strict
 projection, and source document language defaults are not rewritten. Model
 terminology and unsupported table/text-box content are outside this change.
+
+## Table-cell follow-up
+
+After the table-support milestone checks, use a new directory such as
+`local-data/odt-review/run-03` with the command above. Ordinary table paragraphs
+now pass through the same translation/alignment path as main-flow paragraphs.
+Compare the eligible/skipped inventory rather than assuming every table cell is
+supported: formulas, stored values and unsupported enclosing containers remain
+excluded. Inspect merged cells, multiple paragraphs per cell, row/column sizes
+and any pagination changes in the editor. Preserve earlier runs as baselines.
+
+The run-03 review revealed a Python example in paragraphs derived from
+`Preformatted_20_Text` being translated. After the preformatted-style protection
+checks pass, use `--output local-data/odt-review/run-04` for comparison. These
+paragraphs should now be inventoried as `protected_preformatted`, bypass the
+model and preserve their original XML. A higher skipped count is expected and
+does not by itself indicate regression. Compare code, comments and indentation
+against the source as well as the remaining translated table content. This does
+not address terminology errors such as translating the model name `Imagen`.

@@ -5,10 +5,12 @@ from xml.parsers import expat
 
 from doc_lingo.documents.models import TextSegment
 from doc_lingo.documents.odt.inline import inline_segment
-from doc_lingo.documents.odt.package import OFFICE, OdtPackageError
+from doc_lingo.documents.odt.package import OFFICE, OdtPackageError, OdtPackageInfo
+from doc_lingo.documents.odt.styles import language_only_styles, preformatted_styles
 
 TEXT = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 DRAW = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
+TABLE = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 _WRAPPERS = {f"{TEXT}|span", f"{TEXT}|a"}
 _OPAQUE = {
     f"{TEXT}|{name}"
@@ -25,9 +27,21 @@ _OPAQUE = {
         "soft-page-break",
     )
 } | {f"{DRAW}|frame"}
-_FLOW = {f"{OFFICE}|{name}" for name in ("document-content", "body", "text")} | {
-    f"{TEXT}|{name}" for name in ("list", "list-item", "list-header")
-}
+_FLOW = (
+    {f"{OFFICE}|{name}" for name in ("document-content", "body", "text")}
+    | {f"{TEXT}|{name}" for name in ("list", "list-item", "list-header")}
+    | {
+        f"{TABLE}|{name}"
+        for name in (
+            "table",
+            "table-header-rows",
+            "table-rows",
+            "table-row-group",
+            "table-row",
+            "table-cell",
+        )
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -40,8 +54,20 @@ class OdtBlock:
     reason: str | None = None
 
 
+def package_blocks(package: OdtPackageInfo) -> tuple[OdtBlock, ...]:
+    """Use identical package-wide style policies for reading, writing and inventory."""
+    return text_blocks(
+        package.content_xml,
+        language_styles=language_only_styles(package),
+        protected_styles=preformatted_styles(package),
+    )
+
+
 def text_blocks(
-    content: bytes, *, language_styles: frozenset[str] = frozenset()
+    content: bytes,
+    *,
+    language_styles: frozenset[str] = frozenset(),
+    protected_styles: frozenset[str] = frozenset(),
 ) -> tuple[OdtBlock, ...]:
     """Index p/h nodes; unsupported contexts and inline constructs are retained."""
     try:
@@ -52,6 +78,7 @@ def text_blocks(
         raise OdtPackageError("ODT text editing currently requires UTF-8 XML")
     parser = expat.ParserCreate(namespace_separator="|")
     stack = []
+    value_cells = []
     active = []
     result = []
     number = 0
@@ -84,6 +111,15 @@ def text_blocks(
         left = parser.CurrentByteIndex
         right = tag_end(left)
         empty = content[right - 2 : right] == b"/>"
+        if name == f"{TABLE}|table-cell" and (
+            f"{TABLE}|formula" in attributes
+            or attributes.get(f"{OFFICE}|value-type", "string") != "string"
+            or any(
+                f"{OFFICE}|{key}" in attributes
+                for key in ("value", "date-value", "time-value", "boolean-value", "string-value")
+            )
+        ):
+            value_cells.append(len(stack))
         for parent in active:
             if parent["opaque"] is not None:
                 continue
@@ -123,6 +159,8 @@ def text_blocks(
                     "parts": [],
                     "complex": False,
                     "supported": all(tag in _FLOW for tag in stack),
+                    "value_cell": bool(value_cells),
+                    "preformatted": attributes.get(f"{TEXT}|style-name") in protected_styles,
                     "type": "heading"
                     if name == f"{TEXT}|h"
                     else "list_item"
@@ -138,6 +176,8 @@ def text_blocks(
 
     def end(name):
         stack.pop()
+        if value_cells and value_cells[-1] == len(stack):
+            value_cells.pop()
         for parent in active:
             opaque = parent["opaque"]
             if opaque is not None and opaque[0] == len(stack):
@@ -153,8 +193,12 @@ def text_blocks(
             block = active.pop()
             text = "".join(block["parts"])
             reason = (
-                "unsupported_container"
+                "protected_preformatted"
+                if block["preformatted"]
+                else "unsupported_container"
                 if not block["supported"]
+                else "unsupported_cell_value"
+                if block["value_cell"]
                 else "inline_content"
                 if block["complex"]
                 else "empty"

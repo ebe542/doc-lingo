@@ -3,7 +3,7 @@
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from doc_lingo.documents.odt.blocks import TEXT, text_blocks
+from doc_lingo.documents.odt.blocks import TEXT, package_blocks
 from doc_lingo.documents.odt.package import inspect_package
 from doc_lingo.translation.issues import TranslationDiagnostics, TranslationIssue
 
@@ -16,10 +16,14 @@ def skipped_text_issues(source: Path) -> tuple[TranslationIssue, ...]:
     This inventory does not claim complete rendering or text extraction from images.
     """
     package = inspect_package(source)
-    blocks = text_blocks(package.content_xml)
+    blocks = package_blocks(package)
     issues = []
     for block in blocks:
-        if block.reason not in ("unsupported_container", "inline_content"):
+        if block.reason not in (
+            "unsupported_container",
+            "inline_content",
+            "unsupported_cell_value",
+        ):
             continue
         if not block.segment.text.strip():
             continue

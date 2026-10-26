@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 from doc_lingo import MarianBackend, TranslationError, translate_document
 from doc_lingo.documents.odt import OdtReader, OdtWriter, inspect_package
-from doc_lingo.documents.odt.blocks import text_blocks
+from doc_lingo.documents.odt.blocks import package_blocks
 from doc_lingo.translation.alignment import AlignmentError
 from doc_lingo.translation.alignment_statistics import AlignmentStatistics
 from doc_lingo.translation.awesome_adapter import AwesomeAlignAdapter
@@ -32,7 +32,7 @@ def fingerprint(path):
 
 def inventory(package):
     """Include unsupported contexts without implying reliable page coordinates."""
-    blocks = {b.segment.id: b for b in text_blocks(package.content_xml)}
+    blocks = {b.segment.id: b for b in package_blocks(package)}
     rows = []
     number = 0
 
@@ -99,7 +99,7 @@ def evaluate_odt(source, output, backend, aligner, *, metadata):
         "eligible_segments": sum(row["status"] == "eligible" for row in rows),
         "skipped_blocks": sum(row["status"] == "skipped" for row in rows),
         "limitations": [
-            "Tables and text boxes remain unchanged",
+            "Text boxes and cells with formulas or stored values remain unchanged",
             "Header/footer text remains unchanged",
             "No reliable page coordinates or visual-layout validation",
             "Source text and diagnostics may contain private document content",

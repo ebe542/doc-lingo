@@ -24,6 +24,10 @@ def test_subset_outputs_skipped_diagnostics(
     odt_factory, fake_backend, monkeypatch, capsys, aligned
 ):
     source = odt_factory()
+    # Covered cells remain excluded, unlike ordinary textual table cells.
+    with ZipFile(source) as archive:
+        xml = archive.read("content.xml").replace(b"table:table-cell", b"table:covered-table-cell")
+    source = odt_factory(updates={"content.xml": xml})
     destination = source.with_name("sample.de.odt")
     arguments = [str(source), "--target-lang", "de"]
     if aligned:

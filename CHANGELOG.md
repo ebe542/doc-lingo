@@ -4,12 +4,20 @@
 
 ### Fixed
 
+- Protect recognized ODT preformatted paragraph styles and inherited styles from
+  translation, including code comments and indentation in table examples. Report
+  intentional protection in review inventories without treating it as a failure.
+
 - Exclude verified language-only ODT style scopes from optical word projection.
   Preserve unwrapped leading drawing frames outside model input, avoiding source
   retention when an image marker is lost. Keep interior anchors protected and
   validate source-owned prefix reconstruction in the writer.
 
 ### Added
+
+- ODT textual table-cell paragraphs, including nested tables, header rows and
+  lists inside cells. Preserve merged/repeated cell structure and attributes;
+  retain and diagnose formula/stored-value cells without changing their values.
 
 - ODT CLI selection with optional awesome-align, progress and existing JSONL
   diagnostics. Explicitly report unsupported text in content/styles XML as

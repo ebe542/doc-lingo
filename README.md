@@ -45,7 +45,7 @@ Implement formats in this order, reusing the translation core:
 
 TXT and Markdown reading, writing, and orchestration are available for a
 caller-supplied translation backend. ODT adapters support main-flow headings,
-paragraphs and list paragraphs; tables and peripheral text remain unsupported.
+paragraphs, list paragraphs and textual table cells; peripheral text remains unsupported.
 
 ## Development setup
 
@@ -249,12 +249,18 @@ doc-lingo document.odt --target-lang de \
   --output document.aligned.de.odt
 ```
 
-ODT support currently covers main-flow headings, paragraphs and list paragraphs.
+ODT support covers main-flow headings, paragraphs, list paragraphs and textual
+table cells, including nested tables and multiple paragraphs per cell.
 Images and non-content package members are preserved. Optional alignment removes
 style/link syntax from model input; without it, inline XML uses conservative
 marker protection. Translated text can change wrapping and pagination.
 
-Tables, text boxes, headers/footers and unsupported inline text remain unchanged.
+Text boxes, headers/footers, unsupported inline text and cells with formulas or
+separately stored values remain unchanged. Merged/repeated cell structure and
+table attributes are preserved; repeated cells are translated once in stored XML.
+Recognized preformatted paragraph styles and their descendants preserve code and
+comments verbatim. Unmarked code or arbitrary custom code styles are not detected
+automatically; see the [style policy](docs/odt.md).
 The CLI reports these as `skipped_content` in `OUTPUT.odt.issues.jsonl`, separately
 from translation recoveries and formatting warnings. Such outputs return exit
 code **3**, even when all supported paragraphs were processed. Empty paragraphs

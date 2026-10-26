@@ -19,12 +19,12 @@ def test_review_reports_skips_and_member_preservation(odt_factory, tmp_path, cap
     report = evaluate_odt(source, output, Echo(), None, metadata={"backend": "echo"})
     assert report["complete"]
     assert report["manual_review"] == "pending"
-    assert report["processed_segments"] == report["eligible_segments"] == 4
+    assert report["processed_segments"] == report["eligible_segments"] == 6
     assert report["source_unchanged"]
     assert "Pictures/pixel.png" in report["unchanged_members"]
     skipped = [row for row in report["blocks"] if row["status"] == "skipped"]
-    assert len(skipped) == 3
-    assert any(row["source_text"] == "Cell one" for row in skipped)
+    assert len(skipped) == 1
+    assert skipped[0]["reason"] == "protected_only"
     assert all(row["page"] is None for row in report["blocks"])
     assert json.loads((output / "report.json").read_text(encoding="utf-8")) == report
     assert (output / "issues.jsonl").read_bytes() == b""
