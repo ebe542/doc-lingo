@@ -1,9 +1,8 @@
 """Explicit skipped-text diagnostics for the limited ODT command-line path."""
 
 from pathlib import Path
-from xml.etree import ElementTree as ET
 
-from doc_lingo.documents.odt.blocks import TEXT, package_blocks
+from doc_lingo.documents.odt.blocks import package_blocks
 from doc_lingo.documents.odt.package import inspect_package
 from doc_lingo.translation.issues import TranslationDiagnostics, TranslationIssue
 
@@ -18,7 +17,7 @@ def skipped_text_issues(source: Path) -> tuple[TranslationIssue, ...]:
     package = inspect_package(source)
     blocks = package_blocks(package)
     issues = []
-    for block in blocks:
+    for number, block in enumerate(blocks, start=1):
         if block.reason not in (
             "unsupported_container",
             "inline_content",
@@ -33,36 +32,10 @@ def skipped_text_issues(source: Path) -> tuple[TranslationIssue, ...]:
                 "Unsupported ODT text retained: " + block.reason,
                 block.segment.id,
                 block.segment.type,
-                int(block.segment.id),
+                number,
                 None,
                 action="skipped_content",
                 diagnostics=TranslationDiagnostics(None, "odt_inventory", (block.reason,)),
             )
         )
-    if package.styles_xml is not None:
-        number = len(blocks)
-        for index, element in enumerate(
-            (
-                node
-                for node in ET.fromstring(package.styles_xml).iter()
-                if node.tag in (f"{{{TEXT}}}p", f"{{{TEXT}}}h")
-            ),
-            start=1,
-        ):
-            text = "".join(element.itertext())
-            if text.strip():
-                issues.append(
-                    TranslationIssue(
-                        text,
-                        "Unsupported ODT peripheral text retained: styles.xml",
-                        f"styles.xml:{index}",
-                        "peripheral_text",
-                        number + index,
-                        None,
-                        action="skipped_content",
-                        diagnostics=TranslationDiagnostics(
-                            None, "odt_inventory", ("unsupported_styles_text",)
-                        ),
-                    )
-                )
     return tuple(issues)

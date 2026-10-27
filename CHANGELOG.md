@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Skip ODT field-only paragraphs with whitespace/separators before model calls,
+  preserving page-number/count footers without unnecessary marker recovery.
+
 - Protect recognized ODT preformatted paragraph styles and inherited styles from
   translation, including code comments and indentation in table examples. Report
   intentional protection in review inventories without treating it as a failure.
@@ -14,6 +17,11 @@
   validate source-owned prefix reconstruction in the writer.
 
 ### Added
+
+- ODT headers and footers, including left/first-page variants, with part-qualified
+  segment IDs and shared inline/field protection. Patch `styles.xml` independently
+  while preserving page layouts and style definitions. Review report version 2
+  includes peripheral paragraphs in processing totals and records their status.
 
 - ODT textbox and caption paragraphs in supported drawing frames, including
   nested frames, lists and tables. Compose independent child translations inside

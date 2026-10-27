@@ -80,7 +80,10 @@ def test_styles_text_is_explicitly_inventoried(odt_factory, tmp_path):
         odt_factory(updates={"styles.xml": styles}), tmp_path / "review", Echo(), None, metadata={}
     )
     assert report["peripheral_text"][0]["source_text"] == "Header"
-    assert report["peripheral_text"][0]["reason"] == "unsupported_styles_text"
+    assert report["peripheral_text"][0]["reason"] is None
+    assert report["peripheral_text"][0]["status"] == "eligible"
+    assert report["peripheral_text"][0]["segment_id"] == "styles.xml:1"
+    assert report["processed_segments"] == report["eligible_segments"] == 7
 
 
 def test_main_rejects_missing_checkpoint_before_loading(odt_factory, tmp_path, monkeypatch):

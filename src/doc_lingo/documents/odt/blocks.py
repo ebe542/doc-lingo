@@ -1,6 +1,6 @@
 """Locate supported UTF-8 text blocks and preserve original inline XML."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from xml.parsers import expat
 
 from doc_lingo.documents.models import TextSegment
@@ -10,6 +10,7 @@ from doc_lingo.documents.odt.styles import language_only_styles, preformatted_st
 
 TEXT = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 DRAW = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
+STYLE = "urn:oasis:names:tc:opendocument:xmlns:style:1.0"
 TABLE = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 _WRAPPERS = {f"{TEXT}|span", f"{TEXT}|a"}
 _OPAQUE = {
@@ -53,10 +54,27 @@ class OdtBlock:
     end: int
     reason: str | None = None
     frames: tuple[tuple[int, int], ...] = ()
+    part: str = "content.xml"
 
 
-def _supported_context(stack: list[str]) -> bool:
+def _supported_context(stack: list[str], part: str) -> bool:
     """Allow textbox flow, including paragraph-owned frames, but no unknown wrappers."""
+    if part == "styles.xml":
+        prefix = [f"{OFFICE}|document-styles", f"{OFFICE}|master-styles", f"{STYLE}|master-page"]
+        regions = {
+            f"{STYLE}|{name}"
+            for name in (
+                "header",
+                "header-left",
+                "header-first",
+                "footer",
+                "footer-left",
+                "footer-first",
+            )
+        }
+        if stack[:3] != prefix or len(stack) < 4 or stack[3] not in regions:
+            return False
+        stack = stack[4:]
     wrappers = _WRAPPERS | {f"{TEXT}|p", f"{TEXT}|h"}
     for index, tag in enumerate(stack):
         if tag in _FLOW:
@@ -77,16 +95,33 @@ def _supported_context(stack: list[str]) -> bool:
 
 def package_blocks(package: OdtPackageInfo) -> tuple[OdtBlock, ...]:
     """Use identical package-wide style policies for reading, writing and inventory."""
-    return text_blocks(
-        package.content_xml,
-        language_styles=language_only_styles(package),
-        protected_styles=preformatted_styles(package),
-    )
+    blocks = []
+    language_styles = language_only_styles(package)
+    protected_styles = preformatted_styles(package)
+    for part, xml in package_parts(package).items():
+        blocks.extend(
+            text_blocks(
+                xml,
+                part=part,
+                language_styles=language_styles,
+                protected_styles=protected_styles,
+            )
+        )
+    return tuple(blocks)
+
+
+def package_parts(package: OdtPackageInfo) -> dict[str, bytes]:
+    """Editable XML parts in stable translation order."""
+    parts = {"content.xml": package.content_xml}
+    if package.styles_xml is not None:
+        parts["styles.xml"] = package.styles_xml
+    return parts
 
 
 def text_blocks(
     content: bytes,
     *,
+    part: str = "content.xml",
     language_styles: frozenset[str] = frozenset(),
     protected_styles: frozenset[str] = frozenset(),
 ) -> tuple[OdtBlock, ...]:
@@ -155,6 +190,8 @@ def text_blocks(
                 if not empty:
                     parent["wrappers"][len(stack)] = (left, right)
             elif name in _OPAQUE:
+                if name in {f"{TEXT}|page-number", f"{TEXT}|page-count", f"{TEXT}|sequence"}:
+                    parent["has_field"] = True
                 if name == f"{DRAW}|frame":
                     parent["frames"].add(left)
                 if empty:
@@ -182,7 +219,8 @@ def text_blocks(
                     "opaque": None,
                     "parts": [],
                     "complex": False,
-                    "supported": _supported_context(stack),
+                    "has_field": False,
+                    "supported": _supported_context(stack, part),
                     "value_cell": bool(value_cells),
                     "preformatted": attributes.get(f"{TEXT}|style-name") in protected_styles
                     or any(parent["preformatted"] for parent in active),
@@ -246,6 +284,17 @@ def text_blocks(
                 )
                 if not segment.accepts_translation(segment.text):
                     reason = "protected_only"
+                elif block["has_field"]:
+                    # Only field-bearing blocks qualify. Do not suppress ordinary
+                    # punctuation paragraphs or prose wrapped in text:span.
+                    cursor = 0
+                    prose = []
+                    for left, right in segment.protected_spans:
+                        prose.append(segment.text[cursor:left])
+                        cursor = right
+                    prose.append(segment.text[cursor:])
+                    if all(c.isspace() or c in "/|:;.,-–—()[]{}" for c in "".join(prose)):
+                        reason = "protected_only"
             result.append(
                 OdtBlock(
                     segment,
@@ -271,4 +320,15 @@ def text_blocks(
         parser.Parse(content, True)
     except expat.ExpatError:
         raise OdtPackageError("Malformed ODT XML") from None
-    return tuple(sorted(result, key=lambda block: int(block.segment.id)))
+    ordered = sorted(result, key=lambda block: int(block.segment.id))
+    return tuple(
+        replace(
+            block,
+            part=part,
+            segment=replace(
+                block.segment,
+                id=block.segment.id if part == "content.xml" else f"{part}:{block.segment.id}",
+            ),
+        )
+        for block in ordered
+    )

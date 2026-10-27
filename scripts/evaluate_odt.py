@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 from doc_lingo import MarianBackend, TranslationError, translate_document
 from doc_lingo.documents.odt import OdtReader, OdtWriter, inspect_package
-from doc_lingo.documents.odt.blocks import package_blocks
+from doc_lingo.documents.odt.blocks import package_blocks, package_parts
 from doc_lingo.translation.alignment import AlignmentError
 from doc_lingo.translation.alignment_statistics import AlignmentStatistics
 from doc_lingo.translation.awesome_adapter import AwesomeAlignAdapter
@@ -36,14 +36,16 @@ def inventory(package):
     rows = []
     number = 0
 
-    def visit(element, ancestors):
+    def visit(element, ancestors, part):
         nonlocal number
         if element.tag in BLOCKS:
             number += 1
-            block = blocks[str(number)]
+            identifier = str(number) if part == "content.xml" else f"{part}:{number}"
+            block = blocks[identifier]
             rows.append(
                 {
-                    "segment_id": str(number),
+                    "segment_id": identifier,
+                    "part": part,
                     "type": block.segment.type,
                     "context": ancestors,
                     "status": "skipped" if block.reason else "eligible",
@@ -53,21 +55,12 @@ def inventory(package):
                 }
             )
         for child in element:
-            visit(child, [*ancestors, element.tag])
+            visit(child, [*ancestors, element.tag], part)
 
-    visit(ET.fromstring(package.content_xml), [])
-    peripheral = []
-    if package.styles_xml is not None:
-        for element in ET.fromstring(package.styles_xml).iter():
-            if element.tag in BLOCKS:
-                peripheral.append(
-                    {
-                        "part": "styles.xml",
-                        "reason": "unsupported_styles_text",
-                        "page": None,
-                        "source_text": "".join(element.itertext()),
-                    }
-                )
+    for part, xml in package_parts(package).items():
+        number = 0
+        visit(ET.fromstring(xml), [], part)
+    peripheral = [row for row in rows if row["part"] == "styles.xml"]
     return rows, peripheral
 
 
@@ -82,7 +75,7 @@ def evaluate_odt(source, output, backend, aligner, *, metadata):
     stats = AlignmentStatistics()
     started = monotonic()
     report = {
-        "report_version": 1,
+        "report_version": 2,
         "started_at": datetime.now(UTC).isoformat(),
         "source": str(source.resolve()),
         "source_sha256": original_hash,
@@ -100,7 +93,7 @@ def evaluate_odt(source, output, backend, aligner, *, metadata):
         "skipped_blocks": sum(row["status"] == "skipped" for row in rows),
         "limitations": [
             "Cells with formulas/stored values and unsupported drawing containers remain unchanged",
-            "Header/footer text remains unchanged",
+            "Unsupported header/footer containers and inline content remain unchanged",
             "No reliable page coordinates or visual-layout validation",
             "Source text and diagnostics may contain private document content",
         ],
@@ -149,9 +142,9 @@ def evaluate_odt(source, output, backend, aligner, *, metadata):
             if original.namelist() != translated.namelist():
                 raise ValueError("ODT package member list changed")
             for name in original.namelist():
-                if name != "content.xml":
+                if name not in package_parts(package):
                     if original.read(name) != translated.read(name):
-                        raise ValueError("Non-content ODT member changed")
+                        raise ValueError("Non-editable ODT member changed")
                     unchanged.append(name)
         report["source_unchanged"] = fingerprint(source) == original_hash
         if not report["source_unchanged"]:

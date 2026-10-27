@@ -23,26 +23,28 @@ take time. Each processed segment prints its type and elapsed time; a final
 
 ## Artifacts
 
-- `translated.de.odt`: translation of the supported main-flow/list subset.
+- `translated.de.odt`: translation of the supported body and header/footer text.
 - `issues.jsonl`: flushed recovery and formatting diagnostics, including segment
   identity and available attempted translations. An empty file means no issues
   were reported; it does not prove correct translation.
 - `report.json`: source/output SHA-256, runtime/model metadata, checkpoint file
   hashes, implementation/script hashes, alignment call counts/timings, source
   block inventory and skipped reasons. Paragraph contexts use XML expanded names.
-  Text paragraphs in `styles.xml`, including headers/footers, are listed separately.
+  Report version 2 includes `styles.xml` paragraphs in `blocks` and all progress
+  totals. `peripheral_text` is a filtered view of those same rows, with explicit
+  eligibility/skipped status; do not add it to the block counts.
 
 Page numbers remain unknown. Inventory text is extracted XML text, not a rendered
 page view; explicit whitespace elements and field contents may look different in
 the editor. A nested text-box paragraph can also occur within its parent's
 extracted text. Counts describe XML blocks, not distinct visible text occurrences.
 
-The script validates the output package, verifies all non-`content.xml` member
-payloads and checks the source file hash remained unchanged. ZIP compression size
+The script validates the output package, verifies all member payloads except editable
+`content.xml` and `styles.xml` and checks the source file hash remained unchanged. ZIP compression size
 may differ. It does not validate that images kept their visible placement or that
 pagination stayed the same. Textual table paragraphs are processed; cells with
-formulas/stored values, unsupported drawing containers and peripheral text remain in the original
-language. Existing metadata/thumbnail content can be stale.
+formulas/stored values and unsupported drawing or peripheral containers remain
+in the original language. Existing metadata/thumbnail content can be stale.
 
 The report is refreshed as segments are processed, before final publication.
 Processing failures retain a report with `status: failed`, exception type and
@@ -113,3 +115,19 @@ image anchors and image payloads, and inspect captions for overflow or clipping
 in the editor. Parent and nested paragraphs are counted separately; existing
 empty/protected outer-frame inventory entries can remain even when their child
 text is translated. Keep run-04 for comparison.
+
+## Header/footer follow-up
+
+After milestone checks pass, create a fresh comparison against `run-05`:
+
+```bash
+python -m scripts.evaluate_odt \
+  local-data/Introduction-to-Machine-Learning.odt \
+  --alignment-model "$USERPROFILE/.cache/huggingface/hub/models--aneuraz--awesome-align-with-co/snapshots/777756717e1fa9556e304d4d5db173ee386b9c16" \
+  --output local-data/odt-review/run-06
+```
+
+Check the `styles.xml:N` rows and diagnostics. A field-only footer may correctly
+be `protected_only` rather than translated. Inspect headers and footers on all
+page variants, page numbers/counts, logos, wrapping and page placement. The report
+continues to show `manual_review: pending`; record editor review separately.

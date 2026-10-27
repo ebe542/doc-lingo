@@ -12,7 +12,7 @@ from zipfile import ZipFile
 from doc_lingo.documents.errors import SegmentMismatchError
 from doc_lingo.documents.models import TextSegment
 from doc_lingo.documents.odt.aligned import AlignedOdtSegment, render_segment
-from doc_lingo.documents.odt.blocks import package_blocks
+from doc_lingo.documents.odt.blocks import package_blocks, package_parts
 from doc_lingo.documents.odt.inline import OdtInlineSegment
 from doc_lingo.documents.odt.package import OdtPackageError, inspect_package
 from doc_lingo.documents.odt.patches import compose_blocks
@@ -28,6 +28,7 @@ class OdtWriter:
             raise FileExistsError(f"Output file already exists: {destination}")
         package = inspect_package(self.source)
         blocks = package_blocks(package)
+        parts = package_parts(package)
         values = iter(translations)
         replacements = {}
         for block in blocks:
@@ -36,7 +37,7 @@ class OdtWriter:
             value = next(values, None)
             if value is None or value.id != block.segment.id or value.type != block.segment.type:
                 raise SegmentMismatchError("ODT translations must match source IDs and types")
-            replacement = package.content_xml[block.start : block.end]
+            replacement = parts[block.part][block.start : block.end]
             if isinstance(value, AlignedOdtSegment) and value.restored is not None:
                 if not isinstance(block.segment, OdtInlineSegment):
                     raise OdtPackageError("ODT alignment requires an inline source")
@@ -64,16 +65,19 @@ class OdtWriter:
             replacements[block.segment.id] = replacement
         if next(values, None) is not None:
             raise SegmentMismatchError("Unexpected extra ODT translation")
-        content = compose_blocks(package.content_xml, blocks, replacements)
+        rendered_parts = {
+            name: compose_blocks(xml, tuple(b for b in blocks if b.part == name), replacements)
+            for name, xml in parts.items()
+        }
         with TemporaryDirectory(prefix=".doc-lingo-", dir=destination.parent) as directory:
             temporary = Path(directory) / "output.odt"
             with ZipFile(self.source) as source, ZipFile(temporary, "w") as output:
-                if source.read("content.xml") != package.content_xml:
+                if any(source.read(name) != xml for name, xml in parts.items()):
                     raise OdtPackageError("ODT source changed during writing")
                 output.comment = source.comment
                 for member in source.infolist():
-                    if member.filename == "content.xml":
-                        output.writestr(copy(member), content)
+                    if member.filename in rendered_parts:
+                        output.writestr(copy(member), rendered_parts[member.filename])
                     else:
                         with (
                             source.open(member) as incoming,

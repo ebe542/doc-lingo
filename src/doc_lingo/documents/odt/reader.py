@@ -1,4 +1,4 @@
-"""Read supported ODT main-flow, list and table-cell text blocks."""
+"""Read supported ODT body, header and footer text blocks."""
 
 from collections.abc import Generator, Iterator
 from contextlib import contextmanager

@@ -10,7 +10,7 @@ The earlier references to ODP presentations were a naming misunderstanding.
 
 Import `OdtReader` and `OdtWriter` from `doc_lingo.documents.odt`. These implement
 the existing protocols and are selected by the CLI for `.odt` input. They are not
-exported at the library root. UTF-8 `content.xml` is required for this editing subset.
+exported at the library root. UTF-8 is required for editable `content.xml` and optional `styles.xml`.
 
 Nonempty supported `text:p` and `text:h` elements in the direct main flow
 or supported list/table containers are yielded. Nested lists retain their XML structure; a list
@@ -22,8 +22,7 @@ The complete XML and block index are in memory; this is not streaming XML editin
 `reader.skipped_blocks` records empty blocks, unsupported containers, and blocks
 with unsupported inline children, comments, processing instructions or CDATA.
 Fully protected blocks are skipped as well. These blocks remain
-unchanged. This inventory covers `content.xml` only; header/footer text in
-`styles.xml` remains untouched and is not inventoried here. Inventory entries are
+unchanged. This inventory covers both `content.xml` and `styles.xml`. Inventory entries are
 not service-level issue callbacks. The CLI performs a separate preflight inventory
 and writes `skipped_content` issues for nonempty unsupported text, including
 paragraphs in `styles.xml`. IDs there are qualified as `styles.xml:N`; source block
@@ -81,8 +80,7 @@ Explicit spaces, tabs, line breaks, bookmarks, page fields, sequence fields,
 soft page breaks and drawing frames are retained as opaque source fragments.
 Text inside a protected frame is not translated through its enclosing paragraph.
 Unknown inline elements conservatively retain the outer paragraph's text.
-Supported textbox paragraphs have independent translation and recovery;
-headers/footers remain untouched.
+Supported textbox and header/footer paragraphs have independent translation and recovery.
 
 The writer requires protected fragments in their original order and escapes only
 translated prose. Missing, duplicated or reordered markers cause the existing
@@ -139,8 +137,7 @@ Namespace bindings on surrounding unchanged document elements remain intact.
 
 Formatting diagnostics use the existing callback and segment IDs; they do not
 provide linguistic confidence scores. Model-free tests cover preservation and
-failure handling. Real-model translation and visual layout still require review;
-headers/footers are not included in the CLI or library subset.
+failure handling. Real-model translation and visual layout still require review.
 
 ## Implemented package inspection
 
@@ -254,7 +251,7 @@ Textbox paragraphs inside `draw:frame/draw:text-box` are supported in the main
 flow, tables and paragraph-owned inline frames. Multiple paragraphs, nested
 frames, lists and tables retain their own segment IDs and structure. Caption
 prose is translated while sequence/page fields remain opaque. Drawing groups,
-unknown ancestor containers, headers and footers remain excluded. Embedded images
+unknown ancestor containers remain excluded. Embedded images
 are copied unchanged; image titles/descriptions and raster text are not translated.
 
 The enclosing paragraph sends its frame as opaque content (or a fixed leading
@@ -328,3 +325,34 @@ paragraph, nested lists, cell paragraphs, explicit whitespace, a protected field
 a bookmark and an image anchor. Tests must not require the user's local file or
 a model download. Before choosing XML/ODF dependencies, verify their relevant
 preservation behavior and package requirements against authoritative documentation.
+
+## Headers and footers
+
+Both library and CLI process paragraphs under `office:master-styles/style:master-page`
+in `styles.xml`: `style:header`, `header-left`, `header-first`, `footer`,
+`footer-left` and `footer-first`. Supported lists, tables, inline formatting and
+textboxes use the same policies as body text. Unknown containers or fields retain
+the affected paragraph with inventory diagnostics; known page-number/page-count
+fields stay opaque. Preformatted paragraphs remain protected.
+
+Body segments come first with their existing numeric IDs. Style-part segments
+follow with IDs `styles.xml:N`, counting all paragraph/heading occurrences within
+that part, including skipped blocks. Each stored master-page occurrence is
+translated once, even if displayed on many pages. Distinct stored variants are
+translated separately; no page-number inference or text deduplication is used.
+
+The writer applies part-local byte patches to both XML members, preserving page
+layouts, master-page attributes, style definitions and surrounding XML bytes.
+Other package member payloads are unchanged. A no-op round trip preserves both XML
+payloads byte for byte. Nested textbox edits are composed within their own part.
+All editable source parts are checked again before output publication.
+
+Longer translations may overflow header/footer areas or affect pagination.
+Review first, left and right pages, logos, links and page fields in an editor.
+
+Field-bearing paragraphs containing only protected fragments, whitespace and
+simple separators (for example page-number `/` page-count) are `protected_only`.
+They bypass translation and alignment and retain their exact XML. Ordinary prose,
+including labels such as `Page` or `of`, and literal unprotected digits still
+qualify for translation. Punctuation alone without a recognized field does not
+activate this rule.
