@@ -15,6 +15,10 @@
 
 ### Added
 
+- ODT textbox and caption paragraphs in supported drawing frames, including
+  nested frames, lists and tables. Compose independent child translations inside
+  validated parent frames while preserving anchors, attributes and number fields.
+
 - ODT textual table-cell paragraphs, including nested tables, header rows and
   lists inside cells. Preserve merged/repeated cell structure and attributes;
   retain and diagnose formula/stored-value cells without changing their values.

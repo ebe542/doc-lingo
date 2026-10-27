@@ -41,7 +41,8 @@ def test_nested_styles_links_and_opaque_content(odt_factory, tmp_path):
     translate_document(
         OdtReader(source), OdtWriter(source), Backend(), output, source_lang="en", target_lang="de"
     )
-    assert len(calls) == 1
+    assert len(calls) == 2
+    assert calls[1] == "Hidden"
     assert all(word in calls[0] for word in ("Hello", "dear", "reader"))
     assert all(word not in calls[0] for word in ("<", "Bold", "https://", "Hidden", "Figure"))
     with ZipFile(source) as original, ZipFile(output) as translated:

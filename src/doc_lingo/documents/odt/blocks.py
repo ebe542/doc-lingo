@@ -52,6 +52,27 @@ class OdtBlock:
     start: int
     end: int
     reason: str | None = None
+    frames: tuple[tuple[int, int], ...] = ()
+
+
+def _supported_context(stack: list[str]) -> bool:
+    """Allow textbox flow, including paragraph-owned frames, but no unknown wrappers."""
+    wrappers = _WRAPPERS | {f"{TEXT}|p", f"{TEXT}|h"}
+    for index, tag in enumerate(stack):
+        if tag in _FLOW:
+            continue
+        if tag == f"{DRAW}|text-box" and index and stack[index - 1] == f"{DRAW}|frame":
+            continue
+        if tag == f"{DRAW}|frame" and stack[index + 1 : index + 2] == [f"{DRAW}|text-box"]:
+            continue
+        if tag in wrappers:
+            following = index + 1
+            while following < len(stack) and stack[following] in _WRAPPERS:
+                following += 1
+            if stack[following : following + 2] == [f"{DRAW}|frame", f"{DRAW}|text-box"]:
+                continue
+        return False
+    return True
 
 
 def package_blocks(package: OdtPackageInfo) -> tuple[OdtBlock, ...]:
@@ -144,6 +165,9 @@ def text_blocks(
                 parent["complex"] = True
         if name in (f"{TEXT}|p", f"{TEXT}|h"):
             number += 1
+            textbox_boundary = max(
+                (i + 1 for i, tag in enumerate(stack) if tag == f"{DRAW}|text-box"), default=0
+            )
             active.append(
                 {
                     "id": str(number),
@@ -158,13 +182,14 @@ def text_blocks(
                     "opaque": None,
                     "parts": [],
                     "complex": False,
-                    "supported": all(tag in _FLOW for tag in stack),
+                    "supported": _supported_context(stack),
                     "value_cell": bool(value_cells),
-                    "preformatted": attributes.get(f"{TEXT}|style-name") in protected_styles,
+                    "preformatted": attributes.get(f"{TEXT}|style-name") in protected_styles
+                    or any(parent["preformatted"] for parent in active),
                     "type": "heading"
                     if name == f"{TEXT}|h"
                     else "list_item"
-                    if f"{TEXT}|list-item" in stack
+                    if f"{TEXT}|list-item" in stack[textbox_boundary:]
                     else "paragraph",
                 }
             )
@@ -227,6 +252,7 @@ def text_blocks(
                     block["start"],
                     end_offset,
                     reason,
+                    tuple((a, b) for a, b in block["tokens"] if a in block["frames"]),
                 )
             )
 

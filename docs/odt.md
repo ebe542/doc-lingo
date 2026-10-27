@@ -80,8 +80,9 @@ the projection path described below for supported inline segments.
 Explicit spaces, tabs, line breaks, bookmarks, page fields, sequence fields,
 soft page breaks and drawing frames are retained as opaque source fragments.
 Text inside a protected frame is not translated through its enclosing paragraph.
-Unknown inline elements conservatively retain the entire paragraph. Text boxes
-remain unsupported containers; headers/footers remain untouched.
+Unknown inline elements conservatively retain the outer paragraph's text.
+Supported textbox paragraphs have independent translation and recovery;
+headers/footers remain untouched.
 
 The writer requires protected fragments in their original order and escapes only
 translated prose. Missing, duplicated or reordered markers cause the existing
@@ -139,7 +140,7 @@ Namespace bindings on surrounding unchanged document elements remain intact.
 Formatting diagnostics use the existing callback and segment IDs; they do not
 provide linguistic confidence scores. Model-free tests cover preservation and
 failure handling. Real-model translation and visual layout still require review;
-text-box support is not included in the CLI or library subset.
+headers/footers are not included in the CLI or library subset.
 
 ## Implemented package inspection
 
@@ -235,7 +236,7 @@ Cells with formulas, non-string value types or explicit stored value attributes
 (including `office:string-value`) remain unchanged with `unsupported_cell_value`
 diagnostics for nonempty text. This prevents translated display text from
 disagreeing with a stored value. Covered-cell contents remain unsupported.
-Tables inside unsupported containers, such as text boxes or sections, remain
+Tables inside unsupported containers, such as drawing groups or sections, remain
 unsupported as well. This is not a general ODF table schema validator.
 
 Paragraphs using `Preformatted_20_Text` (or the display name `Preformatted Text`)
@@ -249,10 +250,27 @@ protection does not produce a CLI warning. The known style names are an adapter
 convention, not a universal ODF code designation: arbitrary code styles or code
 without a recognized style are not detected by font or syntax guessing.
 
-Text boxes, captions/sequence fields, headers and footers need separate handling.
-Until supported, preserve them and report skipped visible text. Do not advertise
-the sample as completely translated when such regions are retained. Embedded
-images are copied unchanged; text inside raster images is not translated.
+Textbox paragraphs inside `draw:frame/draw:text-box` are supported in the main
+flow, tables and paragraph-owned inline frames. Multiple paragraphs, nested
+frames, lists and tables retain their own segment IDs and structure. Caption
+prose is translated while sequence/page fields remain opaque. Drawing groups,
+unknown ancestor containers, headers and footers remain excluded. Embedded images
+are copied unchanged; image titles/descriptions and raster text are not translated.
+
+The enclosing paragraph sends its frame as opaque content (or a fixed leading
+prefix) and never sends the textbox's text to the backend. Child paragraphs are
+translated independently, exactly once. After validating the outer translation,
+the writer locates original frame fragments and inserts child edits inside them.
+Nested edits are composed from the inside out; source byte offsets are never
+applied to a translated outer paragraph. Parent source retention does not discard
+a successful child translation. Preformatted ancestor paragraphs protect nested
+content as well. Frame attributes, dimensions and anchors remain source-owned,
+but longer text may overflow a fixed-size textbox or change layout.
+
+A frame-only outer paragraph can appear as empty/protected in the inventory while
+its child paragraphs are processed separately. This does not mean the containing
+XML subtree remains untranslated. The sample is still incomplete while unsupported
+peripheral text is retained.
 
 ## Architecture and preservation rules
 

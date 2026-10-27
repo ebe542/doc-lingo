@@ -41,7 +41,7 @@ The script validates the output package, verifies all non-`content.xml` member
 payloads and checks the source file hash remained unchanged. ZIP compression size
 may differ. It does not validate that images kept their visible placement or that
 pagination stayed the same. Textual table paragraphs are processed; cells with
-formulas/stored values, text boxes and peripheral text remain in the original
+formulas/stored values, unsupported drawing containers and peripheral text remain in the original
 language. Existing metadata/thumbnail content can be stale.
 
 The report is refreshed as segments are processed, before final publication.
@@ -64,7 +64,7 @@ Open source and translated ODT side by side in an ODT-capable editor. Review:
 2. Heading levels, list structure, nested styles and link labels/destinations.
 3. Split or expanded formatting and every dropped-formatting diagnostic.
 4. Images, anchors, fields, explicit whitespace and changed page wrapping.
-5. Retained source paragraphs and the explicitly skipped value-cell/text-box/peripheral
+5. Retained source paragraphs and the explicitly skipped value-cell/drawing/peripheral
    text, so untranslated regions are not mistaken for a successful translation.
 
 Record observations separately alongside the run artifacts. Hashes and settings
@@ -103,3 +103,13 @@ model and preserve their original XML. A higher skipped count is expected and
 does not by itself indicate regression. Compare code, comments and indentation
 against the source as well as the remaining translated table content. This does
 not address terminology errors such as translating the model name `Imagen`.
+
+## Textbox and caption follow-up
+
+After milestone checks, run the same command with a new
+`--output local-data/odt-review/run-05`. Supported textbox paragraphs and caption
+prose now participate in translation. Check figure numbers, frame geometry,
+image anchors and image payloads, and inspect captions for overflow or clipping
+in the editor. Parent and nested paragraphs are counted separately; existing
+empty/protected outer-frame inventory entries can remain even when their child
+text is translated. Keep run-04 for comparison.

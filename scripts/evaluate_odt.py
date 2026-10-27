@@ -99,7 +99,7 @@ def evaluate_odt(source, output, backend, aligner, *, metadata):
         "eligible_segments": sum(row["status"] == "eligible" for row in rows),
         "skipped_blocks": sum(row["status"] == "skipped" for row in rows),
         "limitations": [
-            "Text boxes and cells with formulas or stored values remain unchanged",
+            "Cells with formulas/stored values and unsupported drawing containers remain unchanged",
             "Header/footer text remains unchanged",
             "No reliable page coordinates or visual-layout validation",
             "Source text and diagnostics may contain private document content",

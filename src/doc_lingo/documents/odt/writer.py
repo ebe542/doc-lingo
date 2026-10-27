@@ -15,6 +15,7 @@ from doc_lingo.documents.odt.aligned import AlignedOdtSegment, render_segment
 from doc_lingo.documents.odt.blocks import package_blocks
 from doc_lingo.documents.odt.inline import OdtInlineSegment
 from doc_lingo.documents.odt.package import OdtPackageError, inspect_package
+from doc_lingo.documents.odt.patches import compose_blocks
 
 
 class OdtWriter:
@@ -28,8 +29,7 @@ class OdtWriter:
         package = inspect_package(self.source)
         blocks = package_blocks(package)
         values = iter(translations)
-        pieces = []
-        cursor = 0
+        replacements = {}
         for block in blocks:
             if block.reason is not None:
                 continue
@@ -61,12 +61,10 @@ class OdtWriter:
                 if any(c in value.text for c in "\t\n\r") or "  " in value.text:
                     raise OdtPackageError("Changed ODT whitespace requires inline support")
                 replacement = escape(value.text).encode("utf-8")
-            pieces.extend((package.content_xml[cursor : block.start], replacement))
-            cursor = block.end
+            replacements[block.segment.id] = replacement
         if next(values, None) is not None:
             raise SegmentMismatchError("Unexpected extra ODT translation")
-        pieces.append(package.content_xml[cursor:])
-        content = b"".join(pieces)
+        content = compose_blocks(package.content_xml, blocks, replacements)
         with TemporaryDirectory(prefix=".doc-lingo-", dir=destination.parent) as directory:
             temporary = Path(directory) / "output.odt"
             with ZipFile(self.source) as source, ZipFile(temporary, "w") as output:

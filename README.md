@@ -255,7 +255,9 @@ Images and non-content package members are preserved. Optional alignment removes
 style/link syntax from model input; without it, inline XML uses conservative
 marker protection. Translated text can change wrapping and pagination.
 
-Text boxes, headers/footers, unsupported inline text and cells with formulas or
+Textbox and caption paragraphs in supported drawing frames are translated,
+including nested frames; numbering fields and frame attributes remain protected.
+Headers/footers, unsupported inline text and cells with formulas or
 separately stored values remain unchanged. Merged/repeated cell structure and
 table attributes are preserved; repeated cells are translated once in stored XML.
 Recognized preformatted paragraph styles and their descendants preserve code and

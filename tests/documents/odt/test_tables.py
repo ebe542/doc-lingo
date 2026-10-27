@@ -96,7 +96,7 @@ def test_stored_values_remain_unchanged_and_reported(odt_factory, tmp_path, attr
 @pytest.mark.parametrize(
     "prefix,suffix",
     [
-        ("<d:frame><d:text-box>", "</d:text-box></d:frame>"),
+        ("<d:g><d:frame><d:text-box>", "</d:text-box></d:frame></d:g>"),
         ('<t:section t:name="UnknownContext">', "</t:section>"),
     ],
 )
