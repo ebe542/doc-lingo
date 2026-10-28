@@ -2,65 +2,56 @@
 
 ## [Unreleased]
 
-### Fixed
+## [0.3.0] - 2026-10-27
 
-- Skip ODT field-only paragraphs with whitespace/separators before model calls,
-  preserving page-number/count footers without unnecessary marker recovery.
-
-- Protect recognized ODT preformatted paragraph styles and inherited styles from
-  translation, including code comments and indentation in table examples. Report
-  intentional protection in review inventories without treating it as a failure.
-
-- Exclude verified language-only ODT style scopes from optical word projection.
-  Preserve unwrapped leading drawing frames outside model input, avoiding source
-  retention when an image marker is lost. Keep interior anchors protected and
-  validate source-owned prefix reconstruction in the writer.
+OpenDocument text (ODT) support joins TXT and Markdown in the library and CLI.
+ODT is a conservative subset; translated text can change wrapping and pagination.
 
 ### Added
 
-- ODT headers and footers, including left/first-page variants, with part-qualified
-  segment IDs and shared inline/field protection. Patch `styles.xml` independently
-  while preserving page layouts and style definitions. Review report version 2
-  includes peripheral paragraphs in processing totals and records their status.
+- ODT package inspection and readers/writers for headings, paragraphs, lists,
+  textual table cells, supported textboxes/captions and headers/footers, including
+  left/first-page variants. Preserve XML structure, images and package payloads
+  outside edited text; reject unsupported or damaged package structures.
+- Optional awesome-align formatting projection for ODT. Hide style/link syntax
+  from model input, split optical styles, expand links and report uncertain scopes.
+  Without alignment, inline XML uses conservative marker protection.
+- Independent nested textbox translation and recovery. Patch `content.xml` and
+  `styles.xml` with part-qualified IDs while preserving page templates and fields.
+- ODT CLI progress and JSONL diagnostics for retained text, dropped formatting and
+  unsupported text. Published outputs with warnings return exit code 3.
+- Reproducible ODT review tooling with source/output hashes, package preservation
+  checks, model metadata and inventories. Report version 2 includes header/footer
+  paragraphs in totals; `peripheral_text` is a filtered view of the same blocks.
+- Installed-wheel ODT translation smoke check without model dependencies.
 
-- ODT textbox and caption paragraphs in supported drawing frames, including
-  nested frames, lists and tables. Compose independent child translations inside
-  validated parent frames while preserving anchors, attributes and number fields.
+### Fixed
 
-- ODT textual table-cell paragraphs, including nested tables, header rows and
-  lists inside cells. Preserve merged/repeated cell structure and attributes;
-  retain and diagnose formula/stored-value cells without changing their values.
-
-- ODT CLI selection with optional awesome-align, progress and existing JSONL
-  diagnostics. Explicitly report unsupported text in content/styles XML as
-  skipped content and return warning exit code 3 for partial translations.
-
-- Separate ODT review script with progress/completion output, JSONL diagnostics,
-  explicit skipped-text inventory, model/code fingerprints and package-member
-  preservation checks. Linguistic and visual review remain manual.
-
-- Optional ODT formatting projection through the library translation service.
-  Hide style/link wrappers from model input, split styles, expand links, and
-  diagnose dropped formatting using shared alignment policies. Protect opaque
-  XML content and revalidate rendered evidence before writing. CLI support remains
-  pending; namespace-owning and uniquely identified wrappers retain protection.
-
-- Conservative ODT inline protection for nested styles, link labels, explicit
-  whitespace, fields, bookmarks and drawing frames. Translate supported paragraph
-  prose together; retain original paragraphs with diagnostics if marker recovery
-  fails. Alignment-based ODT formatting and CLI support remain pending.
-
-- Limited ODT reader/writer for plain-text main-body headings, paragraphs and
-  nested list paragraphs. Patch text bytes without reserializing document XML;
-  retain unsupported blocks with an inspection inventory. CLI support is pending.
-
-- Read-only ODT package inspection with explicit unsupported-input errors and
-  generated ZIP/XML test fixtures. ODT translation and CLI selection remain pending.
+- Protect recognized preformatted paragraph styles and inherited styles, including
+  code comments and indentation. Preserve cells with formulas or stored values.
+- Exclude verified language-only styles from optical formatting projection and
+  preserve eligible leading image anchors outside model input.
+- Bypass models for field-only paragraphs with whitespace/separators, such as
+  page-number/count footers, without producing unnecessary recovery warnings.
 
 ### Documentation
 
-- Correct the intended OpenDocument roadmap to ODT text documents, not ODP
-  presentations. ODT remains planned; no new adapter is included in this correction.
+- Correct OpenDocument terminology: the intended format is ODT text documents,
+  not ODP presentations. Document supported scope, review evidence and limitations.
+
+### Known limitations
+
+- Unsupported containers/inline content remain unchanged with diagnostics.
+  Text in images and image descriptions is not translated. Preformatted protection
+  depends on recognized styles; arbitrary unmarked code is not detected.
+- Alignment may drop uncertain style/link scopes while retaining translated text.
+  The reviewed six-page sample has ten remaining formatting warnings; this is
+  sample-specific evidence, not a general quality guarantee.
+- No guarantee of identical pagination, textbox fit or linguistic correctness.
+  XML and block indexes are held in memory; no resume support is provided.
+  Metadata statistics, thumbnails and document language are not recalculated.
+- Local model/alignment dependencies remain optional. Package checks do not verify
+  GPU compatibility; existing TXT/Markdown limitations still apply.
 
 ## [0.2.0] - 2026-10-10
 

@@ -5,12 +5,12 @@ and formatting.
 
 ## Status
 
-Version 0.2.0 is the prepared Markdown release of this productive learning project.
-TXT and Markdown translation, reusable terminology glossaries, quality checks,
-and release tooling are available. See the [release notes and limitations](CHANGELOG.md#020---2026-10-10).
+Version 0.3.0 is the prepared ODT release of this productive learning project.
+TXT, Markdown and supported ODT translation, reusable terminology glossaries, quality checks,
+and release tooling are available. See the [release notes and limitations](CHANGELOG.md#030---2026-10-27).
 Markdown includes table cells and supported embedded HTML text; see the
 [Markdown scope and limitations](docs/markdown.md).
-The CLI translates English UTF-8 TXT and Markdown documents using local CUDA models.
+The CLI translates English TXT, Markdown and supported ODT documents using local CUDA models.
 The library provides a translation service with an injectable backend. Marian is
 selected by default; optional model dependencies are installed through `local`.
 See [local model setup](docs/local-model.md) for the project's CUDA configuration.
@@ -45,7 +45,9 @@ Implement formats in this order, reusing the translation core:
 
 TXT and Markdown reading, writing, and orchestration are available for a
 caller-supplied translation backend. ODT adapters support main-flow headings,
-paragraphs, list paragraphs and textual table cells; peripheral text remains unsupported.
+paragraphs, lists, textual table cells, supported textboxes/captions and headers/footers.
+See [ODT scope and limitations](docs/odt.md) and the
+[0.3.0 release checklist](docs/release-0.3.0.md).
 
 ## Development setup
 

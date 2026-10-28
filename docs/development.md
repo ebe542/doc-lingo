@@ -325,7 +325,9 @@ Implement support in the order **TXT, Markdown, then ODT**. Each stage builds on
 the same public library API and translation backend and is exposed through the CLI.
 The initial ODT scope and inspected sample structure are documented in
 [ODT adapter design](odt.md). Package inspection and a limited reader/writer with
-conservative inline protection and optional aligned formatting are implemented;
+conservative inline protection and optional aligned formatting are implemented.
+Supported scopes include textual tables, textboxes/captions and headers/footers;
+part-local XML patching preserves the surrounding structure.
 The CLI selects this limited subset for `.odt` and reports unsupported text
 separately with warning exit code 3.
 The roadmap describes the target behavior. TXT orchestration currently requires

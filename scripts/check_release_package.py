@@ -13,6 +13,57 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DISTRIBUTION_NAME = "doc-lingo"
 
+# Executed by the clean environment's interpreter against the installed wheel.
+ODT_SMOKE = """
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from zipfile import ZipFile, ZIP_STORED
+from doc_lingo import translate_document
+from doc_lingo.documents.odt import OdtReader, OdtWriter, inspect_package
+
+office = "urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+text = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+style = "urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+manifest = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"
+mime = b"application/vnd.oasis.opendocument.text"
+content = (f'<o:document-content xmlns:o="{office}" xmlns:t="{text}">'
+    '<o:body><o:text><t:h t:outline-level="1">Hello</t:h>'
+    '<t:p><t:span>Hello</t:span></t:p></o:text></o:body>'
+    '</o:document-content>').encode()
+styles = (f'<o:document-styles xmlns:o="{office}" xmlns:t="{text}" xmlns:s="{style}">'
+    '<o:master-styles><s:master-page s:name="Standard"><s:header>'
+    '<t:p>Hello</t:p></s:header><s:footer><t:p><t:page-number>1</t:page-number>'
+    '/ <t:page-count>1</t:page-count></t:p></s:footer>'
+    '</s:master-page></o:master-styles></o:document-styles>').encode()
+manifest_xml = (f'<m:manifest xmlns:m="{manifest}">'
+    f'<m:file-entry m:full-path="/" m:media-type="{mime.decode()}"/>'
+    '<m:file-entry m:full-path="content.xml" m:media-type="text/xml"/>'
+    '<m:file-entry m:full-path="styles.xml" m:media-type="text/xml"/>'
+    '</m:manifest>').encode()
+
+class Backend:
+    def translate(self, text, **kwargs):
+        assert text == "Hello", text
+        return "Hallo"
+
+with TemporaryDirectory(prefix="doc-lingo-odt-smoke-") as directory:
+    source = Path(directory) / "source.odt"
+    target = Path(directory) / "target.odt"
+    members = {"mimetype": mime, "content.xml": content, "styles.xml": styles,
+        "META-INF/manifest.xml": manifest_xml}
+    with ZipFile(source, "w", compression=ZIP_STORED) as archive:
+        for name, payload in members.items():
+            archive.writestr(name, payload)
+    translate_document(OdtReader(source), OdtWriter(source), Backend(), target,
+        source_lang="en", target_lang="de")
+    inspect_package(target)
+    with ZipFile(target) as archive:
+        assert archive.namelist() == list(members)
+        for name, payload in members.items():
+            expected = payload.replace(b">Hello<", b">Hallo<")
+            assert archive.read(name) == expected, name
+"""
+
 
 def project_version() -> str:
     """Read the single release version declared in project metadata."""
@@ -144,6 +195,8 @@ def main() -> None:
                 "        assert target.read_bytes() == source.read_bytes(), suffix\n",
             ]
         )
+
+        run([str(python), "-c", ODT_SMOKE])
 
     print("\nRelease package checks passed.")
 

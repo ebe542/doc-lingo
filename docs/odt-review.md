@@ -131,3 +131,18 @@ Check the `styles.xml:N` rows and diagnostics. A field-only footer may correctly
 be `protected_only` rather than translated. Inspect headers and footers on all
 page variants, page numbers/counts, logos, wrapping and page placement. The report
 continues to show `manual_review: pending`; record editor review separately.
+
+## Release baseline: run-07
+
+The maintainer completed `run-07` and confirmed successful editor review on
+2026-10-27. The report records 87 processed segments, 17 skipped blocks and ten
+`formatting_dropped` warnings. Compared with `run-06`, the footer recovery warning
+is gone and no new warning was introduced. The header is eligible; the footer
+containing only page-number/count fields and separators is `protected_only`.
+There were 93 translation calls, 93 alignment calls and zero alignment failures.
+
+These results describe the private six-page sample, not a public test corpus or
+a general guarantee. The ten remaining style/link warnings and known terminology
+limitations are accepted limitations of the initial ODT release. The generated
+report is not rewritten: `manual_review` remains `pending`, while the maintainer's
+confirmation is recorded here. Synthetic tests remain available without local data.

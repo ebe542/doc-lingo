@@ -250,7 +250,7 @@ without a recognized style are not detected by font or syntax guessing.
 Textbox paragraphs inside `draw:frame/draw:text-box` are supported in the main
 flow, tables and paragraph-owned inline frames. Multiple paragraphs, nested
 frames, lists and tables retain their own segment IDs and structure. Caption
-prose is translated while sequence/page fields remain opaque. Drawing groups,
+prose is translated while sequence/page fields remain opaque. Drawing groups and
 unknown ancestor containers remain excluded. Embedded images
 are copied unchanged; image titles/descriptions and raster text are not translated.
 
@@ -266,8 +266,8 @@ but longer text may overflow a fixed-size textbox or change layout.
 
 A frame-only outer paragraph can appear as empty/protected in the inventory while
 its child paragraphs are processed separately. This does not mean the containing
-XML subtree remains untranslated. The sample is still incomplete while unsupported
-peripheral text is retained.
+XML subtree remains untranslated. Header/footer paragraphs use the same policies,
+as described below. Unsupported content remains listed in the inventory.
 
 ## Architecture and preservation rules
 
