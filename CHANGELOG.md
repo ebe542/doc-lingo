@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Documentation
+
+- Define the planned editable ODT review workflow, four-row block layout,
+  correction selection, persistent job identity and staged TXT-first implementation.
+  Review import/finalization and PDF support are not implemented yet.
+
 ### Fixed
 
 - Preserve complete ODT paragraph styles after unwrapped leading soft page breaks

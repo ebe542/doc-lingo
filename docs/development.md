@@ -25,6 +25,11 @@ change. It does not authorize creating a Git commit.
 
 ## Library and CLI architecture
 
+The next planned workflow is [editable translation review](translation-review.md):
+an ODT review document with original, proposal and optional human correction,
+followed by finalization from a persistent translation job. This is an agreed
+design, not an available CLI feature; start with the complete TXT round trip.
+
 The package is organized by responsibility:
 
 ```text
