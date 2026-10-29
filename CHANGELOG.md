@@ -4,6 +4,10 @@
 
 ### Added
 
+- Editable ODT review export for saved TXT jobs: four rows per block, separate
+  reference/proposal/correction areas, job metadata and named block tables.
+  Preserve text whitespace and refuse existing destinations. Import is still planned.
+
 - Persistent TXT review jobs through `doc_lingo.review`, with source snapshots,
   ordered translation proposals, versioned metadata and source/inventory validation.
   Archive publication refuses existing files. ODT review export/import is still planned.

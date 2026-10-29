@@ -1,7 +1,7 @@
 # Editable translation review
 
-Status: TXT job persistence is implemented as a library API. ODT review export,
-import and finalization remain planned. ODT is the agreed review document format.
+Status: TXT job persistence and ODT review export are implemented as library APIs.
+Import and finalization remain planned. ODT is the agreed review document format.
 The existing direct translation workflow remains available. PDF support is
 deferred until the review and finalization workflow works reliably.
 
@@ -159,3 +159,77 @@ no-overwrite publication. Each uncompressed member is limited to 64 MiB; the fir
 implementation holds the job in memory. Store the archive as persistent user data.
 Human edits, formatting evidence and diagnostics integration will extend the job
 contract in subsequent steps; schema 1 does not accept structured document jobs.
+
+## ODT export (review schema 1)
+
+```python
+from doc_lingo.review import load_job, export_review_odt
+
+export_review_odt(load_job("example.review.zip"), "example.review.odt")
+```
+
+The export creates one four-row table per TXT block: source/ID, original,
+proposal, and blank correction. Each text row has a label paragraph followed by
+its payload paragraph. Labels are not part of the payload. Plain TXT has no rich
+formatting; this step does not yet implement Markdown/ODT formatting transfer.
+TXT list prefixes remain in the job's source snapshot; the review shows the same
+translatable block text stored in the job, not reconstructed list numbering.
+
+XML metacharacters are escaped. Tabs, spaces and line endings use explicit ODF
+text elements. CRLF/CR display as line breaks; the exact original byte spelling
+remains in the job archive. Long rows may split across pages. The correction row
+has a minimum height rather than a fixed limit. The review's page numbers are not
+source coordinates, so TXT blocks show no original page number.
+
+Identity encoding is provisional until editor round-trip validation: tables use
+`table:name="DLBlock_ID"`; custom document properties `doc-lingo.review-version`,
+`doc-lingo.job-id` and `doc-lingo.source-sha256` bind the document to its job. These
+are standard ODT metadata rather than visible technical rows. Prefix spelling of
+XML namespaces is not part of the contract. The later importer must validate the
+metadata and complete ID mapping instead of relying on table order.
+
+Output paths must be new. Export validates the job, rejects XML-incompatible text,
+checks the generated package and publishes without overwriting. It neither changes
+the job archive nor loads translation/alignment models. There is no correction
+import or final document generation yet. Keep the job ZIP alongside the ODT.
+
+### Manual export example
+
+After milestone checks pass, run from the repository root in Git Bash:
+
+```bash
+python - <<'PY'
+from pathlib import Path
+from dataclasses import replace
+from doc_lingo import PlainTextReader
+from doc_lingo.review import create_text_job, save_job, load_job, export_review_odt
+
+root = Path("local-data/review-export/run-01")
+root.mkdir(parents=True, exist_ok=False)
+source = root / "example.txt"
+source.write_text(
+    'Keep model.predict(data) unchanged.\n\n'
+    'Read <examples> & compare the results.\n\n'
+    + 'This long paragraph tests page wrapping and table continuation. ' * 80,
+    encoding="utf-8", newline="\n",
+)
+translations = {
+    "1": "model.predict(data) unverändert lassen.\n",
+    "2": "<examples> lesen und die Ergebnisse vergleichen.\n",
+    "3": "Dieser lange Absatz prüft den Seitenumbruch und die Tabellenfortsetzung. " * 80,
+}
+with PlainTextReader(source).iter_segments() as segments:
+    proposals = [replace(s, text=translations[s.id]) for s in segments]
+job = create_text_job(source, proposals, source_lang="en", target_lang="de")
+save_job(job, root / "example.review.zip")
+export_review_odt(load_job(root / "example.review.zip"), root / "example.review.odt")
+print(f"Review export complete: {root / 'example.review.odt'}")
+PY
+```
+
+This uses explicit sample translations, not a model. Choose `run-02` etc. for a
+repeat. Open the ODT in LibreOffice, inspect all four rows and the long paragraph,
+then enter a correction and save under a new filename. Reopen it and check that
+text remains editable, table continuation is readable, and document properties
+and table names retain their IDs. Return the saved example for later import
+validation; this stage does not claim an editor-verified round trip automatically.
