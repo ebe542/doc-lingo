@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- Persistent TXT review jobs through `doc_lingo.review`, with source snapshots,
+  ordered translation proposals, versioned metadata and source/inventory validation.
+  Archive publication refuses existing files. ODT review export/import is still planned.
+
 ### Documentation
 
 - Define the planned editable ODT review workflow, four-row block layout,

@@ -1,6 +1,7 @@
 # Editable translation review
 
-Status: agreed design, not implemented. ODT is the review document format.
+Status: TXT job persistence is implemented as a library API. ODT review export,
+import and finalization remain planned. ODT is the agreed review document format.
 The existing direct translation workflow remains available. PDF support is
 deferred until the review and finalization workflow works reliably.
 
@@ -119,3 +120,42 @@ Original, machine proposal and final human text can form evaluation pairs or a
 translation memory. They do not automatically train a model. Corpus export or
 training is a separate feature requiring explicitly authorized documents and
 traceable provenance; it is not part of the initial workflow.
+
+## Implemented job persistence (schema 1)
+
+Import `create_text_job`, `save_job`, `load_job` and `ReviewJobError` from
+`doc_lingo.review`. No review CLI commands are available yet. The caller supplies
+ordered `TextSegment` proposals with the source IDs/types; this API does not run
+translation. On translation failure, supply the original text as the proposal.
+Source stability during proposal generation remains the caller's responsibility.
+
+```python
+from doc_lingo import PlainTextReader
+from doc_lingo.review import create_text_job, save_job, load_job
+
+# Model-free example: retain source text as each initial proposal.
+with PlainTextReader("example.txt").iter_segments() as proposals:
+    job = create_text_job("example.txt", proposals, source_lang="en", target_lang="de")
+save_job(job, "example.review.zip")
+loaded = load_job("example.review.zip")
+loaded.verify_source("example.txt")
+```
+
+The ZIP contains exactly `job.json` and `source.txt`. The latter preserves original
+bytes, including BOM, list prefixes, separators and line endings. JSON contains
+schema version, UUID job identity, display filename, language pair, source SHA-256,
+format `txt` and ordered blocks with ID/type/original/proposal. TXT has no reliable
+page coordinates; none are invented. IDs follow the existing TXT reader.
+
+Loading verifies the source hash and reconstructs the inventory with the TXT block
+parser, rejecting changed original text, duplicate/reordered blocks, unknown fields
+and unsupported versions. The display filename is never used as an extraction
+path. The snapshot can be loaded after the external source is moved or removed;
+`verify_source` explicitly checks a caller-selected original. Hashes detect
+inconsistency, not malicious modification of both metadata and source.
+
+Publication refuses existing destinations and uses temporary storage followed by
+no-overwrite publication. Each uncompressed member is limited to 64 MiB; the first
+implementation holds the job in memory. Store the archive as persistent user data.
+Human edits, formatting evidence and diagnostics integration will extend the job
+contract in subsequent steps; schema 1 does not accept structured document jobs.
