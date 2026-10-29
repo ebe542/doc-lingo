@@ -4,13 +4,17 @@
 
 ### Added
 
+- ODT correction import and TXT finalization for review jobs. Validate job identity,
+  complete block mapping and unchanged references; select human corrections or
+  saved proposals and reconstruct a new TXT from the source snapshot without models.
+
 - Editable ODT review export for saved TXT jobs: four rows per block, separate
   reference/proposal/correction areas, job metadata and named block tables.
-  Preserve text whitespace and refuse existing destinations. Import is still planned.
+  Preserve text whitespace and refuse existing destinations.
 
 - Persistent TXT review jobs through `doc_lingo.review`, with source snapshots,
   ordered translation proposals, versioned metadata and source/inventory validation.
-  Archive publication refuses existing files. ODT review export/import is still planned.
+  Archive publication refuses existing files.
 
 ### Documentation
 

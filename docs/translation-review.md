@@ -1,7 +1,8 @@
 # Editable translation review
 
-Status: TXT job persistence and ODT review export are implemented as library APIs.
-Import and finalization remain planned. ODT is the agreed review document format.
+Status: TXT job persistence, ODT review export/import and TXT finalization are
+implemented as library APIs. A production review CLI and structured-format
+correction transfer remain planned. ODT is the agreed review document format.
 The existing direct translation workflow remains available. PDF support is
 deferred until the review and finalization workflow works reliably.
 
@@ -190,8 +191,8 @@ metadata and complete ID mapping instead of relying on table order.
 
 Output paths must be new. Export validates the job, rejects XML-incompatible text,
 checks the generated package and publishes without overwriting. It neither changes
-the job archive nor loads translation/alignment models. There is no correction
-import or final document generation yet. Keep the job ZIP alongside the ODT.
+the job archive nor loads translation/alignment models. Keep the job ZIP alongside
+the ODT; see the import/finalization API below.
 
 ### Manual export example
 
@@ -233,3 +234,62 @@ then enter a correction and save under a new filename. Reopen it and check that
 text remains editable, table continuation is readable, and document properties
 and table names retain their IDs. Return the saved example for later import
 validation; this stage does not claim an editor-verified round trip automatically.
+
+## TXT correction import and finalization
+
+```python
+from doc_lingo.review import load_job, import_review_odt, finalize_text_review
+
+job = load_job("example.review.zip")
+segments = import_review_odt(job, "example.review_changed.odt")
+finalize_text_review(job, "example.review_changed.odt", "example.final.de.txt")
+```
+
+`import_review_odt` returns selected `TextSegment` values in original job order.
+Nonempty corrections win; empty or whitespace-only corrections accept the exact
+saved proposal. Multiple correction paragraphs become newline-separated TXT text.
+Inline styles and link labels contribute their text, not formatting or link URLs,
+as stated in the exported document. Explicit tabs/spaces/line breaks are decoded.
+
+The importer checks the job/version/source fingerprint, unique complete table IDs,
+four-row/one-column structure, labels, and original/proposal reference text. Tables
+may be reordered. References are compared after ODF whitespace decoding and newline
+normalization, rather than by serialized XML. Editor-added spans, bookmarks and
+soft page breaks do not change the reference text. Edits outside designated areas,
+tracked changes, merged/repeated cells, embedded objects, fields and nested lists
+or tables are rejected. Failures in a block identify its table ID.
+
+`finalize_text_review` uses the original bytes in the validated job archive and the
+existing TXT writer to preserve BOM, separators, list prefixes and block-ending
+newlines. Internal correction line breaks become LF; multiline reflow follows the
+existing TXT writer policy. No translation or alignment model is loaded. An optional
+`original="example.txt"` argument checks an external source against the job hash
+before import. Without it, the stored snapshot is authoritative; no original path
+is inferred from metadata. Existing outputs are never overwritten, and temporary
+snapshot/output files are cleaned up on failure and success.
+
+### Validate the saved editor example
+
+After milestone checks pass, use the saved example from the export review:
+
+```bash
+python - <<'PY'
+from pathlib import Path
+from doc_lingo.review import load_job, import_review_odt, finalize_text_review
+
+root = Path("local-data/review-export/run-01")
+job = load_job(root / "example.review.zip")
+review = root / "example.review_changed.odt"
+selected = import_review_odt(job, review)
+for block, segment in zip(job.blocks, selected, strict=True):
+    print(f"Block {block.id}: {'changed' if segment.text != block.proposal else 'proposal'}")
+output = root / "example.final.de.txt"
+finalize_text_review(job, review, output, original=root / "example.txt")
+print(f"Review finalization complete: {output}")
+PY
+```
+
+Choose a fresh output filename on repeat runs. For the previously reviewed example,
+block 2 should contain the translator's correction; blocks 1 and 3 should retain
+their proposals. Compare the output with the reviewed text and source structure.
+The job ZIP and edited ODT remain unchanged. No model run is required.

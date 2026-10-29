@@ -226,7 +226,7 @@ def export_review_odt(job: ReviewJob, destination: str | Path) -> None:
     """Export a validated TXT job without changing it or overwriting any file.
 
     Table names identify blocks; document properties identify the job and review
-    schema. These identities still need an editor round trip before import exists.
+    schema. The importer validates these identities independently of XML prefix spelling.
     """
     job.validate()
     destination = Path(destination)
