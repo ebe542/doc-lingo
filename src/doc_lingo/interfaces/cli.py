@@ -40,6 +40,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="doc-lingo",
         description="Translate TXT, Markdown and supported ODT text locally on CUDA.",
+        epilog="Reviewed TXT workflow: doc-lingo review prepare --help / review finalize --help",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {version('doc-lingo')}")
     parser.add_argument("file", type=Path, help="English source (.txt/.md UTF-8 or .odt)")
@@ -63,6 +64,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> None:
     """Translate one document and report expected failures without a traceback."""
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "review":
+        from doc_lingo.interfaces.review_cli import main as review_main
+
+        review_main(argv[1:])
+        return
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

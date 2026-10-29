@@ -277,3 +277,26 @@ Exit code 0 means no issues were reported, 1 means a fatal processing failure,
 and 2 means invalid arguments. Output and report paths must be new. See
 [ODT support and limitations](docs/odt.md) and the separate
 [reproducible review script](docs/odt-review.md).
+
+## Reviewed TXT translation
+
+For translator review, prepare an ODT containing original text, machine proposals
+and empty correction areas, alongside a persistent job archive:
+
+```bash
+doc-lingo review prepare document.txt --target-lang de --output-dir document-review
+```
+
+Edit `document-review/review.odt` in LibreOffice and save a separate edited copy.
+Leave a correction empty to accept its proposal. Then finalize without a model:
+
+```bash
+doc-lingo review finalize document-review/job.zip document-review/review_changed.odt \
+  --output document.final.de.txt
+```
+
+The output directory/file must be new. Preparation uses the existing local backend
+setup and supports `--backend` and `--glossary`; the review workflow currently
+supports TXT only. Recoverable translation issues retain source text and return
+exit code 3 with separate diagnostics. TXT output uses correction text, not rich
+formatting. See [review workflow and validation](docs/translation-review.md#cli-workflow).

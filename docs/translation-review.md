@@ -1,8 +1,8 @@
 # Editable translation review
 
 Status: TXT job persistence, ODT review export/import and TXT finalization are
-implemented as library APIs. A production review CLI and structured-format
-correction transfer remain planned. ODT is the agreed review document format.
+available through library APIs and the TXT review CLI. Structured-format
+correction transfer remains planned. ODT is the agreed review document format.
 The existing direct translation workflow remains available. PDF support is
 deferred until the review and finalization workflow works reliably.
 
@@ -125,7 +125,7 @@ traceable provenance; it is not part of the initial workflow.
 ## Implemented job persistence (schema 1)
 
 Import `create_text_job`, `save_job`, `load_job` and `ReviewJobError` from
-`doc_lingo.review`. No review CLI commands are available yet. The caller supplies
+`doc_lingo.review`. For manual job construction, the caller supplies
 ordered `TextSegment` proposals with the source IDs/types; this API does not run
 translation. On translation failure, supply the original text as the proposal.
 Source stability during proposal generation remains the caller's responsibility.
@@ -293,3 +293,57 @@ Choose a fresh output filename on repeat runs. For the previously reviewed examp
 block 2 should contain the translator's correction; blocks 1 and 3 should retain
 their proposals. Compare the output with the reviewed text and source structure.
 The job ZIP and edited ODT remain unchanged. No model run is required.
+
+## CLI workflow
+
+The existing direct translation syntax is unchanged. For a human-reviewed TXT
+translation, run from Git Bash with the project environment active:
+
+```bash
+doc-lingo review prepare local-data/review-export/run-01/example.txt \
+  --target-lang de --output-dir local-data/review-cli/run-01
+```
+
+Create the parent directory first if necessary (`mkdir -p local-data/review-cli`).
+The output directory itself must not exist. Preparation uses the same local Marian
+backend by default, or `--backend qwen`; `--glossary FILE` is supported. The source
+language is English and the existing backend language constraints apply. Only TXT
+is supported in this review workflow. Alignment options are unnecessary for TXT.
+Optional `.env` loading occurs only during preparation, never help or finalization.
+
+Preparation snapshots the source before translation, calls the shared translation
+service, and rechecks the external original before returning the job. Library
+callers can use `translate_text_job(source, backend, source_lang=..., target_lang=...)`
+with optional progress/issue callbacks. Supplying an issue callback enables the
+existing recoverable-error source retention; unexpected/fatal failures propagate.
+
+The new directory contains:
+
+- `job.zip`: source snapshot, job identity and machine proposals.
+- `review.odt`: editable four-row review tables.
+- `issues.jsonl`: technical diagnostics only when translation issues occurred.
+
+Preparation prints segment progress and artifact paths. A recoverable failure
+keeps the original as the proposal and returns exit code 3 after publishing the
+review. Exit code 0 means preparation completed without reported issues, not that
+translation quality is approved. Fatal failures return 1; invalid command syntax
+or language/format choices return 2. Fatal preparation discards staged artifacts
+and their diagnostics. Normal publication failures roll back files linked by this
+invocation. Abrupt process termination during publication can leave a partial
+folder; do not use it as a complete job.
+
+Edit the ODT Correction areas and save, for example as `review_changed.odt`. Then:
+
+```bash
+doc-lingo review finalize local-data/review-cli/run-01/job.zip \
+  local-data/review-cli/run-01/review_changed.odt \
+  --output local-data/review-cli/run-01/final.de.txt \
+  --original local-data/review-export/run-01/example.txt
+```
+
+`--original` is optional; it verifies the external source against the job before
+import. The job snapshot always supplies reconstruction structure. Finalization
+loads no translation/alignment model and publishes only a new `.txt` file. It
+returns 0 on completion and 1 for validation or I/O failure; wrong output extension
+or command syntax returns 2. Keep the ZIP and edited ODT for repeatable revisions.
+Run `doc-lingo review --help` for both commands.

@@ -4,6 +4,10 @@
 
 ### Added
 
+- TXT review CLI: `review prepare` translates to a persistent job and editable ODT;
+  `review finalize` imports corrections and publishes TXT without model loading.
+  Preparation supports existing backends/glossaries, progress and separate diagnostics.
+
 - ODT correction import and TXT finalization for review jobs. Validate job identity,
   complete block mapping and unchanged references; select human corrections or
   saved proposals and reconstruct a new TXT from the source snapshot without models.
