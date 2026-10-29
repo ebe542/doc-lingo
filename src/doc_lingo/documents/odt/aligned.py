@@ -22,13 +22,18 @@ class AlignedOdtSegment(TextSegment):
 
 
 def aligned_body(source: OdtInlineSegment) -> tuple[str, OdtInlineSegment]:
-    """Keep only unwrapped leading frames at their original paragraph boundary.
+    """Keep unwrapped leading frames and soft page breaks at the paragraph boundary.
 
     Interior frames, bookmarks, fields and explicit whitespace retain markers.
     A frame enclosed by a style/link is not independent of that scope.
     """
     end = 0
-    for left, right in source.frame_spans:
+    for left, right in source.protected_spans:
+        fragment = source.text[left:right]
+        if (left, right) not in source.frame_spans and not re.fullmatch(
+            r"<(?:[^\s:>]+:)?soft-page-break\s*/>", fragment
+        ):
+            break
         if source.text[end:left].strip() or any(r.outer_start < right for r in source.ranges):
             break
         end = right
@@ -75,7 +80,12 @@ def odt_scopes(source: OdtInlineSegment) -> tuple[FormattingScope, ...]:
             else None,
         )
         for index, r in enumerate(source.ranges)
-        if r.inner_start < r.inner_end and index not in source.language_ranges
+        if r.inner_start < r.inner_end
+        and index not in source.language_ranges
+        and (
+            source.text[r.inner_start : r.inner_end].strip()
+            or re.match(r"<(?:[^\s:>]+:)?a(?:\s|>)", source.text[r.outer_start : r.inner_start])
+        )
     )
 
 

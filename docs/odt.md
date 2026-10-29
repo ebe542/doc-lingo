@@ -356,3 +356,18 @@ They bypass translation and alignment and retain their exact XML. Ordinary prose
 including labels such as `Page` or `of`, and literal unprotected digits still
 qualify for translation. Punctuation alone without a recognized field does not
 activate this rule.
+
+## Leading layout boundaries and whitespace scopes
+
+In the aligned path, unwrapped leading `text:soft-page-break` empty elements and
+frames remain at the paragraph boundary outside model input. Their exact XML is
+restored by both service and writer. Interior or style/link-owned breaks, explicit
+line breaks and fields retain marker protection. A complete style on the remaining
+paragraph can therefore use full-segment preservation; partial styles still need
+reliable alignment evidence.
+
+An optical scope containing only literal whitespace has no visible text to map
+and is omitted without a formatting warning. The whitespace itself remains in
+model input. This does not apply to link scopes, punctuation or explicit XML
+whitespace elements such as `text:s` and `text:tab`. The conservative unaligned
+translation path and no-op reader/writer round trips are unchanged.

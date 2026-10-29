@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve complete ODT paragraph styles after unwrapped leading soft page breaks
+  without sending those boundary elements to the model. Partial scopes still
+  require alignment evidence. Omit plain whitespace-only optical scopes without
+  warning; retain explicit whitespace elements and link validation.
+
 ## [0.3.0] - 2026-10-27
 
 OpenDocument text (ODT) support joins TXT and Markdown in the library and CLI.

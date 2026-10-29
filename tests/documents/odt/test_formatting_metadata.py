@@ -170,3 +170,110 @@ def test_multiple_leading_frames_keep_order_and_body_coordinates(odt_factory):
         assert prepare_model_input(body.translation_input()).text == "Hello"
         assert body.language_ranges == {0}
         assert body.frame_spans == ()
+
+
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        "<t:soft-page-break/>",
+        "<t:soft-page-break /> <t:soft-page-break/>",
+        '<d:frame d:name="Icon"/><t:soft-page-break/>',
+        '<t:soft-page-break/><d:frame d:name="Icon"/>',
+    ],
+)
+@pytest.mark.parametrize("partial", [False, True])
+def test_leading_soft_break_keeps_only_complete_style(odt_factory, tmp_path, prefix, partial):
+    body = (
+        '<t:span t:style-name="Bold">Hello</t:span> world.'
+        if partial
+        else '<t:span t:style-name="Bold">Hello world.</t:span>'
+    )
+    xml = content(prefix + body)
+    source = odt_factory(updates={"content.xml": xml})
+
+    class Backend:
+        def translate(self, text, **kwargs):
+            assert text == "Hello world."
+            return "Hallo Welt."
+
+    issues = []
+    output = tmp_path / "out.odt"
+    translate_document(
+        OdtReader(source),
+        OdtWriter(source),
+        Backend(),
+        output,
+        source_lang="en",
+        target_lang="de",
+        aligner=Unresolved(),
+        on_issue=issues.append,
+    )
+    translated = "Hallo Welt." if partial else '<t:span t:style-name="Bold">Hallo Welt.</t:span>'
+    with ZipFile(output) as archive:
+        assert archive.read("content.xml") == xml.replace(body.encode(), translated.encode())
+    assert len(issues) == int(partial)
+    if partial:
+        assert issues[0].action == "formatting_dropped"
+        assert "unresolved_source" in issues[0].reason
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "Hello<t:soft-page-break/> world.",
+        "<t:span><t:soft-page-break/>Hello</t:span>",
+        "<t:line-break/><t:soft-page-break/>Hello",
+        "<t:page-number>1</t:page-number><t:soft-page-break/>Hello",
+    ],
+)
+def test_nonleading_or_wrapped_soft_break_is_still_protected(odt_factory, body):
+    source = odt_factory(updates={"content.xml": content(body)})
+    with OdtReader(source).iter_segments() as segments:
+        segment = next(segments)
+        prefix, translated_body = aligned_body(segment)
+        assert prefix == ""
+        assert prepare_model_input(translated_body.translation_input()).markers
+
+
+def test_whitespace_style_is_omitted_without_losing_text(odt_factory, tmp_path):
+    body = 'Hello<t:span t:style-name="Bold"> </t:span>world.'
+    xml = content(body)
+    source = odt_factory(updates={"content.xml": xml})
+
+    class Backend:
+        def translate(self, text, **kwargs):
+            assert text == "Hello world."
+            return "Hallo Welt."
+
+    issues = []
+    output = tmp_path / "out.odt"
+    translate_document(
+        OdtReader(source),
+        OdtWriter(source),
+        Backend(),
+        output,
+        source_lang="en",
+        target_lang="de",
+        aligner=Unresolved(),
+        on_issue=issues.append,
+    )
+    assert issues == []
+    with ZipFile(output) as archive:
+        assert archive.read("content.xml") == xml.replace(body.encode(), b"Hallo Welt.")
+
+
+@pytest.mark.parametrize("inner", [".", "Hello", "<t:s/>", "<t:tab/>"])
+def test_punctuation_and_explicit_whitespace_scopes_are_not_silenced(odt_factory, inner):
+    source = odt_factory(
+        updates={"content.xml": content(f'<t:span t:style-name="Bold">{inner}</t:span> world.')}
+    )
+    with OdtReader(source).iter_segments() as segments:
+        assert len(odt_scopes(next(segments))) == 1
+
+
+def test_whitespace_link_still_requires_projection(odt_factory):
+    source = odt_factory(updates={"content.xml": content("Hello<t:a> </t:a>world.")})
+    with OdtReader(source).iter_segments() as segments:
+        scopes = odt_scopes(next(segments))
+        assert len(scopes) == 1
+        assert scopes[0].link_target is not None
