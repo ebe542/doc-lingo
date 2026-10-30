@@ -28,8 +28,10 @@ change. It does not authorize creating a Git commit.
 The [translation review workflow](translation-review.md) uses persistent TXT jobs
 and plain-text original/proposal/correction blocks. Library and CLI both use the
 [TXT review contract](text-review-format.md). The unreleased ODT review interface
-was removed; normal ODT translation remains available. Formatting metadata for
-structured-source reviews is a future step.
+was removed; normal ODT translation remains available. Markdown review extraction and source evidence are available as a library-only
+step; see [Markdown review jobs](markdown-review.md). Schema 1 remains TXT-only;
+schema 2 stores Markdown evidence. Model preparation and final Markdown
+reconstruction are separate follow-up work.
 
 The package is organized by responsibility:
 

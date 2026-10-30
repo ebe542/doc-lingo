@@ -115,7 +115,8 @@ The library exposes `export_review_txt` and `import_review_txt` to
 selector is needed. This is interchange version 1, independent of job schema 1. Imports read at
 most 128 MiB; exports enforce the same limit. Both currently hold text in memory.
 
-Current scope is TXT sources with no source page metadata. Export labels use JSON
+The CLI supports TXT sources. The library additionally accepts
+[Markdown review jobs](markdown-review.md); neither supplies source page metadata. Export labels use JSON
 string escaping without surrounding quotes for source filenames. Original and
 proposal comparisons normalize only line endings. Empty corrections select the
 exact saved proposal, so its original newline spelling remains available to the

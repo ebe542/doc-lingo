@@ -1,0 +1,42 @@
+[
+  {
+    "original": "Model prediction",
+    "proposal": "Modellvorhersage",
+    "correction": "Vorhersage mit dem Modell"
+  },
+  {
+    "original": "Call predict() before saving the result with save().",
+    "proposal": "Rufen Sie predict() auf, bevor Sie das Ergebnis mit save() speichern.",
+    "correction": "Vor dem Speichern mit save() rufen Sie predict() auf."
+  },
+  {
+    "original": "Read the user guide before starting.",
+    "proposal": "Lesen Sie vor dem Start das Benutzerhandbuch.",
+    "correction": ""
+  },
+  {
+    "original": "Keep the original data for comparison.",
+    "proposal": "Bewahren Sie die Originaldaten zum Vergleich auf.",
+    "correction": "Behalten Sie die Ausgangsdaten für einen späteren Vergleich."
+  },
+  {
+    "original": "Step",
+    "proposal": "Schritt",
+    "correction": ""
+  },
+  {
+    "original": "Description",
+    "proposal": "Beschreibung",
+    "correction": ""
+  },
+  {
+    "original": "Prediction",
+    "proposal": "Vorhersage",
+    "correction": ""
+  },
+  {
+    "original": "Process new observations.",
+    "proposal": "Verarbeiten Sie neue Beobachtungen.",
+    "correction": "Neue Beobachtungen verarbeiten."
+  }
+]

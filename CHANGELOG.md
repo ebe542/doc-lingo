@@ -4,6 +4,11 @@
 
 ### Added
 
+- Library-only Markdown review jobs with plain-text blocks, schema-2 source
+  evidence, TXT export/import and protected inline-code validation. Preserve
+  schema-1 TXT archives. Reject ambiguous protected occurrences and unsupported
+  mixed HTML/images; Markdown review CLI and reconstruction remain pending.
+
 - Plain-text translation review in the library and CLI. `review prepare` creates
   a versioned job archive and UTF-8 `review.txt`; `review finalize` validates block
   IDs and references, selects corrections or saved proposals, and publishes TXT
@@ -16,7 +21,8 @@
 - Replace the unreleased ODT review experiment with TXT as the only review format.
   Remove ODT review export/import and the format selector. Normal ODT document
   translation is unchanged. Review files contain text only, without a cover page;
-  structured-source formatting metadata remains planned.
+  Markdown source evidence is available in the library; structured-source
+  reconstruction remains planned.
 
 ### Fixed
 

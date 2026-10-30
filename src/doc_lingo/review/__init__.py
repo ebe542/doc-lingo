@@ -2,6 +2,7 @@
 
 from doc_lingo.review.finalize import finalize_text_review
 from doc_lingo.review.jobs import ReviewBlock, ReviewJob, ReviewJobError, create_text_job
+from doc_lingo.review.markdown import create_markdown_job, markdown_review_segments
 from doc_lingo.review.preparation import translate_text_job
 from doc_lingo.review.storage import load_job, save_job
 from doc_lingo.review.text import export_review_txt, import_review_txt
@@ -11,6 +12,8 @@ __all__ = [
     "ReviewJob",
     "ReviewJobError",
     "create_text_job",
+    "create_markdown_job",
+    "markdown_review_segments",
     "export_review_txt",
     "import_review_txt",
     "finalize_text_review",

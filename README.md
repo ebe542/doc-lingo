@@ -297,10 +297,15 @@ doc-lingo review finalize document-review/job.zip document-review/review_changed
 
 The directory/file must be new. Preparation supports `--backend` and `--glossary`
 and uses the existing local model setup. Recoverable failures retain original text
-and return exit code 3 with separate diagnostics. Review currently supports TXT
+and return exit code 3 with separate diagnostics. The review CLI currently supports TXT
 sources only. It has no cover page or rich formatting; source structure remains in
 the job archive. Normal ODT translation is separate from this review workflow.
 
 The same functions are available as `export_review_txt`, `import_review_txt` and
 `finalize_text_review` in `doc_lingo.review`. See the
 [workflow](docs/translation-review.md) and [text format](docs/text-review-format.md).
+
+The library also supports [Markdown review jobs](docs/markdown-review.md) with
+plain-text export and protected inline content. This is an intermediate API:
+Markdown review preparation with a model and final reconstruction are not yet
+available through the CLI.

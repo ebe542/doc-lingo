@@ -5,7 +5,9 @@
 TXT is the single review interchange format in both the library and CLI. The
 unreleased ODT review exporter/importer and format-selection option were removed;
 there is no ODT-review compatibility path. Normal ODT document translation is
-unaffected. Job schema 1 currently supports TXT source documents only.
+unaffected. Job schema 1 supports TXT source documents. The library also supports
+[Markdown review jobs](markdown-review.md) in schema 2; the review CLI and final
+reconstruction remain TXT-only.
 
 Translators receive source location/ID, original text, machine proposal and an
 initially empty correction area for each block. No cover page, rich formatting,
@@ -107,7 +109,8 @@ metadata rather than in the review. Paragraph-level formatting can be reapplied
 to its block. Inline styles/links still need correspondence to the selected target
 text; original positions alone cannot establish it. Use conservative projection
 and separate diagnostics for uncertain mappings, without retranslating corrections.
-Schema 1 does not yet store Markdown/ODT formatting evidence. Protected formula/
+Schema 1 does not store Markdown/ODT formatting evidence. Markdown schema 2 now
+stores source positions, inline formatting ranges and protected visible values. Protected formula/
 field context and structured-source extraction need their own design and tests.
 
 ## Validation and next steps
@@ -117,7 +120,7 @@ and confirmed that corrections were applied in the practical CLI workflow. The
 library export/edit/import/finalization example also passed. These checks do not
 establish correctness across all documents/editors.
 
-Next, define source-format metadata and plain-text extraction/reconstruction for
-Markdown and ODT. Assess translation quality on several documents before adding
+Next, implement Markdown reconstruction from selected review text and connect
+model preparation. ODT review extraction and reconstruction remain future work. Assess translation quality on several documents before adding
 PDF or TeX/LaTeX. Original/proposal/correction pairs may later support evaluation
 or translation memory; training is a separate, explicitly authorized feature.

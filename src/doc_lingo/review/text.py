@@ -146,6 +146,10 @@ def import_review_txt(job: ReviewJob, source: str | Path) -> tuple[TextSegment, 
             if original != _normalize(block.original) or proposal != _normalize(block.proposal):
                 raise ReviewJobError("Reference text changed; move edits into Correction")
             selected[identity] = correction if correction.strip() else block.proposal
+            if block.source_info is not None:
+                from doc_lingo.review.markdown import validate_protected
+
+                validate_protected(block.source_info.protected, selected[identity])
         except ReviewJobError as error:
             raise ReviewJobError(f"Block {identity}: {error}") from error
     if selected.keys() != expected.keys():
