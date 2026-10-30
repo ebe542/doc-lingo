@@ -280,23 +280,27 @@ and 2 means invalid arguments. Output and report paths must be new. See
 
 ## Reviewed TXT translation
 
-For translator review, prepare an ODT containing original text, machine proposals
-and empty correction areas, alongside a persistent job archive:
+Create a plain-text review with original, machine proposal and correction sections:
 
 ```bash
 doc-lingo review prepare document.txt --target-lang de --output-dir document-review
 ```
 
-Edit `document-review/review.odt` in LibreOffice and save a separate edited copy.
-Leave a correction empty to accept its proposal. Then finalize without a model:
+Edit `document-review/review.txt` in a UTF-8 text editor and save as
+`review_changed.txt`. Leave Correction empty to accept its proposal. Keep control
+lines, IDs and reference text unchanged. Then finalize without a model:
 
 ```bash
-doc-lingo review finalize document-review/job.zip document-review/review_changed.odt \
+doc-lingo review finalize document-review/job.zip document-review/review_changed.txt \
   --output document.final.de.txt
 ```
 
-The output directory/file must be new. Preparation uses the existing local backend
-setup and supports `--backend` and `--glossary`; the review workflow currently
-supports TXT only. Recoverable translation issues retain source text and return
-exit code 3 with separate diagnostics. TXT output uses correction text, not rich
-formatting. See [review workflow and validation](docs/translation-review.md#cli-workflow).
+The directory/file must be new. Preparation supports `--backend` and `--glossary`
+and uses the existing local model setup. Recoverable failures retain original text
+and return exit code 3 with separate diagnostics. Review currently supports TXT
+sources only. It has no cover page or rich formatting; source structure remains in
+the job archive. Normal ODT translation is separate from this review workflow.
+
+The same functions are available as `export_review_txt`, `import_review_txt` and
+`finalize_text_review` in `doc_lingo.review`. See the
+[workflow](docs/translation-review.md) and [text format](docs/text-review-format.md).

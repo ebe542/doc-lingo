@@ -12,7 +12,7 @@ from time import monotonic
 
 from dotenv import load_dotenv
 
-from doc_lingo.review import export_review_odt, finalize_text_review, load_job, save_job
+from doc_lingo.review import export_review_txt, finalize_text_review, load_job, save_job
 from doc_lingo.review.preparation import translate_text_job
 from doc_lingo.translation.glossary import Glossary, GlossaryBackend
 from doc_lingo.translation.huggingface import HuggingFaceBackend
@@ -24,7 +24,7 @@ from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, vali
 def build_parser():
     parser = argparse.ArgumentParser(prog="doc-lingo review", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    prepare = commands.add_parser("prepare", help="Translate TXT and create an editable ODT review")
+    prepare = commands.add_parser("prepare", help="Translate TXT and create an editable TXT review")
     prepare.add_argument("file", type=Path, help="English UTF-8 TXT source")
     prepare.add_argument("--target-lang", required=True, choices=("en", "de"))
     prepare.add_argument("--output-dir", type=Path, required=True, help="New review directory")
@@ -32,7 +32,7 @@ def build_parser():
     prepare.add_argument("--glossary", type=Path)
     finish = commands.add_parser("finalize", help="Create final TXT without a translation model")
     finish.add_argument("job", type=Path, help="Saved job.zip")
-    finish.add_argument("review", type=Path, help="Edited review.odt")
+    finish.add_argument("review", type=Path, help="Edited review.txt")
     finish.add_argument("--output", type=Path, required=True, help="New TXT output")
     finish.add_argument("--original", type=Path, help="Optional original to check against the job")
     return parser
@@ -112,12 +112,12 @@ def _prepare(args, parser):
         if not count:
             (staging / "issues.jsonl").unlink()
         save_job(job, staging / "job.zip")
-        export_review_odt(job, staging / "review.odt")
+        export_review_txt(job, staging / "review.txt")
         _publish(staging, args.output_dir)
     print(
-        f"Review preparation complete: {args.output_dir / 'review.odt'}\n"
+        f"Review preparation complete: {args.output_dir / 'review.txt'}\n"
         f"Job: {args.output_dir / 'job.zip'}\n"
-        "Edit the Correction areas, save the ODT, then use doc-lingo review finalize."
+        "Edit the Correction areas, save the TXT, then use doc-lingo review finalize."
     )
     if count:
         parser.exit(

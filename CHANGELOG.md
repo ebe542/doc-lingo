@@ -4,27 +4,19 @@
 
 ### Added
 
-- TXT review CLI: `review prepare` translates to a persistent job and editable ODT;
-  `review finalize` imports corrections and publishes TXT without model loading.
-  Preparation supports existing backends/glossaries, progress and separate diagnostics.
+- Plain-text translation review in the library and CLI. `review prepare` creates
+  a versioned job archive and UTF-8 `review.txt`; `review finalize` validates block
+  IDs and references, selects corrections or saved proposals, and publishes TXT
+  without model loading. Control lines are escaped; BOM/editor newlines and reordered
+  blocks are supported. Progress, backends, glossaries and diagnostics use existing
+  translation services. Preserve source snapshots and refuse existing outputs.
 
-- ODT correction import and TXT finalization for review jobs. Validate job identity,
-  complete block mapping and unchanged references; select human corrections or
-  saved proposals and reconstruct a new TXT from the source snapshot without models.
+### Changed
 
-- Editable ODT review export for saved TXT jobs: four rows per block, separate
-  reference/proposal/correction areas, job metadata and named block tables.
-  Preserve text whitespace and refuse existing destinations.
-
-- Persistent TXT review jobs through `doc_lingo.review`, with source snapshots,
-  ordered translation proposals, versioned metadata and source/inventory validation.
-  Archive publication refuses existing files.
-
-### Documentation
-
-- Define the planned editable ODT review workflow, four-row block layout,
-  correction selection, persistent job identity and staged TXT-first implementation.
-  Review import/finalization and PDF support are not implemented yet.
+- Replace the unreleased ODT review experiment with TXT as the only review format.
+  Remove ODT review export/import and the format selector. Normal ODT document
+  translation is unchanged. Review files contain text only, without a cover page;
+  structured-source formatting metadata remains planned.
 
 ### Fixed
 

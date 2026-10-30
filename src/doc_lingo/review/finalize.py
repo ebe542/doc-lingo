@@ -4,8 +4,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from doc_lingo.documents.plain_text import PlainTextWriter
-from doc_lingo.review.importer import import_review_odt
 from doc_lingo.review.jobs import ReviewJob
+from doc_lingo.review.text import import_review_txt
 
 
 def finalize_text_review(
@@ -22,7 +22,7 @@ def finalize_text_review(
     """
     if original is not None:
         job.verify_source(original)
-    segments = import_review_odt(job, review)
+    segments = import_review_txt(job, review)
     destination = Path(destination)
     with TemporaryDirectory(
         prefix=".doc-lingo-review-source-", dir=destination.parent

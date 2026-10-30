@@ -1,15 +1,12 @@
 """CLI review workflows run with deterministic backends, never model downloads."""
 
 import json
-from xml.etree import ElementTree as ET
-from zipfile import ZipFile
 
 import pytest
 
 from doc_lingo.interfaces import cli, review_cli
 from doc_lingo.review import load_job, translate_text_job
 from doc_lingo.review.jobs import ReviewJobError
-from doc_lingo.review.odt import NS
 from doc_lingo.translation.issues import retain_original
 from doc_lingo.translation.protocols import TranslationError
 
@@ -46,24 +43,17 @@ def test_prepare_edit_finalize_without_model_reload(source, tmp_path, monkeypatc
     monkeypatch.setattr(review_cli, "load_dotenv", lambda **kw: None)
     directory = tmp_path / "review"
     prepare(source, directory)
-    assert sorted(p.name for p in directory.iterdir()) == ["job.zip", "review.odt"]
+    assert sorted(p.name for p in directory.iterdir()) == ["job.zip", "review.txt"]
     job = load_job(directory / "job.zip")
     assert job.source == source.read_bytes()
     assert job.source_name == "source.txt"
     assert job.blocks[0].proposal == "Hallo.\r\n"
     assert "Segments translated: 2" in capsys.readouterr().err
-    review = directory / "review.odt"
-    with ZipFile(review) as archive:
-        members = [(i, archive.read(i)) for i in archive.infolist()]
-    with ZipFile(review, "w") as archive:
-        for info, data in members:
-            if info.filename == "content.xml":
-                root = ET.fromstring(data)
-                table = root.findall(".//table:table", NS)[1]
-                correction = table.findall("table:table-row", NS)[3][0][1]
-                correction.text = "Meine Welt."
-                data = ET.tostring(root, encoding="utf-8", xml_declaration=True)
-            archive.writestr(info, data)
+    review = directory / "review.txt"
+    text = review.read_text(encoding="utf-8")
+    first, second = text.split("=== Block 2 ===", 1)
+    second = second.replace("--- Correction ---\n\n", "--- Correction ---\nMeine Welt.\n", 1)
+    review.write_text(first + "=== Block 2 ===" + second, encoding="utf-8", newline="\n")
 
     def forbidden(*args, **kwargs):
         pytest.fail("Finalization must not load configuration or models")
@@ -103,7 +93,7 @@ def test_recovery_publishes_review_and_separate_diagnostics(source, tmp_path, mo
     job = load_job(directory / "job.zip")
     assert all(b.original == b.proposal for b in job.blocks)
     assert len((directory / "issues.jsonl").read_text(encoding="utf-8").splitlines()) == 2
-    assert (directory / "review.odt").exists()
+    assert (directory / "review.txt").exists()
 
 
 @pytest.mark.parametrize(
@@ -157,7 +147,7 @@ def test_failures_do_not_publish_incomplete_job(source, tmp_path, monkeypatch, s
     if stage == "translate":
         monkeypatch.setattr(review_cli, "translate_text_job", fail)
     elif stage == "export":
-        monkeypatch.setattr(review_cli, "export_review_odt", fail)
+        monkeypatch.setattr(review_cli, "export_review_txt", fail)
     else:
         real_link = review_cli.os.link
         published = 0
