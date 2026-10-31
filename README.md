@@ -307,5 +307,6 @@ The same functions are available as `export_review_txt`, `import_review_txt` and
 
 The library also supports [Markdown review jobs](docs/markdown-review.md) with
 plain-text export and protected inline content. This is an intermediate API:
-Markdown review preparation with a model and final reconstruction are not yet
-available through the CLI.
+Markdown final reconstruction is available as `finalize_markdown_review`, with
+optional alignment and returned formatting diagnostics. Markdown review model
+preparation and CLI integration remain pending.

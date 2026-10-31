@@ -236,7 +236,7 @@ def test_tampered_archive_evidence_is_rejected(tmp_path, kind):
 def test_markdown_cannot_accidentally_use_txt_finalizer(tmp_path):
     job = make_job(tmp_path)
     output = tmp_path / "final.txt"
-    with pytest.raises(ReviewJobError, match="not implemented"):
+    with pytest.raises(ReviewJobError, match="requires a TXT"):
         finalize_text_review(job, tmp_path / "missing-review.txt", output)
     assert not output.exists()
     assert not list(tmp_path.glob(".doc-lingo-*"))

@@ -22,7 +22,7 @@ def finalize_text_review(
     """
     job.validate()
     if job.document_format != "txt":
-        raise ReviewJobError("Markdown review finalization is not implemented yet")
+        raise ReviewJobError("Text finalization requires a TXT review job")
     if original is not None:
         job.verify_source(original)
     segments = import_review_txt(job, review)

@@ -4,10 +4,17 @@
 
 ### Added
 
+- Fixture-driven TXT review integration tests from job creation to final output,
+  covering corrections, proposal fallback, reordered blocks, LF/CRLF and BOM.
+- Finalize Markdown review jobs in the library without retranslating corrections.
+  Restore protected source syntax, retain block structure and optionally project
+  inline formatting with the existing aligner protocol. Return formatting issues,
+  escape literal correction text and validate complete output before publication.
+
 - Library-only Markdown review jobs with plain-text blocks, schema-2 source
   evidence, TXT export/import and protected inline-code validation. Preserve
   schema-1 TXT archives. Reject ambiguous protected occurrences and unsupported
-  mixed HTML/images; Markdown review CLI and reconstruction remain pending.
+  mixed HTML/images; Markdown review CLI remains pending.
 
 - Plain-text translation review in the library and CLI. `review prepare` creates
   a versioned job archive and UTF-8 `review.txt`; `review finalize` validates block
@@ -21,8 +28,8 @@
 - Replace the unreleased ODT review experiment with TXT as the only review format.
   Remove ODT review export/import and the format selector. Normal ODT document
   translation is unchanged. Review files contain text only, without a cover page;
-  Markdown source evidence is available in the library; structured-source
-  reconstruction remains planned.
+  Markdown source evidence and reconstruction are available in the library;
+  ODT review reconstruction remains planned.
 
 ### Fixed
 

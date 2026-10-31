@@ -6,8 +6,7 @@ TXT is the single review interchange format in both the library and CLI. The
 unreleased ODT review exporter/importer and format-selection option were removed;
 there is no ODT-review compatibility path. Normal ODT document translation is
 unaffected. Job schema 1 supports TXT source documents. The library also supports
-[Markdown review jobs](markdown-review.md) in schema 2; the review CLI and final
-reconstruction remain TXT-only.
+[Markdown review jobs](markdown-review.md) in schema 2, including `finalize_markdown_review`; the review CLI remains TXT-only.
 
 Translators receive source location/ID, original text, machine proposal and an
 initially empty correction area for each block. No cover page, rich formatting,
@@ -115,12 +114,21 @@ field context and structured-source extraction need their own design and tests.
 
 ## Validation and next steps
 
+Fixed TXT examples in `tests/fixtures/review/text-review.*` are exercised by
+`tests/integration/test_text_review_workflow.py`. The complete model-free workflow
+checks job persistence, export, unchanged proposals, corrections, reordered review
+blocks and final output against independent expected files. It covers LF/CRLF,
+optional source BOM, list prefixes, blank lines, literal punctuation and unchanged
+input artifacts. These tests run with the normal milestone check and CI; no manual
+example sequence or existing `local-data` files are required.
+
 The maintainer reported successful milestone checks after the CLI switch to TXT
 and confirmed that corrections were applied in the practical CLI workflow. The
 library export/edit/import/finalization example also passed. These checks do not
 establish correctness across all documents/editors.
 
-Next, implement Markdown reconstruction from selected review text and connect
-model preparation. ODT review extraction and reconstruction remain future work. Assess translation quality on several documents before adding
+Next, connect Markdown review model preparation and CLI commands. ODT review
+extraction and reconstruction remain future work. Assess translation quality on
+several documents before adding
 PDF or TeX/LaTeX. Original/proposal/correction pairs may later support evaluation
 or translation memory; training is a separate, explicitly authorized feature.

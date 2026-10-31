@@ -30,8 +30,9 @@ and plain-text original/proposal/correction blocks. Library and CLI both use the
 [TXT review contract](text-review-format.md). The unreleased ODT review interface
 was removed; normal ODT translation remains available. Markdown review extraction and source evidence are available as a library-only
 step; see [Markdown review jobs](markdown-review.md). Schema 1 remains TXT-only;
-schema 2 stores Markdown evidence. Model preparation and final Markdown
-reconstruction are separate follow-up work.
+schema 2 stores Markdown evidence. Markdown reconstruction uses optional
+alignment without retranslating reviewed text and returns formatting issues.
+Model preparation and CLI integration remain separate follow-up work.
 
 The package is organized by responsibility:
 

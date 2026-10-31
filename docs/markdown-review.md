@@ -1,8 +1,9 @@
 # Markdown review jobs
 
-This library-only step extracts plain review text and stores source evidence.
-It does not prepare translations with a model or reconstruct a final Markdown
-document. The review CLI remains TXT-only. Normal Markdown translation is unchanged.
+The library extracts plain review text, stores source evidence and reconstructs
+Markdown from selected proposals or human corrections. It does not prepare
+Markdown review translations with a model. The review CLI remains TXT-only.
+Normal Markdown translation is unchanged.
 
 ## Supported text and protection
 
@@ -48,7 +49,8 @@ Each Markdown block adds `source_info`:
 Validation rebuilds the block inventory and evidence from the snapshot. Altered
 source positions, formatting evidence or protected values are rejected. These
 are source coordinates, not target positions or a complete reconstruction plan.
-Future reconstruction still needs to map formatting onto the selected target text.
+Finalization maps formatting onto selected target text using optional alignment;
+source offsets alone do not establish target positions.
 
 ## Model-free examples
 
@@ -89,11 +91,60 @@ runs do not publish review files to `local-data`.
 `markdown_review_segments` returns review text, not protection-aware backend
 requests. `create_markdown_job` accepts already prepared plain proposals, not
 Markdown or model markers. Retain original plain text on translation failure.
-The TXT finalizer explicitly rejects Markdown jobs; these tests only export
-and import review text, without producing a final Markdown document.
+The TXT finalizer explicitly rejects Markdown jobs. Use the separate
+`finalize_markdown_review` function for Markdown reconstruction.
+
+## Markdown finalization
+
+```python
+from doc_lingo.review import finalize_markdown_review, load_job
+
+job = load_job("document-review/job.zip")
+issues = finalize_markdown_review(
+    job,
+    "document-review/review_changed.txt",
+    "document.final.de.md",
+)
+for issue in issues:
+    print(f"Block {issue.segment_id}: {issue.reason}")
+```
+
+The job must be Markdown schema 2 and the output must not exist. The optional
+`original=...` checks an external source fingerprint; reconstruction always uses
+the snapshot. No translator or automatic model loader is invoked. Pass an
+initialized `TextAligner` through `aligner=...` to project partial formatting from
+original plain text onto the selected correction (or proposal).
+
+- Unchanged blocks retain their original spelling exactly, without alignment.
+- Block syntax, source separators, BOM and excluded contents stay source-owned.
+- Inline code, autolinks and implicit references regain their original syntax at
+  their validated new locations. Ordinary correction punctuation is escaped so
+  literal text cannot become new Markdown markup.
+- Complete-block formatting can be restored without word alignment. Partial
+  formatting needs alignment evidence; absent, failed or uncertain alignment
+  drops that formatting while retaining the reviewed text.
+- The existing projection policy splits optical styles, expands discontinuous
+  links, and drops conflicting or unrenderable scopes. Every such event is
+  returned as a `TranslationIssue`, optionally also sent to `on_issue` for logging.
+- Hard Markdown line breaks in changed blocks are not projected yet. They produce
+  a formatting warning; plain correction newlines become soft line breaks.
+- Corrections may change soft wrapping, including list continuations, but must
+  retain the block inventory and hierarchy. Table-cell corrections must stay on
+  one line. Introducing extra paragraphs or losing protected contents is an error.
+
+Before publication, the complete output is parsed again to verify its visible
+text and block structure. Errors and logging callback failures prevent publication.
+Temporary files are cleaned up and existing outputs are never replaced. No extra
+issue file is created implicitly by the library; consume the returned issues or
+supply the existing application logging callback. Unknown Markdown dialects and
+mixed HTML/images retain the extraction limitations described above.
 
 ## Validation
 
 The focused unit tests additionally cover source mutation, stored-evidence
 tampering, varied code/reference protection, and rejection by the TXT finalizer.
-No model evaluation is required for this extraction and persistence change.
+`tests/review/test_markdown_finalize.py` covers final reconstruction, corrected
+text, nested styles, split/expanded scopes, alignment failures, literal punctuation,
+tables, block boundaries, source snapshots and publication cleanup. The reusable
+fixture is also finalized and re-extracted to verify all selected texts.
+No model evaluation is required for these deterministic tests.

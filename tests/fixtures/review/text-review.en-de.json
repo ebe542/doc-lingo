@@ -1,0 +1,26 @@
+[
+  {
+    "type": "paragraph",
+    "original": "Review example.\n",
+    "proposal": "Prüfbeispiel.\n",
+    "correction": "Beispiel zur Durchsicht."
+  },
+  {
+    "type": "bullet_item",
+    "original": "Read the guide.\n",
+    "proposal": "Lesen Sie die Anleitung.\n",
+    "correction": ""
+  },
+  {
+    "type": "numbered_item",
+    "original": "Keep the original data.\n",
+    "proposal": "Bewahren Sie die Originaldaten auf.\n",
+    "correction": "Behalten Sie die Ausgangsdaten."
+  },
+  {
+    "type": "paragraph",
+    "original": "Keep **literal** text.\n",
+    "proposal": "Behalten Sie **wörtlichen** Text.\n",
+    "correction": ""
+  }
+]

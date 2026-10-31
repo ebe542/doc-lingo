@@ -1,4 +1,4 @@
-"""Model-free Markdown review extraction; final reconstruction is not implemented."""
+"""Model-free Markdown review extraction and source evidence."""
 
 import re
 from collections.abc import Iterable
@@ -51,7 +51,7 @@ class MarkdownSource:
             raise ReviewJobError("Invalid protected Markdown contents")
 
 
-def validate_protected(values: tuple[str, ...], text: str) -> None:
+def locate_protected(values: tuple[str, ...], text: str) -> tuple[tuple[int, int], ...]:
     """Reject missing, repeated or overlapping literal matches rather than guess."""
     occupied: list[tuple[int, int]] = []
     for value in values:
@@ -65,20 +65,26 @@ def validate_protected(values: tuple[str, ...], text: str) -> None:
         if any(start < b and a < end for a, b in occupied):
             raise ReviewJobError("Protected content has ambiguous overlapping occurrences")
         occupied.append((start, end))
+    return tuple(occupied)
+
+
+def validate_protected(values: tuple[str, ...], text: str) -> None:
+    """Validate protected content without exposing positions to callers."""
+    locate_protected(values, text)
 
 
 def _parser() -> MarkdownIt:
     parser = MarkdownIt("commonmark").enable(["table", "strikethrough"])
     # Keep implicit reference labels opaque, as the document adapter does.
     names = parser.get_active_rules()["inline"]
-    rule = parser.inline.ruler.getRules("")[names.index("link")]
+    link_rule = parser.inline.ruler.getRules("")[names.index("link")]
 
     def link(state: StateInline, silent: bool) -> bool:
         start, count = state.pos, len(state.tokens)
         if state.src[start : start + 1] != "[":
-            return rule(state, silent)
+            return link_rule(state, silent)
         end = state.md.helpers.parseLinkLabel(state, start, True)
-        matched = rule(state, silent)
+        matched = link_rule(state, silent)
         if matched and not silent and state.src[end + 1 : state.pos] in ("", "[]"):
             for token in state.tokens[count:]:
                 if token.type == "link_open":
@@ -86,6 +92,28 @@ def _parser() -> MarkdownIt:
         return matched
 
     parser.inline.ruler.at("link", link)
+
+    # Retain consumed spelling for reconstruction, not just normalized token text.
+    def capture(rule, token_type):
+        def wrapped(state: StateInline, silent: bool) -> bool:
+            start, count = state.pos, len(state.tokens)
+            matched = rule(state, silent)
+            if matched and not silent:
+                for token in state.tokens[count:]:
+                    if token.type == token_type:
+                        token.meta["review_raw"] = state.src[start : state.pos]
+                        break
+            return matched
+
+        return wrapped
+
+    for name, token_type in (
+        ("backticks", "code_inline"),
+        ("autolink", "link_open"),
+        ("link", "link_open"),
+    ):
+        rule = parser.inline.ruler.getRules("")[names.index(name)]
+        parser.inline.ruler.at(name, capture(rule, token_type))
     return parser
 
 
