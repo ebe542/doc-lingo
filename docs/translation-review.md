@@ -6,7 +6,8 @@ TXT is the single review interchange format in both the library and CLI. The
 unreleased ODT review exporter/importer and format-selection option were removed;
 there is no ODT-review compatibility path. Normal ODT document translation is
 unaffected. Job schema 1 supports TXT source documents. The library also supports
-[Markdown review jobs](markdown-review.md) in schema 2, including `finalize_markdown_review`; the review CLI remains TXT-only.
+[Markdown review jobs](markdown-review.md) in schema 2. Both formats support
+CLI preparation and finalization; the final extension must match the stored job.
 
 Translators receive source location/ID, original text, machine proposal and an
 initially empty correction area for each block. No cover page, rich formatting,
@@ -56,7 +57,10 @@ return 1; invalid command syntax/language/format choices return 2. Fatal prepara
 discards staging files and diagnostics. Normal publication failures remove the
 files created by that invocation. Abrupt termination can leave a partial folder;
 do not treat it as a complete job. Finalization returns 0 on completion, 1 for
-validation/I/O errors and 2 for invalid command syntax/output extension.
+validation/I/O errors and 2 for invalid command syntax/output extension. Markdown
+finalization returns 3 when it publishes formatting warnings in
+`OUTPUT.md.issues.jsonl`. Optional `--aligner awesome --alignment-model DIRECTORY`
+projects Markdown formatting; no translation model is loaded during finalization.
 
 ## Library and persistent job
 
@@ -127,8 +131,7 @@ and confirmed that corrections were applied in the practical CLI workflow. The
 library export/edit/import/finalization example also passed. These checks do not
 establish correctness across all documents/editors.
 
-Next, connect Markdown review model preparation and CLI commands. ODT review
-extraction and reconstruction remain future work. Assess translation quality on
+ODT review extraction and reconstruction remain future work. Assess translation quality on
 several documents before adding
 PDF or TeX/LaTeX. Original/proposal/correction pairs may later support evaluation
 or translation memory; training is a separate, explicitly authorized feature.

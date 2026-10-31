@@ -40,7 +40,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="doc-lingo",
         description="Translate TXT, Markdown and supported ODT text locally on CUDA.",
-        epilog="Reviewed TXT workflow: doc-lingo review prepare --help / review finalize --help",
+        epilog="TXT/Markdown review: doc-lingo review prepare --help / review finalize --help",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {version('doc-lingo')}")
     parser.add_argument("file", type=Path, help="English source (.txt/.md UTF-8 or .odt)")

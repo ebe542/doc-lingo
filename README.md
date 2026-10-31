@@ -278,7 +278,7 @@ and 2 means invalid arguments. Output and report paths must be new. See
 [ODT support and limitations](docs/odt.md) and the separate
 [reproducible review script](docs/odt-review.md).
 
-## Reviewed TXT translation
+## Reviewed TXT and Markdown translation
 
 Create a plain-text review with original, machine proposal and correction sections:
 
@@ -297,16 +297,28 @@ doc-lingo review finalize document-review/job.zip document-review/review_changed
 
 The directory/file must be new. Preparation supports `--backend` and `--glossary`
 and uses the existing local model setup. Recoverable failures retain original text
-and return exit code 3 with separate diagnostics. The review CLI currently supports TXT
-sources only. It has no cover page or rich formatting; source structure remains in
+and return exit code 3 with separate diagnostics. The review CLI supports TXT
+and Markdown sources. It has no cover page or rich formatting; source structure remains in
 the job archive. Normal ODT translation is separate from this review workflow.
 
 The same functions are available as `export_review_txt`, `import_review_txt` and
 `finalize_text_review` in `doc_lingo.review`. See the
 [workflow](docs/translation-review.md) and [text format](docs/text-review-format.md).
 
-The library also supports [Markdown review jobs](docs/markdown-review.md) with
-plain-text export and protected inline content. This is an intermediate API:
-Markdown final reconstruction is available as `finalize_markdown_review`, with
-optional alignment and returned formatting diagnostics. Markdown review model
-preparation and CLI integration remain pending.
+For Markdown, use `.md` as the input and final output extension:
+
+```bash
+doc-lingo review prepare document.md --target-lang de --output-dir markdown-review
+doc-lingo review finalize markdown-review/job.zip markdown-review/review_changed.txt \
+  --output document.final.de.md
+```
+
+The review is still plain TXT; keep visible inline code unchanged. Markdown
+preparation protects code with internal markers and restores it before export.
+For partial formatting, finalization optionally accepts `--aligner awesome` with
+`--alignment-model models/awesome-align`. No translation model is loaded during
+finalization. Without alignment, uncertain partial formatting is omitted.
+Formatting warnings return exit code 3 with a completed document and a separate
+`OUTPUT.md.issues.jsonl` report. Both output paths must be new. See
+[Markdown review jobs](docs/markdown-review.md) for supported syntax and limitations.
+The library exposes `translate_markdown_job` and `finalize_markdown_review`.

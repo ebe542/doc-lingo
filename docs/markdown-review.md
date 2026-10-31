@@ -1,9 +1,50 @@
 # Markdown review jobs
 
 The library extracts plain review text, stores source evidence and reconstructs
-Markdown from selected proposals or human corrections. It does not prepare
-Markdown review translations with a model. The review CLI remains TXT-only.
+Markdown from selected proposals or human corrections. Both preparation and
+finalization are available through the review CLI.
 Normal Markdown translation is unchanged.
+
+## CLI and model preparation
+
+```bash
+doc-lingo review prepare document.md --target-lang de --output-dir document-review
+```
+
+Preparation validates supported source syntax before loading configuration or
+constructing a translator. It uses the same Marian/Qwen choices, language rules,
+optional glossary and progress display as TXT review preparation. The library
+entry point is `translate_markdown_job(source, backend, source_lang=..., target_lang=...)`.
+
+The backend receives plain text with internal markers only for protected visible
+contents. Formatting syntax is absent. Marker movement is allowed, but each marker
+must survive exactly once. Restore code/reference contents before saving proposals
+or exporting `review.txt`; no model marker belongs in the human review text.
+Recoverable backend/marker failures retain the complete original plain block,
+continue with later blocks and emit separate diagnostics. Without an issue callback,
+library recovery remains strict. Source mutation during preparation is rejected.
+
+Edit Correction sections, save `review_changed.txt`, then finalize:
+
+```bash
+doc-lingo review finalize document-review/job.zip document-review/review_changed.txt \
+  --output document.final.de.md \
+  --aligner awesome --alignment-model models/awesome-align
+```
+
+The aligner options must be supplied together and refer to an existing local model
+directory. They are optional and only valid for Markdown jobs. Finalization never
+loads a translator or `.env`; it loads the aligner only when explicitly requested,
+after validating the job, edits, optional original fingerprint and output paths.
+Without alignment, unresolved partial formatting is dropped and reported.
+
+Final output extension must match the job. Formatting warnings produce a complete
+Markdown file plus `OUTPUT.md.issues.jsonl` and exit code 3. Clean completion returns
+0, invalid arguments 2, and operational/validation failures 1. Preparation likewise
+returns 3 for completed jobs with recovered translation issues. Output and report
+paths must be new. Both artifacts are staged before publication; normal publication
+failures roll back newly published reports. Abrupt process termination may leave a
+report without its document, which is not a completed finalization.
 
 ## Supported text and protection
 
@@ -148,3 +189,7 @@ text, nested styles, split/expanded scopes, alignment failures, literal punctuat
 tables, block boundaries, source snapshots and publication cleanup. The reusable
 fixture is also finalized and re-extracted to verify all selected texts.
 No model evaluation is required for these deterministic tests.
+
+CLI tests in `tests/interfaces/test_markdown_review_cli.py` use deterministic
+backends/aligners and cover preparation, edits, final output, warnings, preflight
+validation and publication failures. No downloads or local documents are required.

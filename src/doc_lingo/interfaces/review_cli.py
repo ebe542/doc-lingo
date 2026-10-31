@@ -1,4 +1,4 @@
-"""Prepare and finalize human-reviewed TXT translations."""
+"""Prepare and finalize human-reviewed TXT and Markdown translations."""
 
 import argparse
 import json
@@ -12,8 +12,19 @@ from time import monotonic
 
 from dotenv import load_dotenv
 
-from doc_lingo.review import export_review_txt, finalize_text_review, load_job, save_job
+from doc_lingo.review import (
+    export_review_txt,
+    finalize_markdown_review,
+    finalize_text_review,
+    import_review_txt,
+    load_job,
+    save_job,
+    translate_markdown_job,
+)
+from doc_lingo.review.markdown import markdown_blocks
 from doc_lingo.review.preparation import translate_text_job
+from doc_lingo.translation.alignment import AlignmentError
+from doc_lingo.translation.awesome_adapter import AwesomeAlignAdapter
 from doc_lingo.translation.glossary import Glossary, GlossaryBackend
 from doc_lingo.translation.huggingface import HuggingFaceBackend
 from doc_lingo.translation.marian import MarianBackend
@@ -24,17 +35,25 @@ from doc_lingo.translation.selection import BACKEND_NAMES, DEFAULT_BACKEND, vali
 def build_parser():
     parser = argparse.ArgumentParser(prog="doc-lingo review", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    prepare = commands.add_parser("prepare", help="Translate TXT and create an editable TXT review")
-    prepare.add_argument("file", type=Path, help="English UTF-8 TXT source")
+    prepare = commands.add_parser(
+        "prepare", help="Translate TXT/Markdown into an editable TXT review"
+    )
+    prepare.add_argument("file", type=Path, help="English UTF-8 .txt or .md source")
     prepare.add_argument("--target-lang", required=True, choices=("en", "de"))
     prepare.add_argument("--output-dir", type=Path, required=True, help="New review directory")
     prepare.add_argument("--backend", choices=BACKEND_NAMES, default=DEFAULT_BACKEND)
     prepare.add_argument("--glossary", type=Path)
-    finish = commands.add_parser("finalize", help="Create final TXT without a translation model")
+    finish = commands.add_parser("finalize", help="Create final TXT/Markdown without retranslating")
     finish.add_argument("job", type=Path, help="Saved job.zip")
     finish.add_argument("review", type=Path, help="Edited review.txt")
-    finish.add_argument("--output", type=Path, required=True, help="New TXT output")
+    finish.add_argument(
+        "--output", type=Path, required=True, help="New output matching the job format"
+    )
     finish.add_argument("--original", type=Path, help="Optional original to check against the job")
+    finish.add_argument(
+        "--aligner", choices=("awesome",), help="Optional Markdown formatting alignment"
+    )
+    finish.add_argument("--alignment-model", type=Path, help="Local awesome-align model directory")
     return parser
 
 
@@ -56,8 +75,9 @@ def _publish(staging: Path, destination: Path):
 
 
 def _prepare(args, parser):
-    if args.file.suffix.lower() != ".txt":
-        parser.error("Review preparation currently supports only .txt sources")
+    extension = args.file.suffix.lower()
+    if extension not in (".txt", ".md"):
+        parser.error("Review preparation supports .txt and .md sources")
     if os.path.lexists(args.output_dir):
         raise FileExistsError(args.output_dir)
     if not args.output_dir.parent.is_dir() or not args.file.is_file():
@@ -69,6 +89,8 @@ def _prepare(args, parser):
             raise ValueError("Glossary language mismatch")
     # Reject undecodable input before constructing the backend.
     args.file.read_bytes().decode("utf-8-sig")
+    if extension == ".md":
+        markdown_blocks(args.file.read_bytes())
     with suppress(OSError, UnicodeError):
         load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
     backend: TranslationBackend = (
@@ -101,7 +123,8 @@ def _prepare(args, parser):
                     flush=True,
                 )
 
-            job = translate_text_job(
+            translate_job = translate_markdown_job if extension == ".md" else translate_text_job
+            job = translate_job(
                 args.file,
                 backend,
                 source_lang="en",
@@ -127,6 +150,63 @@ def _prepare(args, parser):
         )
 
 
+def _finalize(args, parser):
+    if args.output.suffix.lower() not in (".txt", ".md"):
+        parser.error("Final review output must use the .txt or .md extension")
+    if bool(args.aligner) != bool(args.alignment_model):
+        parser.error("--aligner and --alignment-model must be supplied together")
+    report = args.output.with_name(args.output.name + ".issues.jsonl")
+    if os.path.lexists(args.output) or os.path.lexists(report):
+        raise FileExistsError(args.output)
+    if not args.output.parent.is_dir():
+        raise FileNotFoundError("Output directory does not exist")
+    job = load_job(args.job)
+    if args.output.suffix.lower() != "." + job.document_format:
+        parser.error(f"Output must use the .{job.document_format} extension")
+    if args.aligner and job.document_format != "md":
+        parser.error("--aligner requires a Markdown review job")
+    if args.original is not None:
+        job.verify_source(args.original)
+    # Validate human edits before optional alignment dependencies are loaded.
+    import_review_txt(job, args.review)
+    aligner = None
+    if args.aligner:
+        if not args.alignment_model.is_dir():
+            raise FileNotFoundError("Alignment model directory does not exist")
+        print("Loading Markdown formatting aligner...", file=sys.stderr, flush=True)
+        aligner = AwesomeAlignAdapter.load(str(args.alignment_model))
+    issues = ()
+    with TemporaryDirectory(prefix=".doc-lingo-review-", dir=args.output.parent) as directory:
+        staging = Path(directory)
+        output = staging / args.output.name
+        if job.document_format == "md":
+            issues = finalize_markdown_review(
+                job, args.review, output, original=args.original, aligner=aligner
+            )
+        else:
+            finalize_text_review(job, args.review, output, original=args.original)
+        staged_report = staging / report.name
+        if issues:
+            staged_report.write_text(
+                "".join(json.dumps(asdict(issue), ensure_ascii=False) + "\n" for issue in issues),
+                encoding="utf-8",
+                newline="\n",
+            )
+        published = []
+        try:
+            if issues:
+                os.link(staged_report, report)
+                published.append(report)
+            os.link(output, args.output)
+        except BaseException:
+            for path in published:
+                path.unlink()
+            raise
+    print(f"Review finalization complete: {args.output}")
+    if issues:
+        parser.exit(3, f"Warning: {len(issues)} formatting issues. Diagnostics: {report}\n")
+
+
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -138,15 +218,8 @@ def main(argv=None):
                 parser.error(str(error))
             _prepare(args, parser)
         else:
-            if args.output.suffix.lower() != ".txt":
-                parser.error("Final review output must use the .txt extension")
-            if os.path.lexists(args.output):
-                raise FileExistsError(args.output)
-            finalize_text_review(
-                load_job(args.job), args.review, args.output, original=args.original
-            )
-            print(f"Review finalization complete: {args.output}")
+            _finalize(args, parser)
     except FileExistsError:
         parser.exit(1, "Error: Output already exists; choose a new output path.\n")
-    except (OSError, ValueError, TranslationError) as error:
+    except (OSError, ValueError, TranslationError, AlignmentError) as error:
         parser.exit(1, f"Error: {error}\n")

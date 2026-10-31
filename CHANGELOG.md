@@ -4,6 +4,12 @@
 
 ### Added
 
+- Markdown review preparation and finalization in the CLI. Translate plain blocks
+  with protected content markers, restore readable proposals, and retain originals
+  on recoverable failures. Optional finalization alignment reports formatting
+  warnings beside the completed Markdown output. Add deterministic CLI and
+  preparation tests without model downloads.
+
 - Fixture-driven TXT review integration tests from job creation to final output,
   covering corrections, proposal fallback, reordered blocks, LF/CRLF and BOM.
 - Finalize Markdown review jobs in the library without retranslating corrections.
@@ -14,7 +20,7 @@
 - Library-only Markdown review jobs with plain-text blocks, schema-2 source
   evidence, TXT export/import and protected inline-code validation. Preserve
   schema-1 TXT archives. Reject ambiguous protected occurrences and unsupported
-  mixed HTML/images; Markdown review CLI remains pending.
+  mixed HTML/images until their review representation is supported.
 
 - Plain-text translation review in the library and CLI. `review prepare` creates
   a versioned job archive and UTF-8 `review.txt`; `review finalize` validates block

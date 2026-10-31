@@ -109,7 +109,7 @@ def test_prepare_preflight_avoids_model_loading(source, tmp_path, monkeypatch, k
     elif kind == "missing":
         source.unlink()
     elif kind == "format":
-        source = source.with_suffix(".md")
+        source = source.with_suffix(".odt")
     elif kind == "language":
         extra = ["--target-lang", "en"]
     elif kind == "encoding":
@@ -189,7 +189,7 @@ def test_review_help_does_not_load_configuration(monkeypatch, command):
 def test_finalize_rejects_existing_output_and_wrong_extension(tmp_path):
     output = tmp_path / "out.txt"
     output.write_bytes(b"keep")
-    for target, code in ((output, 1), (tmp_path / "out.md", 2)):
+    for target, code in ((output, 1), (tmp_path / "out.odt", 2)):
         with pytest.raises(SystemExit) as error:
             cli.main(["review", "finalize", "missing.zip", "missing.odt", "--output", str(target)])
         assert error.value.code == code
