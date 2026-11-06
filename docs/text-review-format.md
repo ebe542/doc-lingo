@@ -61,11 +61,17 @@ For example, literal `--- Correction ---` in prose is stored as
 `\--- Correction ---`. This is delimiter escaping, not document formatting.
 Do not interpret HTML, Markdown, XML or model markers in payloads.
 
-Each section header is followed by a newline, the escaped payload, then one
-mandatory framing newline before the next structural line. That final newline is
-not payload. If payload already ends with a newline, the file therefore contains
-an additional blank line, preserving that ending unambiguously. Empty corrections
-contain only the framing newline. Never strip arbitrary blank lines from payloads.
+Blank lines, including whitespace-only lines, are presentation only and are
+ignored everywhere during import: before headers, between controls and within
+Original, Translation and Correction sections. An empty Correction may therefore
+be followed immediately by its End Block control. Export still adds blank lines
+for readability. Blank review lines do not add or remove document paragraphs;
+the job snapshot owns document structure.
+
+Nonempty lines remain significant, including their leading/trailing spaces and
+line breaks. Reference comparisons ignore only blank lines and newline convention.
+An empty correction selects the exact stored proposal, preserving source-owned
+line endings. A nonempty correction contains its nonempty lines joined by LF.
 
 Export uses UTF-8 without BOM and LF. Import may accept a leading UTF-8 BOM and
 editor CRLF/CR line endings, normalizing them to LF before parsing. Original byte
@@ -118,7 +124,7 @@ most 128 MiB; exports enforce the same limit. Both currently hold text in memory
 The library and CLI support TXT sources and
 [Markdown review jobs](markdown-review.md); neither supplies source page metadata. Export labels use JSON
 string escaping without surrounding quotes for source filenames. Original and
-proposal comparisons normalize only line endings. Empty corrections select the
+proposal comparisons normalize line endings and ignore blank lines. Empty corrections select the
 exact saved proposal, so its original newline spelling remains available to the
 TXT writer. No additional markup stripping is performed on existing TXT blocks.
 

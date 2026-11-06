@@ -99,7 +99,8 @@ failure. The archive is persistent user data and must be retained with the revie
 Import checks review version, job identity, complete unique block IDs and unchanged
 source labels/originals/proposals. Block order may change; IDs determine source
 placement. Empty corrections select the exact saved proposal. Nonempty corrections
-are used with normalized LF line endings. Validate the complete review before
+are used with normalized LF line endings. Blank review lines are ignored as
+presentation throughout the file; source paragraph separators remain in the job. Validate the complete review before
 publishing. Text outside defined sections and malformed boundaries are errors.
 
 The existing TXT writer preserves the source BOM, separators, list prefixes and

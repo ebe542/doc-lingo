@@ -103,7 +103,8 @@ def _escape_and_restore(target: str, protected: tuple[tuple[str, str], ...]):
             end, piece = replacements[position]
         else:
             char = target[position]
-            piece = "\\" + char if char in string.punctuation else char
+            # Commas cannot introduce Markdown syntax, including at line starts.
+            piece = "\\" + char if char in string.punctuation and char != "," else char
             end = position + 1
         pieces.append(piece)
         length += len(piece)
@@ -248,7 +249,13 @@ def finalize_markdown_review(
         raise FileExistsError(f"Output file already exists: {destination}")
     if original is not None:
         job.verify_source(original)
-    selected = import_review_txt(job, review)
+    # Editors commonly leave a final newline in a Correction section. Markdown
+    # owns those block endings; they are not visible inline text. Preserve all
+    # interior newlines and leave TXT review import semantics unchanged.
+    selected = tuple(
+        replace(segment, text=segment.text.rstrip("\r\n"))
+        for segment in import_review_txt(job, review)
+    )
     source = job.source.decode("utf-8-sig")
     regions = tuple(_regions(source))
     pieces = []
@@ -287,7 +294,19 @@ def finalize_markdown_review(
     if [(b.id, b.type, b.original) for b in reconstructed] != [
         (s.id, s.type, s.text) for s in selected
     ]:
-        raise ReviewJobError("Reviewed text changes Markdown block structure or visible contents")
+        first_difference = next(
+            (
+                expected.id
+                for actual, expected in zip(reconstructed, selected, strict=False)
+                if (actual.id, actual.type, actual.original)
+                != (expected.id, expected.type, expected.text)
+            ),
+            selected[min(len(reconstructed), len(selected) - 1)].id if selected else "unknown",
+        )
+        raise ReviewJobError(
+            f"Block {first_difference}: Reviewed text changes Markdown block structure "
+            "or visible contents; check paragraph boundaries and whitespace"
+        )
     if _block_structure(text) != _block_structure(source):
         raise ReviewJobError("Reviewed text changes Markdown block structure")
     if on_issue is not None:

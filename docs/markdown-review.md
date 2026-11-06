@@ -172,6 +172,10 @@ original plain text onto the selected correction (or proposal).
 - Corrections may change soft wrapping, including list continuations, but must
   retain the block inventory and hierarchy. Table-cell corrections must stay on
   one line. Introducing extra paragraphs or losing protected contents is an error.
+- Finalization treats trailing line endings in proposals/corrections as block
+  endings owned by the source document, not visible inline text. This accepts an
+  editor's extra blank line before `=== End Block ===`. Blank review lines are ignored by the shared importer for both TXT and
+  Markdown. Breaks between nonempty correction lines remain significant.
 
 Before publication, the complete output is parsed again to verify its visible
 text and block structure. Errors and logging callback failures prevent publication.

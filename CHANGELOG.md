@@ -39,6 +39,14 @@
 
 ### Fixed
 
+- Avoid unnecessary backslashes before commas when finalizing Markdown review text.
+- Ignore blank presentation lines throughout TXT/Markdown review files, including
+  whitespace-only lines and spacing between controls. Keep source paragraph
+  structure and exact stored proposals independent of review spacing.
+
+- Treat trailing review line endings as source-owned Markdown block endings,
+  accepting editor-added final newlines without rejecting otherwise valid text.
+  Include the affected block ID when final visible-text validation fails.
 - Preserve complete ODT paragraph styles after unwrapped leading soft page breaks
   without sending those boundary elements to the model. Partial scopes still
   require alignment evidence. Omit plain whitespace-only optical scopes without

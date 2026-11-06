@@ -22,6 +22,11 @@ def _normalize(text: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
+def _content_lines(text: str) -> list[str]:
+    """Blank review lines are presentation, never document structure."""
+    return [line for line in _normalize(text).split("\n") if line.strip()]
+
+
 def _reserved(line: str) -> bool:
     return line in {_HEADER, _ORIGINAL, _TRANSLATION, _CORRECTION, _END} or bool(
         _BLOCK.fullmatch(line)
@@ -71,7 +76,7 @@ def export_review_txt(job: ReviewJob, destination: str | Path) -> None:
 
 class _Parser:
     def __init__(self, text: str):
-        self.lines = text.split("\n")
+        self.lines = _content_lines(text)
         self.position = 0
 
     def take(self) -> str:
@@ -90,8 +95,6 @@ class _Parser:
         while True:
             line = self.take()
             if line == terminator:
-                if not lines:
-                    raise ReviewJobError("Review section is missing its framing newline")
                 return "\n".join(lines)
             if line.startswith("\\"):
                 literal = line[1:]
@@ -109,7 +112,8 @@ def import_review_txt(job: ReviewJob, source: str | Path) -> tuple[TextSegment, 
     """Validate a complete review and select text in original job order.
 
     BOM and editor newline conventions are accepted. Reference sections are
-    immutable; payload whitespace is preserved except for newline normalization.
+    immutable except for blank presentation lines. Nonempty line contents and
+    their line breaks remain significant; blank corrections accept stored proposals.
     """
     job.validate()
     with Path(source).open("rb") as stream:
@@ -123,13 +127,10 @@ def import_review_txt(job: ReviewJob, source: str | Path) -> tuple[TextSegment, 
     parser = _Parser(text)
     parser.expect(_HEADER)
     parser.expect(f"Job-ID: {job.id}")
-    parser.expect("")
     expected = {block.id: block for block in job.blocks}
     selected = {}
     while parser.position < len(parser.lines):
         line = parser.take()
-        if line == "":
-            continue
         match = _BLOCK.fullmatch(line)
         if match is None:
             raise ReviewJobError("Unexpected text outside review blocks")
@@ -143,7 +144,9 @@ def import_review_txt(job: ReviewJob, source: str | Path) -> tuple[TextSegment, 
             original = parser.section(_TRANSLATION)
             proposal = parser.section(_CORRECTION)
             correction = parser.section(_END)
-            if original != _normalize(block.original) or proposal != _normalize(block.proposal):
+            if original != "\n".join(_content_lines(block.original)) or proposal != "\n".join(
+                _content_lines(block.proposal)
+            ):
                 raise ReviewJobError("Reference text changed; move edits into Correction")
             selected[identity] = correction if correction.strip() else block.proposal
             if block.source_info is not None:

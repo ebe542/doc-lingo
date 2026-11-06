@@ -202,7 +202,7 @@ def test_existing_output_and_changed_original_rejected(tmp_path):
 
 def test_structure_changing_correction_is_not_published(tmp_path):
     job, review, output = prepare(tmp_path, "Hello.\n", ["Hallo.\n\nNoch ein Absatz."])
-    with pytest.raises(ReviewJobError, match="block structure"):
+    with pytest.raises(ReviewJobError, match="Block 1:.*block structure"):
         finalize_markdown_review(job, review, output)
     assert not output.exists()
 
@@ -264,3 +264,53 @@ def test_nested_whole_block_styles_need_no_word_alignment(tmp_path):
     job, review, output = prepare(tmp_path, "***Hello.***\n", ["Hallo."])
     assert finalize_markdown_review(job, review, output) == ()
     assert output.read_text(encoding="utf-8") == "***Hallo\\.***\n"
+
+
+@pytest.mark.parametrize("ending", ["\n", "\n\n", "\r\n"])
+def test_editor_final_newlines_are_block_endings(tmp_path, ending):
+    job, review, output = prepare(
+        tmp_path,
+        "# Title\r\n\r\nCall `predict()` before `save()`.\r\n",
+        ["Titel", "Call predict() before save()."],
+    )
+    first, second = review.read_text(encoding="utf-8").split("=== Block 2 ===", 1)
+    correction = "Vor save() bitte predict() aufrufen."
+    second = second.replace(
+        "--- Correction ---\n\n", "--- Correction ---\n" + correction + ending + "\n"
+    )
+    review.write_bytes((first + "=== Block 2 ===" + second).encode("utf-8"))
+    before = review.read_bytes()
+    assert finalize_markdown_review(job, review, output) == ()
+    assert output.read_bytes() == (b"# Titel\r\n\r\nVor `save()` bitte `predict()` aufrufen\\.\r\n")
+    assert review.read_bytes() == before
+
+
+def test_table_proposal_ending_does_not_create_another_row(tmp_path):
+    job, review, output = prepare(tmp_path, "| Name |\n| --- |\n| Value |\n", ["Name\n", "Wert\n"])
+    assert finalize_markdown_review(job, review, output) == ()
+    assert output.read_text(encoding="utf-8") == "| Name |\n| --- |\n| Wert |\n"
+
+
+def test_interior_correction_newline_is_preserved_with_terminal_newline(tmp_path):
+    job, review, output = prepare(tmp_path, "> Hello\n> world.\n", ["Hallo\nWelt.\n"])
+    assert finalize_markdown_review(job, review, output) == ()
+    assert output.read_text(encoding="utf-8") == "> Hallo\n> Welt\\.\n"
+
+
+def test_comma_after_restored_code_is_not_escaped(tmp_path):
+    job, review, output = prepare(
+        tmp_path, "Call `predict()` before saving.\n", ["Rufen Sie predict() an."]
+    )
+    correction = "Rufen Sie predict() auf, bevor Sie speichern."
+    review.write_text(
+        review.read_text(encoding="utf-8").replace(
+            "--- Correction ---\n\n", "--- Correction ---\n" + correction + "\n"
+        ),
+        encoding="utf-8",
+        newline="\n",
+    )
+    assert finalize_markdown_review(job, review, output) == ()
+    assert output.read_text(encoding="utf-8") == (
+        "Rufen Sie `predict()` auf, bevor Sie speichern\\.\n"
+    )
+    assert markdown_review_segments(output)[0].text == correction

@@ -97,7 +97,6 @@ def test_escaped_correction_controls_and_backslashes(tmp_path):
         ("Hello.", "Changed reference."),
         ("Hallo.", "Changed proposal."),
         ("--- Original ---", "--- Translation ---"),
-        ("--- Correction ---\n\n", "--- Correction ---\n"),
         ("--- Correction ---\n\n", "--- Correction ---\n\\invalid\n"),
         ("--- Correction ---\n\n", "--- Correction ---\n=== Block 42 ===\n"),
     ],
@@ -215,3 +214,28 @@ def test_empty_job_finalization_needs_no_external_source(tmp_path):
     output = tmp_path / "out.txt"
     finalize_text_review(job, review, output)
     assert output.read_bytes() == b""
+
+
+@pytest.mark.parametrize("spacing", ["", "\n", " \t\n\n"])
+def test_blank_lines_anywhere_are_only_review_presentation(tmp_path, spacing):
+    job, source, review = setup_review(tmp_path)
+    lines = [line for line in review.read_text(encoding="utf-8").splitlines() if line.strip()]
+    review.write_text(
+        spacing + ("\n" + spacing).join(lines) + "\n" + spacing, encoding="utf-8", newline="\n"
+    )
+    selected = import_review_txt(job, review)
+    assert [s.text for s in selected] == [b.proposal for b in job.blocks]
+    output = tmp_path / "out.txt"
+    finalize_text_review(job, review, output, original=source)
+    assert output.read_bytes() == b"\xef\xbb\xbfHallo.\r\n\r\n- Welt.\r\n"
+
+
+def test_blank_correction_lines_ignored_without_stripping_nonempty_lines(tmp_path):
+    job, _, review = setup_review(tmp_path)
+    text = review.read_text(encoding="utf-8").replace(
+        "--- Correction ---\n\n",
+        "--- Correction ---\n\n  Erste Zeile.  \n \t\n\nZweite Zeile.\n\n",
+        1,
+    )
+    review.write_text(text, encoding="utf-8", newline="\n")
+    assert import_review_txt(job, review)[0].text == "  Erste Zeile.  \nZweite Zeile."
