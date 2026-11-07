@@ -1,7 +1,7 @@
 # Experimental PDF layout evidence
 
-The `experiment/pdf-layout` work starts with PDF inspection, before paragraph
-grouping, translation or Scribus export. `doc_lingo.pdf_layout.extract_layout`
+The `experiment/pdf-layout` work starts with PDF inspection and separately
+reviewable text grouping, before translation or Scribus export. `doc_lingo.pdf_layout.extract_layout`
 exports schema-versioned JSON and separate assets. It does not yet reconstruct
 an editable document or promise a lossless rendering round trip.
 
@@ -111,9 +111,66 @@ large PDFs and image-heavy pages can still require substantial memory. Character
 records make JSON intentionally verbose. Compression can be added after the
 format and reconstruction requirements have been exercised.
 
-Next, inspect selected page objects and font matches, then derive line/paragraph
-groups as a separate layer referring to fragment IDs. Do not overwrite the raw
-evidence. A Scribus exporter and translation integration follow after that.
+## Derived text groups
+
+Group existing extraction data without reopening the PDF or changing its JSON:
+
+```bash
+python -m scripts.group_pdf_layout local-data/pdf-layout/extraction-02 \
+  --output local-data/pdf-layout/groups-01
+python -m scripts.preview_pdf_layout input.pdf \
+  --layout local-data/pdf-layout/extraction-02 \
+  --groups local-data/pdf-layout/groups-01 \
+  --output local-data/pdf-layout/group-preview-01
+```
+
+The separate group manifest records the algorithm `conservative-lines-v2` and
+the extraction manifest hash. Per-page files contain the original page JSON hash,
+derived lines and candidate paragraphs. Every group references its line IDs and
+original fragment IDs. Each text fragment belongs to exactly one candidate block.
+Group IDs are deterministic for the same evidence and algorithm, not stable across
+algorithm revisions. Image and vector objects remain in the original extraction.
+
+The rules retain engine block boundaries except for geometrically compatible
+continuations of separately marked list items. Within each engine block, visual
+rows are rebuilt by baseline proximity, independently of engine line numbers.
+Horizontal fragments are ordered by x position and joined only across
+small gaps and compatible baselines. Existing text is preserved; a space is
+inserted across a visible gap when neither fragment already supplies whitespace.
+Subsequent lines join only with similar font sizes, plausible baseline spacing,
+compatible left margins and horizontal overlap. A first-line indent may return
+to the margin. New list markers, larger gaps, new indentation, short preceding
+lines and size changes end a candidate paragraph. Rotated/vertical fragments stay
+separate. Inline style changes do not by themselves split a line.
+
+These are geometric heuristics, not semantic classification. Small captions,
+headings, code, tables or tightly spaced columns can still be grouped incorrectly.
+Distinct engine blocks outside marked lists are not joined even if they belong to the same paragraph.
+No cross-page merging, reading-order inference or hyphen removal is performed.
+Group text keeps line breaks, including `inspira-\ntion`; it is not yet a final
+translation input. Original character geometry remains available in the evidence.
+
+Standalone bullet glyphs (including private-use Wingdings/Dingbats symbols) are
+retained as separate `list_marker` groups, not converted to raster graphics.
+The following text block references the glyph via `marker_ids`; the glyph is not
+included in its translation text. A nearby continuation aligned with the list
+text may cross an engine block boundary. A new marker starts another item.
+This initial rule requires a separate glyph fragment on the same visual row;
+symbols embedded inside a larger text fragment are not split automatically.
+
+Each block records `layout.line_lefts` and `layout.first_line_indent` in points.
+These preserve first-line indentation explicitly, in addition to the unchanged
+source coordinates. Grouping does not remove inline emphasis or original spaces.
+An eventual layout exporter must apply these values; there is no exporter yet.
+
+The preview adds pink candidate-block bounds and a table with their text and
+source fragment IDs. With groups supplied, raw bounds are initially hidden to make
+overlapping fragment and group rectangles distinguishable. They can be enabled
+independently. Manifest/page
+hashes prevent displaying stale groups against changed extraction data. Visual
+inspection is required before using these candidates for translation or export.
+
+A Scribus exporter and translation integration follow after grouping review.
 
 ## Validation
 

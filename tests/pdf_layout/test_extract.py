@@ -8,8 +8,10 @@ import pytest
 
 from doc_lingo.pdf_layout import extract_layout
 from doc_lingo.pdf_layout.extract import _asset, _fonts, _match_font
+from doc_lingo.pdf_layout.grouping import group_layout
 from doc_lingo.pdf_layout.preview import _rectangle, create_preview
 from scripts.extract_pdf_layout import main
+from scripts.group_pdf_layout import main as group_main
 from scripts.preview_pdf_layout import main as preview_main
 
 
@@ -274,3 +276,49 @@ def test_preview_cli(source, tmp_path, capsys):
     assert "PDF preview complete:" in capsys.readouterr().out
     assert preview_main(args) == 1
     assert "PDF preview failed:" in capsys.readouterr().err
+
+
+def test_grouping_export_preview_and_stale_evidence(source, tmp_path, capsys):
+    layout, groups, preview = tmp_path / "layout", tmp_path / "groups", tmp_path / "preview"
+    extract_layout(source, layout)
+    before = {p.relative_to(layout): p.read_bytes() for p in layout.rglob("*") if p.is_file()}
+    args = [str(layout), "--output", str(groups)]
+    assert group_main(args) == 0
+    assert "PDF grouping complete:" in capsys.readouterr().out
+    grouped = read_json(groups / "page-0001.json")
+    assert grouped["blocks"]
+    assert (
+        grouped["page_sha256"]
+        == hashlib.sha256((layout / "pages/page-0001.json").read_bytes()).hexdigest()
+    )
+    html = create_preview(source, layout, preview, groups=groups).read_text(encoding="utf-8")
+    assert 'class="group"' in html
+    assert "Show candidate text groups" in html
+    assert before == {
+        p.relative_to(layout): p.read_bytes() for p in layout.rglob("*") if p.is_file()
+    }
+    assert group_main(args) == 1
+    assert "PDF grouping failed:" in capsys.readouterr().err
+    page_path = layout / "pages/page-0001.json"
+    page_path.write_bytes(page_path.read_bytes() + b"\n")
+    with pytest.raises(ValueError, match="page evidence"):
+        create_preview(source, layout, tmp_path / "stale", groups=groups)
+    assert not (tmp_path / "stale").exists()
+    manifest_path = layout / "manifest.json"
+    manifest_path.write_bytes(manifest_path.read_bytes() + b"\n")
+    with pytest.raises(ValueError, match="extraction manifest"):
+        create_preview(source, layout, tmp_path / "stale", groups=groups)
+    assert not list(tmp_path.glob(".pdf-preview-*"))
+
+
+def test_grouping_failure_does_not_publish(source, tmp_path):
+    layout = tmp_path / "layout"
+    extract_layout(source, layout)
+    page = layout / "pages/page-0001.json"
+    data = read_json(page)
+    data["pdf_page"] = 2
+    page.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(ValueError, match="manifest"):
+        group_layout(layout, tmp_path / "groups")
+    assert not (tmp_path / "groups").exists()
+    assert not list(tmp_path.glob(".pdf-groups-*"))

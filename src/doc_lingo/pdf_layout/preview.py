@@ -28,7 +28,9 @@ def _rectangle(box, matrix, kind, title):
     )
 
 
-def create_preview(source: Path, layout: Path, destination: Path) -> Path:
+def create_preview(
+    source: Path, layout: Path, destination: Path, *, groups: Path | None = None
+) -> Path:
     """Write an offline HTML inspection view into a new directory.
 
     Source SHA-256 must match the extraction. Source rendering is only a visual
@@ -40,6 +42,18 @@ def create_preview(source: Path, layout: Path, destination: Path) -> Path:
     if destination.exists():
         raise FileExistsError(destination)
     manifest = _load(layout, "manifest.json")
+    grouped_pages = {}
+    if groups is not None:
+        groups = Path(groups)
+        grouped_manifest = _load(groups, "manifest.json")
+        if (
+            grouped_manifest["extraction_sha256"]
+            != hashlib.sha256((layout / "manifest.json").read_bytes()).hexdigest()
+        ):
+            raise ValueError("Groups do not match extraction manifest")
+        grouped_pages = {entry["pdf_page"]: entry["file"] for entry in grouped_manifest["pages"]}
+        if set(grouped_pages) != {entry["pdf_page"] for entry in manifest["pages"]}:
+            raise ValueError("Group page selection does not match extraction")
     data = source.read_bytes()
     if hashlib.sha256(data).hexdigest() != manifest["source"]["sha256"]:
         raise ValueError("Source PDF does not match the extraction SHA-256")
@@ -60,6 +74,31 @@ def create_preview(source: Path, layout: Path, destination: Path) -> Path:
             image = f"page-{number:04d}.png"
             page.get_pixmap(matrix=pymupdf.Matrix(1.5, 1.5), alpha=False).save(root / image)
             matrix = pymupdf.Matrix(evidence["rotation_matrix"])
+            group_overlays, group_rows = [], []
+            if groups is not None:
+                grouped = _load(groups, grouped_pages[number])
+                if (
+                    grouped["page_sha256"]
+                    != hashlib.sha256((layout / reference["file"]).read_bytes()).hexdigest()
+                    or grouped["pdf_page"] != number
+                ):
+                    raise ValueError("Groups do not match page evidence")
+                for block in grouped["blocks"]:
+                    title = f"{block['id']}\n{block['kind']}\n{block['text']}"
+                    group_overlays.append(_rectangle(block["bbox"], matrix, "group", title))
+                    group_rows.append(
+                        "<tr>"
+                        + "".join(
+                            f"<td>{escape(str(value))}</td>"
+                            for value in (
+                                block["id"],
+                                block["kind"],
+                                block["text"],
+                                ", ".join(block["fragment_ids"]),
+                            )
+                        )
+                        + "</tr>"
+                    )
             overlays, rows = [], []
             for obj in evidence["objects"]:
                 kind = obj["kind"]
@@ -101,12 +140,19 @@ def create_preview(source: Path, layout: Path, destination: Path) -> Path:
             width, height = page.rect.width, page.rect.height
             sections.append(
                 f"<section><h2>PDF page {number}</h2>"
-                f'<input id="toggle-{index}" type="checkbox" checked>'
+                f'<input class="raw-toggle" id="toggle-{index}" type="checkbox" '
+                f"{'checked' if groups is None else ''}>"
                 f'<label for="toggle-{index}"> Show extracted bounds</label>'
+                f'<input class="group-toggle" id="groups-{index}" type="checkbox" checked>'
+                f'<label for="groups-{index}"> Show candidate text groups</label>'
                 f'<svg viewBox="0 0 {width} {height}" role="img" '
                 f'aria-label="PDF page {number} with extraction bounds">'
                 f'<image href="{image}" width="{width}" height="{height}"/>'
-                f"<g>{''.join(overlays)}</g></svg>"
+                f'<g class="raw-bounds">{"".join(overlays)}</g>'
+                f'<g class="group-bounds">{"".join(group_overlays)}</g></svg>'
+                "<details open><summary>Candidate text groups</summary><table>"
+                "<tr><th>ID</th><th>Kind</th><th>Text</th><th>Source fragments</th></tr>"
+                f"{''.join(group_rows)}</table></details>"
                 "<details><summary>Objects and font candidates</summary><table>"
                 "<tr><th>ID</th><th>Text</th><th>Extracted font</th>"
                 "<th>Match</th><th>Candidates</th></tr>"
@@ -122,7 +168,9 @@ rect{fill:transparent;stroke-width:.7;vector-effect:non-scaling-stroke}
 rect:hover{fill:#ffff0066;stroke-width:2}
 .text{stroke:#0672ce}.image{stroke:#16803c}.vector{stroke:#9b35ba}
 .uncertain{stroke:#d05400;stroke-dasharray:3 2}
-input:not(:checked)~svg g{display:none}
+.group{stroke:#c40063;stroke-width:1.5}
+.raw-toggle:not(:checked)~svg .raw-bounds{display:none}
+.group-toggle:not(:checked)~svg .group-bounds{display:none}
 td,th{border:1px solid #ccc;padding:.4rem;text-align:left;overflow-wrap:anywhere}
 table{border-collapse:collapse;width:100%;table-layout:fixed}td{white-space:pre-wrap}
 </style><h1>PDF layout inspection</h1>
@@ -130,6 +178,8 @@ table{border-collapse:collapse;width:100%;table-layout:fixed}td{white-space:pre-
 Bounds only check extraction geometry, not completeness or correct reading order.</p>
 <p>Blue: text; orange dashed: uncertain font; green: image; purple: vector/clip bounds.
 Hover over a rectangle for its ID and text. Font details are listed below each page.</p>
+<p>Pink: candidate text groups. Hide extracted bounds to inspect groups separately.
+Group text preserves line breaks and hyphens; grouping does not establish reading order.</p>
 """
         html += "".join(sections) + "\n</html>\n"
         (root / "index.html").write_text(html, encoding="utf-8", newline="\n")

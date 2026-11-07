@@ -4,6 +4,14 @@
 
 ### Added
 
+- Derive candidate PDF text lines and paragraphs in separate JSON with fragment
+  provenance and extraction hashes. Add grouping commands, synthetic regression
+  cases and independently switchable group bounds in the offline preview.
+  Preserve source evidence, line breaks and hyphenation for later review.
+  Rebuild visual rows independently of engine line numbers, retain standalone
+  bullet glyphs separately, connect aligned list continuations across engine
+  blocks and expose first-line indentation as layout metadata.
+
 - Experimental PDF layout evidence export with versioned page JSON, text fragments
   and character geometry, separate image/vector assets, font inventory and opt-in
   embedded font extraction. Add synthetic PDF tests and an extraction script;
