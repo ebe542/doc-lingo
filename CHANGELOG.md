@@ -4,6 +4,13 @@
 
 ### Added
 
+- Experimental PDF layout evidence export with versioned page JSON, text fragments
+  and character geometry, separate image/vector assets, font inventory and opt-in
+  embedded font extraction. Add synthetic PDF tests and an extraction script;
+  paragraph grouping, system font discovery and Scribus export remain future work.
+  Include conservative truncated-font candidates and an offline HTML inspection
+  view with source-page references and extracted bounding rectangles.
+
 - Markdown review preparation and finalization in the CLI. Translate plain blocks
   with protected content markers, restore readable proposals, and retain originals
   on recoverable failures. Optional finalization alignment reports formatting

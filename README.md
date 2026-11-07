@@ -1,5 +1,9 @@
 # doc-lingo
 
+Experimental PDF layout extraction is documented in [PDF layout evidence](docs/pdf-layout.md).
+It exports JSON objects, images, vector paths and font metadata before paragraph
+grouping or translation. PDF-to-Scribus conversion is not yet implemented.
+
 A Python library and CLI for translating documents while preserving their structure
 and formatting.
 
