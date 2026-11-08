@@ -4,6 +4,11 @@
 
 ### Added
 
+- Experimental Scribus export preparation and an in-application import script:
+  editable grouped text, explicit font choices, image/vector assets and export
+  reports for substitutions and overflows. Include an example-book font map and
+  synthetic preparation/import-contract tests. Real Scribus review remains required.
+
 - Local PDF font reports with internal family/style/PostScript names, collection
   face indexes, a limited German-character probe, affected PDF resource pages and
   explicit original/replacement mappings. Preserve raw extraction and report

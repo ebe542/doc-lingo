@@ -170,7 +170,8 @@ independently. Manifest/page
 hashes prevent displaying stale groups against changed extraction data. Visual
 inspection is required before using these candidates for translation or export.
 
-A Scribus exporter and translation integration follow after grouping review.
+The [first Scribus export experiment](scribus-export.md) follows grouping review.
+Translation integration remains a later step.
 
 ## Validation
 

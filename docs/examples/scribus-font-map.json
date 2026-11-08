@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "fonts": {
+    "NewBaskerville-Roman": {
+      "kind": "replacement",
+      "scribus_name": "NewBaskerville Regular",
+      "reason": "Example trial: local regular face has a different PostScript name. Metrics need review."
+    },
+    "FranklinGothic-Demi": {
+      "kind": "replacement",
+      "scribus_name": "Franklin Gothic Medium Regular",
+      "reason": "Example trial: Demi unavailable; lighter Medium cut explicitly selected."
+    },
+    "FranklinGothic-DemiItal": {
+      "kind": "replacement",
+      "scribus_name": "Franklin Gothic Medium Italic",
+      "reason": "Example trial: Demi Italic unavailable; Medium Italic explicitly selected."
+    },
+    "HumanistMann521-BoldCondensed-Bold": {
+      "kind": "replacement",
+      "scribus_name": "DejaVu Sans Condensed Bold",
+      "reason": "Example trial: Humanist 521 unavailable; available condensed bold sans serif selected."
+    }
+  },
+  "fragment_fonts": {
+    "NewBaskerville-BoldItali": "NewBaskerville-BoldItalic",
+    "HumanistMann521-BoldCond": "HumanistMann521-BoldCondensed-Bold"
+  }
+}

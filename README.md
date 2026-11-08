@@ -1,8 +1,9 @@
 # doc-lingo
 
 Experimental PDF layout extraction is documented in [PDF layout evidence](docs/pdf-layout.md).
-It exports JSON objects, images, vector paths and font metadata before paragraph
-grouping or translation. PDF-to-Scribus conversion is not yet implemented.
+It exports JSON objects, images, vector paths and font metadata, with separately
+reviewable text grouping. The [first Scribus export experiment](docs/scribus-export.md)
+builds editable text frames and graphics from this evidence; translation comes later.
 
 A Python library and CLI for translating documents while preserving their structure
 and formatting.

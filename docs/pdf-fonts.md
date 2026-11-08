@@ -132,8 +132,8 @@ The script refuses an existing destination and reports completion in a dialog.
 Refresh the catalog after installing or changing fonts and restarting Scribus.
 
 This optional catalog helps diagnose actual layout font names. It does not yet
-create an SLA or validate glyph rendering. The first Scribus layout export remains
-the next step once concrete original/replacement choices are available.
+create an SLA or validate glyph rendering. The [first Scribus layout export](scribus-export.md)
+uses concrete original/replacement choices and checks availability inside Scribus.
 
 API references: [FontTools TTFont](https://fonttools.readthedocs.io/en/latest/ttLib/ttFont.html)
 and [font naming tables](https://fonttools.readthedocs.io/en/latest/ttLib/tables/_n_a_m_e.html).
