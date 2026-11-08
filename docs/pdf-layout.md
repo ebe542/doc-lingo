@@ -88,10 +88,10 @@ resource-name prefixes. A single candidate is marked `name_prefix_candidate`;
 candidates remain unresolved. Exact matches take precedence, so a regular or bold
 font is never replaced by a longer italic name through this heuristic.
 
-System font discovery is not implemented: `system_availability` is explicitly
-`not_checked`. No silent substitutions, installation, download links or automatic
-downloads are attempted. This distinction prevents claiming that a required font
-is either installed or missing without checking.
+Extraction itself leaves `system_availability` as `not_checked`. The separate
+[local font report](pdf-fonts.md) scans common font directories and supports
+explicit file/face mappings without modifying this evidence. No silent
+substitution, installation or automatic downloads are attempted.
 
 With `--export-fonts`, embedded bytes are exported when available. Use this only
 when you have the necessary rights; PDF embedding alone does not grant permission

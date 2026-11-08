@@ -4,6 +4,17 @@
 
 ### Added
 
+- Local PDF font reports with internal family/style/PostScript names, collection
+  face indexes, a limited German-character probe, affected PDF resource pages and
+  explicit original/replacement mappings. Preserve raw extraction and report
+  ambiguous matches, scan errors and unresolved fragment font assignments.
+  Suggest unverified family/style candidates when exact names differ, without
+  silently selecting a replacement or weakening explicit mapping checks.
+  Add a script run inside Scribus to capture actual available font names and
+  document the explicit replacement policy for the upcoming layout experiment.
+  Document original-font purchase sources, free alternative download sources and
+  installation/recheck steps. Keep the Scribus catalog optional diagnostics.
+
 - Derive candidate PDF text lines and paragraphs in separate JSON with fragment
   provenance and extraction hashes. Add grouping commands, synthetic regression
   cases and independently switchable group bounds in the offline preview.

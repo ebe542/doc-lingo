@@ -29,7 +29,7 @@ Repository = "https://github.com/ebe542/doc-lingo"
 doc-lingo = "doc_lingo.interfaces.cli:main"
 
 [project.optional-dependencies]
-pdf = ["PyMuPDF>=1.26,<2"]
+pdf = ["PyMuPDF>=1.26,<2", "fonttools>=4.55,<5"]
 awesome = [
   "awesome-align==0.1.7",
   "torch>=2.12,<2.14",
@@ -41,6 +41,7 @@ alignment = [
   "transformers>=5,<6",
 ]
 dev = [
+  "fonttools>=4.55,<5",
   "PyMuPDF>=1.26,<2",
   "pytest>=8,<10",
   "pytest-cov>=5,<8",
