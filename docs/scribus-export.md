@@ -75,7 +75,15 @@ does not prove matching line breaks or layout fidelity.
 The first example-book visual review found the overall layout promising, with
 additional line breaks. Its report recorded 18 overflowing frames across source
 pages 20, 24 and 49, including frames using original fonts. Frame geometry is still
-copied from PDF text bounds; automatic frame expansion is a separate follow-up.
+copied from PDF text bounds. Automatic frame expansion was tried and withdrawn:
+line wrapping and later translation can require manual frame/layout adjustments.
+Overflow reports are retained to support that work.
+
+Images, vectors and text are placed on separate unlocked `Images`, `Vectors` and
+`Text` layers. Select `Images` in the Layers panel when editing an image; hide
+upper layers temporarily if they intercept selection. The imported screenshot
+remains an image frame, not editable text. Real selection behavior needs manual
+verification in Scribus.
 
 ## Supported first-pass layout and known limits
 
@@ -94,12 +102,16 @@ copied from PDF text bounds; automatic frame expansion is a separate follow-up.
   content inside the crop. No whole-page raster background is used.
 - Image assets are converted to RGB PNG, preserving the extracted transform and
   optional mask within the observed image bounds. This is an extra rasterization
-  at two pixels per point; image-internal text remains pixels. CMYK fidelity is
+  at at least two pixels per point, increased to retain the source sampling
+  density along both transformed image axes; image-internal text remains pixels. CMYK fidelity is
   not guaranteed by the RGB conversion.
 - Line, cubic, rectangle and quadrilateral vector commands are rebuilt as SVG
   with available clip paths and fill/stroke opacity, then imported as Scribus
   vector objects. Dashed paths, unsupported vector operators and group records
   are reported. Complex transparency and SVG importer fidelity need visual review.
+  Placement uses geometric curve extrema rather than control-point bounds or
+  stroke padding. Clipped paths still require visual checking because Scribus
+  may trim the imported geometry differently.
 - Images precede vector graphics and all graphics precede editable text. This is
   an approximate paint order, not complete PDF compositing. Annotations and other
   content absent from the original extraction remain outside the supported subset.

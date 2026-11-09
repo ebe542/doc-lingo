@@ -9,7 +9,7 @@ import pytest
 
 from doc_lingo.pdf_layout import extract_layout
 from doc_lingo.pdf_layout.grouping import group_layout
-from doc_lingo.pdf_layout.scribus_graphics import _path, vector_svg
+from doc_lingo.pdf_layout.scribus_graphics import _path, image_png, vector_origin, vector_svg
 from doc_lingo.pdf_layout.scribus_plan import _text_frame, prepare_scribus
 from scripts.import_scribus_layout import import_plan
 from scripts.import_scribus_layout import main as import_main
@@ -104,6 +104,12 @@ def test_prepare_and_import_records_fonts_assets_and_overflows(inputs, tmp_path)
     }
     assert {entry["kind"] for entry in report["font_choices"]} == {"original", "replacement"}
     assert any(call[0] == "placeSVG" for call in scribus.calls)
+    vector = next(g for g in plan["pages"][0]["graphics"] if g["kind"] == "vector")
+    placed = next(args for name, args in scribus.calls if name == "placeSVG")
+    assert placed[1:] == tuple(vector["placement_origin"])
+    assert ("setActiveLayer", ("Images",)) in scribus.calls
+    assert ("setActiveLayer", ("Vectors",)) in scribus.calls
+    assert ("setLayerLocked", ("Images", False)) in scribus.calls
     assert any(call[0] == "setFont" for call in scribus.calls)
     assert scribus.calls[-1] == ("openDoc", (str(output),))
     assert before == {str(p): p.read_bytes() for p in layout.rglob("*") if p.is_file()}
@@ -194,6 +200,27 @@ def test_vector_commands_and_clipping():
     assert b"clipPath" in svg and b"evenodd" in svg and b"#ff0000" in svg
     with pytest.raises(ValueError, match="Unsupported"):
         _path([["unknown"]])
+
+
+def test_curve_origin_uses_extrema_not_control_hull():
+    path = {"items": [["c", [10, 100], [10, 0], [110, 0], [110, 100]]]}
+    assert vector_origin(path) == pytest.approx([10, 25])
+    with pytest.raises(ValueError, match="Empty"):
+        vector_origin({"items": []})
+
+
+def test_image_export_preserves_source_sampling(tmp_path):
+    pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 600, 240), False)
+    pix.clear_with(100)
+    pix.save(tmp_path / "image.png")
+    obj = {
+        "file": "image.png",
+        "mask_file": None,
+        "source": {"bbox": [10, 20, 110, 60], "transform": [100, 0, 0, 40, 10, 20]},
+    }
+    result = pymupdf.Pixmap(image_png(tmp_path, obj))
+    assert result.width >= 600
+    assert result.height >= 240
 
 
 def test_uncertain_font_requires_explicit_source_assignment():

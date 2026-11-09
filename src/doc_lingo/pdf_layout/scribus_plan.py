@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 
 from .extract import _base_name, _json
 from .preview import _load
-from .scribus_graphics import image_png, vector_svg
+from .scribus_graphics import image_png, vector_origin, vector_svg
 
 
 def _hash(path):
@@ -175,12 +175,19 @@ def prepare_scribus(source, layout, groups, mapping_file, destination):
                 name = f"assets/page-{number}-vector-{index}.svg"
                 try:
                     content = vector_svg(path, list(clips.values()), box)
+                    origin = vector_origin(path)
                 except ValueError as error:
                     issues.append(f"Page {number}, vector {index}: {error}")
                     continue
                 (root / name).write_bytes(content)
                 graphics.append(
-                    {"kind": "vector", "file": name, "bbox": box, "id": f"vector-{number}-{index}"}
+                    {
+                        "kind": "vector",
+                        "file": name,
+                        "bbox": box,
+                        "placement_origin": origin,
+                        "id": f"vector-{number}-{index}",
+                    }
                 )
             pages.append(
                 {

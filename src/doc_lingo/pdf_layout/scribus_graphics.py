@@ -1,6 +1,7 @@
 """Build portable graphic assets from extracted objects for the first SLA trial."""
 
 import base64
+import math
 import xml.etree.ElementTree as ET
 
 SVG = "http://www.w3.org/2000/svg"
@@ -42,6 +43,18 @@ def _path(items):
 
 def _color(rgb):
     return "none" if rgb is None else "#" + "".join(f"{round(c * 255):02x}" for c in rgb)
+
+
+def vector_origin(path):
+    """Return geometric minima, not the control-point hull or stroke padding."""
+    from fontTools.pens.boundsPen import BoundsPen
+    from fontTools.svgLib.path import parse_path
+
+    pen = BoundsPen(None)
+    parse_path(_path(path["items"]), pen)
+    if pen.bounds is None:
+        raise ValueError("Empty vector path")
+    return list(pen.bounds[:2])
 
 
 def vector_svg(path, clips, box):
@@ -112,5 +125,14 @@ def image_png(layout, obj):
         f'<image width="1" height="1" preserveAspectRatio="none" transform="matrix({matrix})" '
         f'xlink:href="data:image/png;base64,{encoded}"/></svg>'
     )
+    # Preserve at least the source sampling density along both transformed axes.
+    a, b, c, d, _, _ = obj["source"]["transform"]
+    scale = max(
+        2.0,
+        pixmap.width / max(math.hypot(a, b), 1e-9),
+        pixmap.height / max(math.hypot(c, d), 1e-9),
+    )
     with pymupdf.open(stream=svg.encode(), filetype="svg") as document:
-        return document[0].get_pixmap(matrix=pymupdf.Matrix(2, 2), alpha=True).tobytes("png")
+        return (
+            document[0].get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=True).tobytes("png")
+        )

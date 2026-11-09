@@ -94,6 +94,9 @@ def import_plan(scribus, plan_file):
     ):
         raise RuntimeError("Scribus could not create a document")
     issues = list(plan["issues"])
+    for layer in ("Images", "Vectors", "Text"):
+        scribus.createLayer(layer)
+        scribus.setLayerLocked(layer, False)
     overflow_count = 0
     for index, page in enumerate(plan["pages"], 1):
         scribus.gotoPage(index)
@@ -101,11 +104,15 @@ def import_plan(scribus, plan_file):
             x0, y0, x1, y1 = graphic["bbox"]
             path = str(assets[graphic["file"]])
             if graphic["kind"] == "vector":
-                scribus.placeSVG(path, x0, y0)
+                scribus.setActiveLayer("Vectors")
+                vx, vy = graphic.get("placement_origin", [x0, y0])
+                scribus.placeSVG(path, vx, vy)
             else:
+                scribus.setActiveLayer("Images")
                 name = scribus.createImage(x0, y0, x1 - x0, y1 - y0, graphic["id"])
                 scribus.loadImage(path, name)
                 scribus.setScaleImageToFrame(True, False, name)
+        scribus.setActiveLayer("Text")
         for frame in page["texts"]:
             x0, y0, x1, y1 = frame["bbox"]
             name = scribus.createText(x0, y0, x1 - x0, y1 - y0, frame["id"])
