@@ -12,7 +12,7 @@ Install the optional extraction dependency in the active virtual environment:
 ```bash
 python -m pip install -e ".[pdf]"
 python -m scripts.extract_pdf_layout input.pdf \
-  --pages 20 24 49 \
+  --pages 1 2 3 \
   --output local-data/pdf-layout/extraction-01
 ```
 
@@ -33,9 +33,9 @@ own MIT license. See the [upstream licensing information](https://pymupdf.io/lic
 
 ```text
 manifest.json
-pages/page-0020.json
+pages/page-0001.json
 assets/images/<sha256>.<extension>
-assets/graphics/page-0020.json
+assets/graphics/page-0001.json
 fonts/<sha256>.<extension>       # only with --export-fonts
 ```
 
@@ -116,10 +116,10 @@ format and reconstruction requirements have been exercised.
 Group existing extraction data without reopening the PDF or changing its JSON:
 
 ```bash
-python -m scripts.group_pdf_layout local-data/pdf-layout/extraction-02 \
+python -m scripts.group_pdf_layout local-data/pdf-layout/extraction-01 \
   --output local-data/pdf-layout/groups-01
 python -m scripts.preview_pdf_layout input.pdf \
-  --layout local-data/pdf-layout/extraction-02 \
+  --layout local-data/pdf-layout/extraction-01 \
   --groups local-data/pdf-layout/groups-01 \
   --output local-data/pdf-layout/group-preview-01
 ```
@@ -161,7 +161,8 @@ symbols embedded inside a larger text fragment are not split automatically.
 Each block records `layout.line_lefts` and `layout.first_line_indent` in points.
 These preserve first-line indentation explicitly, in addition to the unchanged
 source coordinates. Grouping does not remove inline emphasis or original spaces.
-An eventual layout exporter must apply these values; there is no exporter yet.
+The experimental Scribus exporter uses first-line indentation; arbitrary per-line
+indentation is not yet reconstructed.
 
 The preview adds pink candidate-block bounds and a table with their text and
 source fragment IDs. With groups supplied, raw bounds are initially hidden to make

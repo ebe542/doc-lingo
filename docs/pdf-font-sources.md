@@ -5,9 +5,12 @@ downloads or proof that a current retail font is identical to the PDF's version.
 Install fonts yourself, rerun the local font report, and record any substitution.
 The manual Scribus font catalog is optional troubleshooting, not a prerequisite.
 
-## Original families in the example PDF
+## Font family lookup examples
 
-| PDF family / required styles | Source | Acquisition and limitations |
+The following entries illustrate how to find font families. They are not a
+required font list. Start with the names in your own extraction/font report.
+
+| Font family / styles | Source | Acquisition and limitations |
 | --- | --- | --- |
 | NewBaskerville: Roman, Italic, Bold, BoldItalic | [ITC New Baskerville at MyFonts](https://www.myfonts.com/collections/new-baskerville-font-itc) | Commercial family; select the relevant desktop styles/license. Current Pro names may differ from the PDF's names. A purchase does not establish identical metrics. |
 | FranklinGothic: Demi, DemiItal | [Microsoft family information](https://learn.microsoft.com/en-us/typography/font-list/franklin-gothic), [commercial Demi Italic listing](https://www.myfonts.com/products/demi-italic-franklin-gothic-379218) | Microsoft lists Demi and Demi Italic and Office availability. Its information page is not a free font download. Use a licensed supplying product or the vendor's desktop offering for the required cuts. |

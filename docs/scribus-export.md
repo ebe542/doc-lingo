@@ -1,6 +1,6 @@
 # First editable Scribus layout experiment
 
-This exports the **English original**, before translation. A preparation command
+This exports the **source document**, before translation. A preparation command
 reads immutable extraction/group JSON and creates `plan.json` plus portable graphic
 assets. A separate script runs inside Scribus and creates a new editable document,
 `layout.sla`, with one text frame per candidate text group. It writes readable and
@@ -8,12 +8,14 @@ JSON export reports. The manual font catalog is optional, not a prerequisite.
 
 ## Font choices
 
-`docs/examples/scribus-font-map.json` is an explicit **example-book trial**, not a
-global fallback policy. It selects NewBaskerville Regular for Roman, Franklin
-Gothic Medium Regular/Italic for Demi/DemiItal, and DejaVu Sans Condensed Bold for
-Humanist 521. These are documented replacements, not promises of metric equality.
-It also explicitly resolves the example's two truncated source-font names.
-Inspect or copy/edit this file before using it. Fonts are not downloaded or installed.
+The separate [object/flow plan](pdf-protected-objects.md) records protected content
+by source object ID. It is not yet consumed by this Scribus exporter.
+
+`docs/examples/scribus-font-map.json` is an empty starting template. Copy it to
+`font-map.json` and add only the choices needed by your document. With empty
+mappings, the importer requires unique original PostScript-name matches. Fonts
+are not downloaded or installed. Replacement names must match faces available in
+your Scribus installation; selecting a replacement does not establish metric equality.
 
 This export map is distinct from the file/face map used by `check_pdf_fonts`:
 it names the actual Scribus face, not a font file. `fonts` is keyed by source
@@ -23,6 +25,24 @@ PostScript name without its PDF subset prefix. Each entry requires `kind`
 accepted only if it identifies exactly one existing candidate. An optional
 `extraction_sha256` restricts the map to one extraction; the plan always records
 the source/extraction/group hashes and the complete mapping used.
+
+For example, the following entry illustrates an explicit substitution. Both font
+names are placeholders: replace the key with the source PostScript name from
+your extraction and `scribus_name` with an installed face name from Scribus.
+
+```json
+{
+  "schema_version": 1,
+  "fonts": {
+    "SourceSerif-Regular": {
+      "kind": "replacement",
+      "scribus_name": "Installed Serif Regular",
+      "reason": "Original unavailable; replacement selected for manual layout review."
+    }
+  },
+  "fragment_fonts": {}
+}
+```
 
 An explicit font choice takes precedence. Without one, the importer requires a
 unique available Scribus face with the original PostScript name. It fails before
@@ -35,9 +55,9 @@ From Git Bash in the repository, substituting your PDF path:
 
 ```bash
 python -m scripts.prepare_scribus_layout input.pdf \
-  --layout local-data/pdf-layout/extraction-02 \
-  --groups local-data/pdf-layout/groups-02 \
-  --font-map docs/examples/scribus-font-map.json \
+  --layout local-data/pdf-layout/extraction-01 \
+  --groups local-data/pdf-layout/groups-01 \
+  --font-map font-map.json \
   --output local-data/pdf-layout/scribus-01
 ```
 
@@ -72,16 +92,14 @@ selected Scribus face). Reusing a replacement across blocks does not increase th
 replacement count. The dialog includes the readable report path. Zero overflows
 does not prove matching line breaks or layout fidelity.
 
-The first example-book visual review found the overall layout promising, with
-additional line breaks. Its report recorded 18 overflowing frames across source
-pages 20, 24 and 49, including frames using original fonts. Frame geometry is still
-copied from PDF text bounds. Automatic frame expansion was tried and withdrawn:
-line wrapping and later translation can require manual frame/layout adjustments.
-Overflow reports are retained to support that work.
+Text frames use the original PDF text bounds. Different font metrics and line
+wrapping can cause overflow even when an original font name matches. Translation
+can also change text length. Adjust frames manually after reviewing the content;
+overflow reports identify frames that require attention.
 
 Images, vectors and text are placed on separate unlocked `Images`, `Vectors` and
 `Text` layers. Select `Images` in the Layers panel when editing an image; hide
-upper layers temporarily if they intercept selection. The imported screenshot
+upper layers temporarily if they intercept selection. An imported raster image
 remains an image frame, not editable text. Real selection behavior needs manual
 verification in Scribus.
 
@@ -116,7 +134,7 @@ verification in Scribus.
   an approximate paint order, not complete PDF compositing. Annotations and other
   content absent from the original extraction remain outside the supported subset.
 
-Inspect source PDF pages 20, 24 and 49 against the resulting three layout pages.
+Compare each exported page with the corresponding page in your source PDF.
 Check paragraph/caption editing, list markers, inline italics, image orientation,
 arrow placement, clipping, page dimensions, overflows and substitutions. Exporting
 a PDF from Scribus and comparing it visually is separate from automated testing.

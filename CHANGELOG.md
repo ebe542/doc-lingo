@@ -4,13 +4,18 @@
 
 ### Added
 
+- Source-bound PDF object plans with explicit formula/code membership, automatic
+  image objects, ordered text/object references and unassigned-content inventories.
+  Preserve raw evidence and reject duplicate ownership; no rectangle-based crops
+  or translation/rendering integration is included.
+
 - Preserve source image sampling in Scribus graphic preparation, place curves by
   geometric extrema and separate images, vectors and text onto unlocked layers.
   Keep original text-frame bounds and report overflows for manual adjustment.
 
 - Experimental Scribus export preparation and an in-application import script:
   editable grouped text, explicit font choices, image/vector assets and export
-  reports for substitutions and overflows. Include an example-book font map and
+  reports for substitutions and overflows. Include an empty font-map template and
   synthetic preparation/import-contract tests. Real Scribus review remains required.
 
 - Local PDF font reports with internal family/style/PostScript names, collection
